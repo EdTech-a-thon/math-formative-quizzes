@@ -946,3 +946,7 @@ button span,
   .editor-bar-actions { gap: 10px; }
   .doc-sheet { padding: 26px 20px; }
 }
+
+/* Every "Copy class link" button pairs the copy icon with its wording, the same
+   way the class sidebar's copy button does. */
+.copy-link-button { display: inline-flex; align-items: center; gap: 8px; }
