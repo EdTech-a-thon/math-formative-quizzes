@@ -175,8 +175,7 @@ input:focus {
   padding: 0;
   accent-color: #7456e8;
 }
-button,
-.button-link {
+button {
   width: 100%;
   margin-top: 16px;
   border: 0;
@@ -190,13 +189,7 @@ button,
     transform 0.15s,
     box-shadow 0.15s;
 }
-.button-link {
-  display: block;
-  text-align: center;
-  text-decoration: none;
-}
-button:hover,
-.button-link:hover {
+button:hover {
   transform: translateY(-2px);
 }
 button:disabled {
@@ -204,8 +197,7 @@ button:disabled {
   opacity: 0.65;
   transform: none;
 }
-button span,
-.button-link span {
+button span {
   margin-left: 12px;
   font-size: 1.15rem;
 }
@@ -655,8 +647,8 @@ button span,
 }
 .operation-tags span.op-multiplication, .operation-tags span.op-division, .operation-tags span.op-addition, .operation-tags span.op-subtraction { background: var(--operation-soft); color: var(--operation); }
 .student-count { margin-left: 8px; color: #81799a; white-space: nowrap; }.class-card-actions { display: flex; align-items: center; gap: 7px; }.display-code { width: 38px; height: 38px; margin: 0; padding: 0; border: 1px solid #ded6ec; border-radius: 9px; background: #f7f4ff; box-shadow: none; color: #6748d1; font-size: 1.25rem; }.display-code:hover { transform: none; border-color: #7456e8; }.class-menu-trigger { width: 38px; height: 38px; margin: 0; padding: 0; border: 0; border-radius: 9px; background: transparent; box-shadow: none; color: #6748d1; font-size: 1.45rem; line-height: 1; }.class-menu-trigger:hover, .class-menu-trigger:focus-visible { background: #f1edff; outline: none; transform: none; }.class-menu { position: relative; }.class-menu-dropdown { position: absolute; z-index: 5; top: calc(100% + 7px); right: 0; min-width: 152px; padding: 5px; border: 1px solid #e2dce9; border-radius: 10px; background: #fffdfa; box-shadow: 0 10px 22px rgba(44, 35, 62, .14); }.class-menu-dropdown button { width: 100%; margin: 0; padding: 9px 10px; border-radius: 7px; background: transparent; box-shadow: none; color: #4d399b; font-size: .82rem; text-align: left; }.class-menu-dropdown button:hover { background: #f1edff; transform: none; }.class-menu-dropdown .menu-danger { color: #c0392b; }.class-menu-dropdown .menu-danger:hover { background: #fdeceb; }.class-menu-dropdown .menu-danger:disabled { opacity: .6; cursor: wait; }
-.clickable-class-card { cursor: pointer; transition: border-color .15s, box-shadow .15s; }.clickable-class-card:hover { border-color: #cfc3f3; box-shadow: 0 8px 20px rgba(44, 35, 62, .07); }.class-card-open-link { display: none; }.class-card-link { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; min-width: 0; }.clickable-class-card:hover h3 { color: #6748d1; }.class-page { display: block; overflow: visible; padding: 110px 24px 70px; }.class-roster { position: relative; z-index: 1; width: min(var(--content-width), 100%); margin: 0 auto; }.class-roster-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 28px; }.class-roster-header h1 { margin: 5px 0 8px; }.class-roster-header p:not(.eyebrow) { margin: 0; color: #77728c; }.class-roster-header code { color: #4d399b; font-family: "DM Mono", monospace; font-weight: 900; }.class-operations { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 13px; }.class-operations span { border-radius: 7px; padding: 5px 8px; background: var(--operation-soft); color: var(--operation); font-size: .75rem; font-weight: 900; }.class-roster-actions { display: flex; align-items: center; gap: 8px; }.copy-class-link { width: auto; margin: 0; padding: 10px 13px; border: 1px solid #ded6ec; background: #f7f4ff; box-shadow: none; color: #6748d1; font-size: .82rem; }.copy-class-link:hover { border-color: #7456e8; transform: none; }.roster-table { overflow: hidden; border: 1px solid #e9e4df; border-radius: 15px; background: #fffdfa; }.roster-table-heading, .roster-student { display: grid; grid-template-columns: minmax(190px, 1.5fr) repeat(4, minmax(110px, 1fr)); align-items: center; gap: 14px; padding: 15px 20px; }.roster-table-heading { background: #f7f4ff; color: #81799a; font-size: .69rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }.roster-student { border-top: 1px solid #eee9e5; }.roster-student-name { display: flex; align-items: center; gap: 11px; min-width: 0; }.student-avatar { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: #eee9ff; color: #6748d1; font-family: Fraunces, Georgia, serif; font-size: 1.05rem; }.roster-student-name strong, .roster-student-name small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.roster-student-name small { margin-top: 2px; color: #81799a; font-family: "DM Mono", monospace; font-size: .7rem; }.level-badge { display: inline-flex; align-items: center; width: max-content; gap: 6px; border-radius: 8px; padding: 6px 8px; background: var(--operation-soft); color: var(--operation); font-size: .78rem; font-weight: 900; }.level-badge span { font-size: 1rem; }.empty-roster { padding: 42px; border: 1px dashed #d8d1e4; border-radius: 15px; background: #fffdfa; text-align: center; }.empty-roster > span { display: grid; width: 42px; height: 42px; place-items: center; margin: 0 auto 14px; border-radius: 12px; background: #eee9ff; color: #6748d1; font-size: 1.4rem; }.empty-roster h2 { margin: 0 0 7px; font-family: Fraunces, Georgia, serif; }.empty-roster p { margin: 0; color: #77728c; }
-@media (max-width: 700px) { .class-page { padding: 100px 18px 50px; }.roster-table { overflow-x: auto; }.roster-table-heading, .roster-student { min-width: 690px; }.class-card-link { gap: 12px; } }
+.clickable-class-card { cursor: pointer; transition: border-color .15s, box-shadow .15s; }.clickable-class-card:hover { border-color: #cfc3f3; box-shadow: 0 8px 20px rgba(44, 35, 62, .07); }.class-card-open-link { display: none; }.class-card-link { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; min-width: 0; }.clickable-class-card:hover h3 { color: #6748d1; }.class-page { display: block; overflow: visible; padding: 110px 24px 70px; }.class-roster { position: relative; z-index: 1; width: min(var(--content-width), 100%); margin: 0 auto; }.class-roster-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 28px; }.class-roster-header h1 { margin: 5px 0 8px; }.class-roster-header p:not(.eyebrow) { margin: 0; color: #77728c; }.class-roster-header code { color: #4d399b; font-family: "DM Mono", monospace; font-weight: 900; }.class-operations { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 13px; }.class-operations span { border-radius: 7px; padding: 5px 8px; background: var(--operation-soft); color: var(--operation); font-size: .75rem; font-weight: 900; }.class-roster-actions { display: flex; align-items: center; gap: 8px; }.copy-class-link { width: auto; margin: 0; padding: 10px 13px; border: 1px solid #ded6ec; background: #f7f4ff; box-shadow: none; color: #6748d1; font-size: .82rem; }.copy-class-link:hover { border-color: #7456e8; transform: none; }.roster-table { overflow: visible; border: 1px solid #e9e4df; border-radius: 15px; background: #fffdfa; }.roster-table-heading { border-radius: 15px 15px 0 0; }.roster-table > .roster-student:last-child { border-radius: 0 0 15px 15px; }.roster-table-heading, .roster-student { display: grid; grid-template-columns: minmax(190px, 1.5fr) repeat(4, minmax(110px, 1fr)); align-items: center; gap: 14px; padding: 15px 20px; }.roster-table-heading { background: #f7f4ff; color: #81799a; font-size: .69rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }.roster-student { border-top: 1px solid #eee9e5; }.roster-student-name { display: flex; align-items: center; gap: 11px; min-width: 0; }.student-avatar { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: #eee9ff; color: #6748d1; font-family: Fraunces, Georgia, serif; font-size: 1.05rem; }.roster-student-name strong, .roster-student-name small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.roster-student-name small { margin-top: 2px; color: #81799a; font-family: "DM Mono", monospace; font-size: .7rem; }.level-badge { display: inline-flex; align-items: center; width: max-content; gap: 6px; border-radius: 8px; padding: 6px 8px; background: var(--operation-soft); color: var(--operation); font-size: .78rem; font-weight: 900; }.level-badge span { font-size: 1rem; }.empty-roster { padding: 42px; border: 1px dashed #d8d1e4; border-radius: 15px; background: #fffdfa; text-align: center; }.empty-roster > span { display: grid; width: 42px; height: 42px; place-items: center; margin: 0 auto 14px; border-radius: 12px; background: #eee9ff; color: #6748d1; font-size: 1.4rem; }.empty-roster h2 { margin: 0 0 7px; font-family: Fraunces, Georgia, serif; }.empty-roster p { margin: 0; color: #77728c; }
+@media (max-width: 700px) { .class-page { padding: 100px 18px 50px; }.roster-table { overflow: visible; }.roster-table-heading, .roster-student { min-width: 690px; }.class-card-link { gap: 12px; } }
 .code-modal { position: fixed; z-index: 20; inset: 0; display: grid; grid-template-rows: 1fr auto; min-height: 100vh; padding: 42px clamp(24px, 6vw, 80px); background: linear-gradient(130deg, #7054dc, #9271eb); color: white; }.code-modal::before { content: "+"; position: absolute; top: -75px; right: 7%; color: rgba(255,255,255,.09); font-family: Fraunces, Georgia, serif; font-size: 18rem; font-weight: 700; transform: rotate(12deg); }.code-modal-center { position: relative; z-index: 1; display: grid; align-content: center; justify-items: center; text-align: center; }.code-modal .eyebrow { color: #ddd4ff; }.large-class-code { margin: 18px 0 12px; color: #ffbd70; font-family: "DM Mono", monospace; font-size: clamp(5rem, 18vw, 13rem); font-weight: 500; letter-spacing: .08em; line-height: .9; }.code-modal-center p:last-child { margin: 0; color: #eee9ff; font-size: 1rem; }.close-code-modal { position: absolute; z-index: 2; top: 28px; right: 32px; width: 44px; height: 44px; margin: 0; padding: 0; border: 1px solid rgba(255,255,255,.25); border-radius: 50%; background: rgba(255,255,255,.12); box-shadow: none; color: white; font-size: 1.9rem; }.close-code-modal:hover { transform: none; background: rgba(255,255,255,.2); }.code-modal footer { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 20px; }.code-modal footer strong { font-family: Fraunces, Georgia, serif; font-size: 1.3rem; }.code-modal footer button { width: auto; margin: 0; background: white; box-shadow: 0 5px 0 rgba(44,27,111,.2); color: #4d399b; }
 @media (max-width: 600px) { .code-modal { padding: 28px 22px; }.code-modal footer { align-items: flex-start; flex-direction: column; }.large-class-code { font-size: clamp(4rem, 20vw, 7rem); }.close-code-modal { top: 18px; right: 18px; } }
 
@@ -700,7 +692,18 @@ button span,
 .display-code, .class-menu-trigger, .close-code-modal, .remove, .stepper button, .sidebar-code-actions button { display: grid; place-items: center; }
 
 /* ---- Roster: progression assignments ---- */
-.roster-assign-heading, .roster-assign-row { grid-template-columns: minmax(180px, 1fr) minmax(0, 2.3fr); }
+.roster-assign-heading, .roster-assign-row { grid-template-columns: 26px minmax(180px, 1fr) minmax(0, 2.3fr); }
+.select-cell { display: flex; align-items: center; justify-content: center; }
+.select-cell input { width: 17px; height: 17px; margin: 0; accent-color: #6748d1; cursor: pointer; }
+.roster-assign-row.row-selected { background: #f7f4ff; }
+.bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; padding: 11px 14px; border: 1px solid #ded6ec; border-radius: 12px; background: #f7f4ff; box-shadow: 0 8px 20px rgba(44, 35, 62, .06); }
+.bulk-count { color: #4d399b; font-size: .82rem; font-weight: 900; }
+.bulk-progression { min-width: 190px; padding: 8px 10px; border: 1px solid #ded6ec; border-radius: 8px; background: white; color: #26233a; font-family: "Nunito Sans", sans-serif; font-size: .84rem; }
+.bulk-assign { width: auto; margin: 0; padding: 8px 16px; font-size: .82rem; }
+.bulk-assign:disabled { opacity: .5; }
+.bulk-clear { width: auto; margin: 0; padding: 8px 12px; border: 1px solid #ded6ec; background: white; box-shadow: none; color: #6b6479; font-size: .82rem; }
+.bulk-clear:hover { transform: none; border-color: #7456e8; color: #4d399b; }
+.message.success { border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; background: #eef7ee; color: #2f6a37; font-size: .84rem; font-weight: 700; }
 .assign-cell { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .assign-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 5px 5px 11px; border-radius: 999px; background: var(--operation-soft); color: var(--operation); font-size: .78rem; font-weight: 800; }
 .assign-chip .assign-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--operation); }
@@ -721,7 +724,8 @@ button span,
 .student-row-simple { grid-template-columns: minmax(0, 1fr) 32px; }
 .progression-card .progression-icon { background: var(--operation-soft, #fff0df); color: var(--operation, #c76a1d); }
 @media (max-width: 700px) {
-  .roster-assign-heading, .roster-assign-row { min-width: 0; grid-template-columns: 1fr; gap: 10px; }
+  .roster-assign-heading, .roster-assign-row { min-width: 0; grid-template-columns: 26px 1fr; gap: 10px; }
+  .roster-assign-row .assign-cell { grid-column: 1 / -1; }
   .roster-assign-heading span:last-child { display: none; }
 }
 
@@ -817,9 +821,12 @@ button span,
 /* Filter row above the quiz list — it hides rows only, never changes the path. */
 .picker-filters { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
 .filter-pill { display: inline-flex; align-items: center; gap: 6px; width: auto; margin: 0; padding: 6px 12px; border: 1px solid #e6dfed; border-radius: 999px; background: #fff; box-shadow: none; color: #6b6479; font-size: .78rem; font-weight: 800; }
-.filter-pill i { font-style: normal; font-size: .95rem; color: var(--operation); }
-.filter-pill:hover { transform: none; border-color: var(--operation); }
-.filter-pill.on { border-color: var(--operation); background: var(--operation-soft); color: var(--operation); }
+/* Pills without an op-* class (All, per-progression, no-progression) fall back to
+   the house purple rather than resolving --operation to nothing. */
+.filter-pill i { font-style: normal; font-size: .95rem; color: var(--operation, #6748d1); }
+.filter-pill:hover { transform: none; border-color: var(--operation, #6748d1); }
+.filter-pill.on { border-color: var(--operation, #6748d1); background: var(--operation-soft, #f1edff); color: var(--operation, #6748d1); }
+.filter-pill .pill-count { color: inherit; opacity: .6; font-family: "DM Mono", monospace; font-weight: 500; }
 .picker-hidden-note { margin: -6px 0 12px; color: #8a8399; font-size: .78rem; line-height: 1.4; }
 /* Inclusion only — a tick box, not a position. The order lives in the preview. */
 .editor-screen .step-picker button { border-radius: 12px; padding: 12px 14px; transition: border-color .12s, background .12s; }
@@ -869,15 +876,11 @@ button span,
 .qp-next { margin-top: 24px; color: var(--operation); font-size: .85rem; font-weight: 800; }
 .qp-foot { margin: 0; color: #a49dad; font-size: .74rem; text-align: center; }
 
-/* ---- Quiz library grouped by progression: subtle eyebrow headers over the
-       normal card list (no enclosing box), each collapsible. ---- */
-.library-sections { display: grid; gap: 26px; }
-.quiz-section { display: grid; gap: 13px; }
-.quiz-section-head { display: inline-flex; align-items: center; justify-self: start; gap: 8px; width: auto; margin: 0; padding: 3px 0; border: 0; background: transparent; box-shadow: none; color: #81799a; font-family: "Nunito Sans", sans-serif; font-size: .72rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }
-.quiz-section-head:hover { transform: none; color: #6b6480; }
-.quiz-section-chevron { display: inline-flex; flex: 0 0 auto; color: #b3abbf; transition: transform .15s; }
-.quiz-section-chevron.collapsed { transform: rotate(-90deg); }
-.quiz-section-count { color: #b8b0c4; }
+/* ---- Quiz library: one flat card list ordered by progression membership,
+       with each card naming the progressions it belongs to. ---- */
+.card-memberships { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.membership-tag { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 3px 9px; background: var(--operation-soft, #f1edff); color: var(--operation, #6748d1); font-size: .69rem; font-weight: 800; }
+.membership-tag.none { border: 1px dashed #ded7e6; background: transparent; color: #a29aae; }
 
 /* ---- Live progression preview (drag to reorder the steps) ---- */
 .path-head { display: grid; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid #f0ebf4; }
@@ -950,3 +953,41 @@ button span,
 /* Every "Copy class link" button pairs the copy icon with its wording, the same
    way the class sidebar's copy button does. */
 .copy-link-button { display: inline-flex; align-items: center; gap: 8px; }
+
+/* The student home screen: a greeting, the practice waiting for them, and the
+   quizzes they have already finished. */
+.student-page { display: block; overflow: visible; padding: 110px 24px 70px; }
+.student-home { position: relative; z-index: 1; width: min(var(--content-width), 100%); margin: 0 auto; }
+.student-sign-out { position: absolute; z-index: 2; top: 30px; right: clamp(26px, 6vw, 76px); }
+.student-sign-out button { width: auto; margin: 0; padding: 9px 13px; border: 1px solid #ded6ec; border-radius: 10px; background: #fffdfa; box-shadow: none; color: #6748d1; font-size: .82rem; }
+.student-sign-out button:hover { border-color: #7456e8; transform: none; }
+.student-greeting { margin-bottom: 34px; }
+.student-greeting h1 { margin: 6px 0 7px; }
+.student-greeting p:not(.eyebrow) { margin: 0; color: #77728c; font-weight: 800; }
+.student-home section + section { margin-top: 42px; }
+.student-section-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.student-section-heading h2 { margin: 0; font-family: Fraunces, Georgia, serif; font-size: 1.5rem; }
+.student-section-heading p { margin: 0; color: #81799a; font-size: .88rem; }
+.student-empty { margin: 0; padding: 30px; border: 1px dashed #d8d1e4; border-radius: 15px; background: #fffdfa; color: #77728c; text-align: center; }
+.assigned-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)); gap: 16px; }
+.assigned-card { padding: 22px; border: 1px solid #e9e4df; border-radius: 16px; background: #fffdfa; box-shadow: 0 8px 20px rgba(44, 35, 62, .05); }
+.assigned-symbol { display: grid; width: 44px; height: 44px; place-items: center; margin-bottom: 14px; border-radius: 12px; background: var(--operation-soft, #eee9ff); color: var(--operation, #6748d1); font-family: Fraunces, Georgia, serif; font-size: 1.5rem; }
+.assigned-card h3 { margin: 0 0 5px; font-family: Fraunces, Georgia, serif; font-size: 1.15rem; }
+.assigned-path { margin: 0 0 3px; color: var(--operation, #6748d1); font-size: .78rem; font-weight: 900; }
+.assigned-meta { margin: 0; color: #81799a; font-size: .82rem; }
+.start-quiz { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; padding: 11px 14px; border-radius: 11px; font-size: .88rem; }
+.start-quiz:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+.history-list { overflow: hidden; border: 1px solid #e9e4df; border-radius: 15px; background: #fffdfa; }
+.history-row { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 14px; padding: 14px 18px; border-top: 1px solid #eee9e5; }
+.history-row:first-child { border-top: 0; }
+.history-symbol { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 10px; background: var(--operation-soft, #eee9ff); color: var(--operation, #6748d1); font-family: Fraunces, Georgia, serif; font-size: 1.15rem; }
+.history-name strong { display: block; }
+.history-name small { display: block; margin-top: 2px; color: #81799a; font-size: .75rem; }
+.history-score { color: #4d399b; font-family: "DM Mono", monospace; font-weight: 500; }
+.history-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 6px 9px; background: #f4f1ec; color: #81799a; font-size: .75rem; font-weight: 900; white-space: nowrap; }
+.history-badge.passed { background: #e7f6ec; color: #2f7d4f; }
+@media (max-width: 560px) {
+  .student-page { padding: 96px 18px 60px; }
+  .history-row { grid-template-columns: auto 1fr auto; }
+  .history-badge { grid-column: 2 / -1; justify-self: start; }
+}

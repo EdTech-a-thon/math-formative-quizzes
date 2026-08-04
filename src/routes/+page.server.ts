@@ -19,8 +19,12 @@ async function checkClassCode(code: string) {
 
 // Auto-submit: a teacher-shared link like /?classCode=693174 is checked here on
 // the server and forwarded straight to the name screen when the class exists.
-export async function load({ url }) {
+export async function load({ url, cookies }) {
   const code = sanitize(url.searchParams.get("classCode"));
+  // A student who is still signed in on this device goes straight to their own
+  // home screen. A shared class link still leads to the name screen, so someone
+  // else can sign in on the same device.
+  if (!code && cookies.get("student_session")) redirect(303, "/home");
   if (!code) return { prefill: "" };
   if (!/^\d{4,6}$/.test(code)) return { prefill: code, error: "Enter the class code your teacher shared." };
   const { ok, body } = await checkClassCode(code);

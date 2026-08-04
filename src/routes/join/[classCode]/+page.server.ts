@@ -22,12 +22,23 @@ export async function load({ params }) {
 }
 
 export const actions = {
-  default: async ({ request, params }) => {
+  default: async ({ request, params, cookies }) => {
     const data = await request.formData();
     const name = String(data.get("name") ?? "").trim();
+    const remember = data.get("remember") === "on";
     if (!name) return fail(400, { error: "Enter your name to continue." });
     const { ok, body } = await pocketBasePost("/api/fact-friends/join", { classCode: params.classCode, name });
     if (!ok) return fail(400, { name, error: body.message || "We could not add you to the class." });
-    return { joined: true, studentName: body.studentName as string, className: body.className as string };
+
+    // Signing in keeps the student on this device. "Remember me" is what decides
+    // whether that outlives closing the browser.
+    cookies.set("student_session", body.studentId as string, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      ...(remember ? { maxAge: 60 * 60 * 24 * 60 } : {}),
+    });
+    redirect(303, "/home");
   },
 };
