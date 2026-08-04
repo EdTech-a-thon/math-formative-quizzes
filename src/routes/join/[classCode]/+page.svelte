@@ -8,7 +8,9 @@
   export let form: { joined?: boolean; studentName?: string; className?: string; name?: string; error?: string } | null = null;
 
   let name = form?.name ?? "";
-  let remember = false;
+  // Ticked by default: most students sign in on their own device, and the ones
+  // who share can untick it.
+  let remember = true;
   let pending = false;
 
   // A student already remembered for this class gets their name filled in, so
@@ -16,7 +18,6 @@
   onMount(() => {
     const saved = readRememberedStudent();
     if (!saved || saved.classCode !== data.classCode) return;
-    remember = true;
     if (!name) name = saved.name;
   });
 
