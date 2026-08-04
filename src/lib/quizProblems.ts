@@ -7,6 +7,15 @@ export type StoredFactGroup = { group: number; from?: number; to?: number; quest
 export type Problem = { top: number; bottom: number; sym: string; group: number };
 export type BuildOptions = { cap?: number; seed?: number | null };
 
+// The answer a student should write. Division and subtraction are built so the
+// top number is the larger one, so every operation reads top-then-bottom.
+export function answerFor(problem: Problem, operation: Operation): number {
+  if (operation === "multiplication") return problem.top * problem.bottom;
+  if (operation === "division") return problem.top / problem.bottom;
+  if (operation === "addition") return problem.top + problem.bottom;
+  return problem.top - problem.bottom;
+}
+
 // A tiny seeded PRNG so a shuffled preview/printout is stable across re-renders
 // (a fresh Math.random() shuffle would reorder on every keystroke).
 function mulberry32(seed: number) {

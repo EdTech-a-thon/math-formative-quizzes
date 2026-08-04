@@ -21,7 +21,6 @@ onRecordAfterCreateSuccess((e) => {
       progression.set("name", ladder.label);
       progression.set("description", "Step through " + ladder.label.toLowerCase() + " facts, one fact family at a time.");
       progression.set("passPercentage", 80);
-      progression.set("status", "active");
       progression.set("operation", ladder.op);
       app.save(progression);
 
@@ -235,4 +234,94 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
     forYou: forYou,
     history: history,
   });
+});
+
+// The quiz a student is about to sit, with the settings the screen needs.
+routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
+  const data = new DynamicModel({ studentId: "", stepId: "" });
+  e.bindBody(data);
+
+  const studentStep = require(`${__hooks}/student_step.js`);
+  const found = studentStep(e.app, (data.studentId || "").trim(), (data.stepId || "").trim());
+  if (!found) throw new NotFoundError("This quiz is not waiting for you right now.");
+
+  let quiz, details;
+  try {
+    quiz = e.app.findRecordById("quizzes", found.step.getString("quiz"));
+    details = JSON.parse(quiz.getString("data") || "{}");
+  } catch (_) {
+    throw new NotFoundError("We could not open this quiz.");
+  }
+
+  // The teacher decides whether a quiz can be handed in with blanks.
+  let allowIncompleteAnswers = true;
+  try {
+    const classRoom = e.app.findRecordById("classes", found.progression.getString("class"));
+    allowIncompleteAnswers = e.app.findRecordById("teachers", classRoom.getString("teacher")).getBool("allowIncompleteAnswers");
+  } catch (_) {}
+
+  return e.json(200, {
+    studentName: found.student.getString("name"),
+    progressionName: found.progression.getString("name"),
+    position: found.position,
+    totalSteps: found.steps.length,
+    passPercentage: found.progression.getInt("passPercentage"),
+    allowIncompleteAnswers: allowIncompleteAnswers,
+    quiz: {
+      title: details.title || "Quiz",
+      operation: details.operation || "multiplication",
+      factGroups: details.factGroups || [],
+      questionCount: details.questionCount || 0,
+      timeLimitMinutes: details.timeLimitMinutes || 0,
+      showScore: details.showScore !== false,
+      passMessage: details.passMessage || "Great work! You finished this quiz.",
+    },
+  });
+});
+
+// Save a finished quiz. Reaching the pass mark moves the student to the next
+// step; falling short is recorded but changes nothing, so they stay put.
+routerAdd("POST", "/api/fact-friends/record-attempt", (e) => {
+  const data = new DynamicModel({ studentId: "", stepId: "", correct: 0, total: 0, secondsRemaining: 0, responses: [] });
+  e.bindBody(data);
+
+  const studentStep = require(`${__hooks}/student_step.js`);
+  const found = studentStep(e.app, (data.studentId || "").trim(), (data.stepId || "").trim());
+  if (!found) throw new NotFoundError("This quiz is not waiting for you right now.");
+
+  const correct = Math.max(0, Math.round(data.correct));
+  const total = Math.max(0, Math.round(data.total));
+  const percentage = total ? Math.round((correct / total) * 100) : 0;
+  const passed = total > 0 && percentage >= found.progression.getInt("passPercentage");
+
+  // Passing moves them along the ladder; the last step finishes it.
+  let leveledUp = false;
+  let finishedProgression = false;
+  if (passed) {
+    const nextStep = found.steps[found.position];
+    if (nextStep) {
+      found.enrollment.set("currentStep", nextStep.id);
+      leveledUp = true;
+    } else {
+      found.enrollment.set("status", "completed");
+      finishedProgression = true;
+    }
+    e.app.save(found.enrollment);
+  }
+
+  const attempt = new Record(e.app.findCollectionByNameOrId("quiz_attempts"));
+  attempt.set("quiz", found.step.getString("quiz"));
+  attempt.set("student", found.student.id);
+  attempt.set("correct", correct);
+  attempt.set("total", total);
+  attempt.set("passed", passed);
+  attempt.set("leveledUp", leveledUp);
+  attempt.set("completedAt", new DateTime());
+  attempt.set("secondsRemaining", Math.max(0, Math.round(data.secondsRemaining)));
+  attempt.set("responses", data.responses || []);
+  attempt.set("progressionEnrollment", found.enrollment.id);
+  attempt.set("progressionStep", found.step.id);
+  e.app.save(attempt);
+
+  return e.json(200, { correct: correct, total: total, percentage: percentage, passed: passed, leveledUp: leveledUp, finishedProgression: finishedProgression });
 });

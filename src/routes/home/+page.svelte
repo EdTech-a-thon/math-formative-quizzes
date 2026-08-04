@@ -38,7 +38,7 @@
               <h3>{assigned.title}</h3>
               <p class="assigned-path">{assigned.progressionName} · step {assigned.position} of {assigned.totalSteps}</p>
               <p class="assigned-meta">{assigned.questionCount} questions{assigned.timeLimitMinutes ? ` · ${assigned.timeLimitMinutes} min` : ""}</p>
-              <button class="start-quiz" type="button" disabled title="Your quiz opens here soon">Start quiz <Icon name="arrow-right" size={16} /></button>
+              <a class="start-quiz" href="/quiz/{assigned.stepId}">Start quiz <Icon name="arrow-right" size={16} /></a>
             </article>
           {/each}
         </div>
