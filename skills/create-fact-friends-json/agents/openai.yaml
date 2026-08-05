@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Fact Friends JSON"
+  short_description: "Create import-ready quizzes and progressions"
+  default_prompt: "Create valid Fact Friends JSON for the quiz or progression I describe."
