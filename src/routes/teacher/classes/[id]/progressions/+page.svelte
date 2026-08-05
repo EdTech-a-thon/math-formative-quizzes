@@ -4,6 +4,7 @@
   import { page } from "$app/stores";
   import Icon from "$lib/Icon.svelte";
   import ImportButton from "$lib/ImportButton.svelte";
+  import ImportDropTarget from "$lib/ImportDropTarget.svelte";
   import IconPicker from "$lib/IconPicker.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
   type Quiz = { id: string; data: { title: string; problems?: Problem[] } };
@@ -70,6 +71,7 @@
   }
 </script>
 
+<ImportDropTarget classId={String($page.params.id)}>
 <section class="workspace-page"><header class="workspace-heading"><div><p class="eyebrow">LEARNING PATHS</p><h1>Progressions</h1><p>Release one attempt when your class is ready. After each attempt, students wait for you to release the next one.</p></div><div class="workspace-heading-actions"><ImportButton classId={String($page.params.id)} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New progression</a></div></header>
   {#if error}<p class="message error">{error}</p>{/if}
   {#if message}<p class="message success">{message}</p>{/if}
@@ -93,3 +95,4 @@
       </div>
     </article>{/each}{:else}<a class="empty-workspace empty-link" href={`${base}/new`}><span><Icon name="route" size={22} /></span><h2>No progressions yet</h2><p>Create a sequence of quizzes. Students will retry a step until they meet the progression's passing score.</p></a>{/if}</section>
 </section>
+</ImportDropTarget>
