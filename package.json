@@ -7,6 +7,8 @@
     "dev": "vite dev --host 0.0.0.0 --port 8000",
     "build": "vite build",
     "start": "node build",
+    "production:prepare": "./deploy/prepare-release.sh",
+    "production:start": "./deploy/run-production.sh",
     "generate:icons": "node scripts/generate-lucide-icons.mjs"
   },
   "devDependencies": {

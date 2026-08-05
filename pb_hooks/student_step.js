@@ -18,7 +18,7 @@ module.exports = function studentStep(app, studentId, stepId) {
   } catch (_) {
     return null;
   }
-  if (!enrollment || enrollment.getString("status") === "completed") return null;
+  if (!enrollment || enrollment.getString("status") === "completed" || !enrollment.getBool("released")) return null;
 
   // Students only ever sit the step they are currently on.
   const currentStepId = enrollment.getString("currentStep") || (steps.length ? steps[0].id : "");
