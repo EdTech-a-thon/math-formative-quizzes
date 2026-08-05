@@ -78,37 +78,65 @@ function bytesOf(spec: PDFDict): Uint8Array | null {
   }
 }
 
-// Pull the canonical record back out of a PDF, or null if it carries none.
-// Matching is on /Desc, because that is what the spec actually defines; the
-// filename is only a fallback, so a record written by any other pdfcx producer
-// still reads here whatever they chose to call it.
-export async function extractRecord(bytes: Uint8Array): Promise<unknown | null> {
+// Why a file could not give up a record. Each case wants different advice, so
+// they stay separate all the way to the message the teacher reads.
+export type ExtractFailure = "not-a-pdf" | "unreadable-pdf" | "no-attachments" | "no-record" | "damaged-record";
+export type ExtractResult = { ok: true; record: unknown } | { ok: false; reason: ExtractFailure };
+
+function looksLikePdf(bytes: Uint8Array): boolean {
+  // Every PDF starts %PDF-, though some tools leave junk in front of it.
+  const head = new TextDecoder("latin1").decode(bytes.subarray(0, 1024));
+  return head.includes("%PDF-");
+}
+
+// Pull the canonical record back out of a PDF. Matching is on /Desc, because
+// that is what the spec actually defines; the filename is only a fallback, so a
+// record written by any other pdfcx producer still reads here whatever they
+// chose to call it.
+export async function extractRecord(bytes: Uint8Array): Promise<ExtractResult> {
+  if (!looksLikePdf(bytes)) return { ok: false, reason: "not-a-pdf" };
+
   let pdf: PDFDocument;
   try {
     pdf = await PDFDocument.load(bytes, { ignoreEncryption: true, throwOnInvalidObject: false });
   } catch (_) {
-    return null;
+    return { ok: false, reason: "unreadable-pdf" };
   }
 
-  const names = pdf.catalog.lookup(PDFName.of("Names"));
-  const embedded = names instanceof PDFDict ? names.lookup(PDFName.of("EmbeddedFiles")) : undefined;
-  const specs = collectAttachments(embedded);
-  if (!specs.length) return null;
+  // A file can satisfy PDFDocument.load and still be missing the structure this
+  // walk expects, so reading it is guarded too rather than only the load.
+  let specs: PDFDict[];
+  try {
+    const names = pdf.catalog.lookup(PDFName.of("Names"));
+    const embedded = names instanceof PDFDict ? names.lookup(PDFName.of("EmbeddedFiles")) : undefined;
+    specs = collectAttachments(embedded);
+  } catch (_) {
+    return { ok: false, reason: "unreadable-pdf" };
+  }
+  if (!specs.length) return { ok: false, reason: "no-attachments" };
 
-  const byDescription = specs.filter((spec) => textOf(spec.lookup(PDFName.of("Desc"))) === PDFCX_DESCRIPTION);
-  const byName = specs.filter((spec) => {
-    const name = textOf(spec.lookup(PDFName.of("UF"))) || textOf(spec.lookup(PDFName.of("F")));
-    return name.toLowerCase().includes("pdfcx");
-  });
+  const describe = (spec: PDFDict, key: string) => {
+    try {
+      return textOf(spec.lookup(PDFName.of(key)));
+    } catch (_) {
+      return "";
+    }
+  };
+  const byDescription = specs.filter((spec) => describe(spec, "Desc") === PDFCX_DESCRIPTION);
+  const byName = specs.filter((spec) => (describe(spec, "UF") || describe(spec, "F")).toLowerCase().includes("pdfcx"));
 
-  for (const spec of [...byDescription, ...byName]) {
+  const candidates = [...byDescription, ...byName];
+  if (!candidates.length) return { ok: false, reason: "no-record" };
+
+  for (const spec of candidates) {
     const payload = bytesOf(spec);
     if (!payload) continue;
     try {
-      return JSON.parse(new TextDecoder().decode(payload));
+      return { ok: true, record: JSON.parse(new TextDecoder().decode(payload)) };
     } catch (_) {
       continue; // Not JSON — try the next candidate rather than giving up.
     }
   }
-  return null;
+  // The record is there and named right, but its contents will not parse.
+  return { ok: false, reason: "damaged-record" };
 }

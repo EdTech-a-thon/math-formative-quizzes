@@ -1311,3 +1311,20 @@ button span {
   .editor-side { position: static; max-height: none; overflow: visible; padding: 22px clamp(16px, 4vw, 44px) 0; }
   .editor-body-picker .editor-canvas { padding-top: 20px; }
 }
+
+/* ---- Toasts: one stack, bottom-right, mounted once for the whole app ---- */
+.toast-stack { position: fixed; z-index: 60; right: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 10px; width: min(390px, calc(100vw - 36px)); }
+.toast { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 11px; padding: 13px 13px 13px 14px; border: 1px solid #e6dfed; border-radius: 14px; background: #fffdfa; box-shadow: 0 16px 40px rgba(44, 35, 62, .22); animation: toast-in .18s ease-out; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.toast-mark { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 8px; }
+.toast-body { min-width: 0; display: grid; gap: 3px; }
+.toast-body strong { color: #26233a; font-size: .88rem; font-weight: 800; line-height: 1.35; }
+.toast-body small { color: #77728c; font-size: .8rem; line-height: 1.45; }
+.toast-close { width: 26px; height: 26px; margin: 0; padding: 0; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; box-shadow: none; color: #b3abbf; }
+.toast-close:hover { transform: none; background: #f4f0f8; color: #4c465c; }
+.toast-error { border-color: #f0c2cc; background: #fffafb; }
+.toast-error .toast-mark { background: #fff0f2; color: #c0415f; }
+.toast-success .toast-mark { background: #e8f5e9; color: #37723e; }
+@media (max-width: 560px) {
+  .toast-stack { right: 12px; left: 12px; bottom: 12px; width: auto; }
+}

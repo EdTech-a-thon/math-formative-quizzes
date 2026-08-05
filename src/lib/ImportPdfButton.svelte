@@ -1,12 +1,12 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
   import Icon from "$lib/Icon.svelte";
+  import { pushToast } from "$lib/toasts";
 
   // One button for both kinds of file: the endpoint reads what the PDF carries,
   // so importing a progression from the quiz library works just as well.
   export let classId: string;
-  export let label = "Import PDF";
-  export let onResult: (message: string, ok: boolean) => void = () => {};
+  export let label = "Import";
 
   let input: HTMLInputElement;
   let busy = false;
@@ -19,18 +19,35 @@
       const body = new FormData();
       body.append("class", classId);
       body.append("file", file);
+
       const response = await fetch("/api/import", { method: "POST", body });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message);
-      onResult(
+      // A failure here can be an error page rather than JSON, so a broken parse
+      // must not turn into a confusing "undefined" on screen.
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        pushToast(
+          "error",
+          result.message || `We could not import ${file.name}.`,
+          result.detail || "Please try again, or export the file fresh.",
+        );
+        return;
+      }
+
+      pushToast(
+        "success",
         result.kind === "progression"
           ? `Imported “${result.title}” and its ${result.quizzes} quiz${result.quizzes === 1 ? "" : "zes"}.`
           : `Imported “${result.title}”.`,
-        true,
       );
       await invalidateAll();
     } catch (caught) {
-      onResult(caught instanceof Error ? caught.message : "We could not import that PDF.", false);
+      // Nothing came back at all — the request never landed.
+      pushToast(
+        "error",
+        `We could not import ${file.name}.`,
+        caught instanceof Error && caught.message ? caught.message : "Check your connection and try again.",
+      );
     } finally {
       busy = false;
       input.value = ""; // Clearing it means picking the same file again still counts.
