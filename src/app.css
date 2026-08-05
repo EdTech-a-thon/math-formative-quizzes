@@ -885,6 +885,15 @@ button span {
 .editor-save:disabled { cursor: wait; opacity: .65; }
 .editor-ghost { width: auto; margin: 0; padding: 9px 13px; border: 1px solid #e0dbe8; border-radius: 11px; background: #fff; box-shadow: none; color: #5b5470; font-size: .82rem; font-weight: 800; }
 .editor-ghost:hover { transform: none; border-color: #7456e8; color: #4d399b; }
+.export-menu-wrap { position: relative; }
+.export-trigger { display: inline-flex; align-items: center; gap: 6px; }
+.export-dropdown { position: absolute; z-index: 31; top: calc(100% + 7px); right: 0; width: 250px; padding: 5px; border: 1px solid #e2dce9; border-radius: 12px; background: #fffdfa; box-shadow: 0 12px 26px rgba(44, 35, 62, .16); }
+.export-dropdown button { display: flex; align-items: center; gap: 10px; width: 100%; margin: 0; padding: 9px 10px; border-radius: 8px; background: transparent; box-shadow: none; color: #4c465c; text-align: left; }
+.export-dropdown button:hover { transform: none; background: var(--operation-soft); color: var(--operation); }
+.export-dropdown button > svg { flex: 0 0 auto; }
+.export-dropdown span { display: grid; gap: 1px; }
+.export-dropdown strong { font-size: .82rem; }
+.export-dropdown small { color: #91899d; font-size: .7rem; font-weight: 700; }
 
 .editor-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
 .editor-body-single { grid-template-columns: minmax(0, 1fr); }

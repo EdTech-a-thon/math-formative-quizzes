@@ -29,6 +29,7 @@
   // highlighted, until they are inserted for real or the panel goes quiet.
   let pending: Problem[] = [];
   let messageOpen = false; // Finished-message popover open.
+  let exportOpen = false;
   let error = "";
   let saving = false;
   let titleInvalid = false; // Set when a save is attempted with no name; clears as soon as one is typed.
@@ -266,6 +267,7 @@
     }
     const tag = (event.target as HTMLElement | null)?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    if (event.key === "Escape" && exportOpen) { exportOpen = false; return; }
     if (event.key === "Escape") { selected = new Set(); return; }
     if ((event.key === "Delete" || event.key === "Backspace") && selected.size) {
       event.preventDefault();
@@ -324,11 +326,29 @@
   // Exporting supersedes printing: the PDF is the same worksheet and carries the
   // quiz's data, so it can be imported back. A quiz has to exist to be exported.
   function exportPdf() {
+    exportOpen = false;
     if (!editing || !quiz?.id) {
       pushToast("error", "Save this quiz before exporting it.", "The PDF is built from the saved quiz, so it needs saving first.");
       return;
     }
     window.location.href = `/api/quizzes/${quiz.id}/pdf`;
+  }
+
+  function quizMarkdown(): string {
+    const heading = title.trim() || "Untitled quiz";
+    const details = `${problems.length} question${problems.length === 1 ? "" : "s"} · ${timeLimitMinutes} minute${timeLimitMinutes === 1 ? "" : "s"}`;
+    const questions = problems.map((problem, index) => `${index + 1}. ${problem.top} ${symbolFor(problem.op)} ${problem.bottom} = ____`);
+    return [`# ${heading}`, "", details, "", ...questions].join("\n");
+  }
+
+  async function copyMarkdown() {
+    exportOpen = false;
+    try {
+      await navigator.clipboard.writeText(quizMarkdown());
+      pushToast("success", "Quiz copied as Markdown.", "You can paste it into a document, message, or notes app.");
+    } catch (_) {
+      pushToast("error", "The quiz could not be copied.", "Please allow clipboard access and try again.");
+    }
   }
 
   // Pulls the questions out of a PDF or a JSON record and adds them to the quiz
@@ -441,9 +461,25 @@
       <button class="editor-ghost" type="button" disabled={importing} title="Add the questions from a PDF or JSON file to this quiz" on:click={() => importInput.click()}>
         <Icon name="download" size={15} /> {importing ? "Reading…" : "Import"}
       </button>
-      <button class="editor-ghost" type="button" title="Export as a PDF that can be imported back (Ctrl+P)" on:click={exportPdf}>
-        <Icon name="upload" size={15} /> Export
-      </button>
+      <div class="export-menu-wrap">
+        <button class="editor-ghost export-trigger" type="button" aria-expanded={exportOpen} aria-haspopup="menu" on:click|stopPropagation={() => (exportOpen = !exportOpen)}>
+          <Icon name="upload" size={15} /> Export <Icon name="chevron-down" size={13} />
+        </button>
+        {#if exportOpen}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div class="icon-picker-backdrop" role="presentation" on:click={() => (exportOpen = false)}></div>
+          <div class="export-dropdown" role="menu" aria-label="Export quiz">
+            <button type="button" role="menuitem" on:click={exportPdf}>
+              <Icon name="download" size={15} />
+              <span><strong>Export as PDF</strong><small>Download a printable worksheet</small></span>
+            </button>
+            <button type="button" role="menuitem" on:click={copyMarkdown}>
+              <Icon name="copy" size={15} />
+              <span><strong>Copy as Markdown</strong><small>Copy the questions as text</small></span>
+            </button>
+          </div>
+        {/if}
+      </div>
       <input class="sr-only" type="file" accept="application/pdf,.pdf,application/json,.json" bind:this={importInput} on:change={importQuestions} />
       <a class="editor-cancel" href={`/teacher/classes/${classId}/quizzes`}>Cancel</a>
       <button class="editor-save" type="button" disabled={saving} on:click={save}>{saving ? "Saving…" : editing ? "Save changes" : "Save quiz"}</button>
