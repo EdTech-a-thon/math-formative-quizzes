@@ -115,8 +115,8 @@
 
       <div class="add-actions">
         {#if added}<p class="add-added" role="status">{added}</p>{/if}
-        <button type="button" class="editor-cancel add-done" on:click={onClose}>Done</button>
-        <button type="button" class="editor-save" disabled={!preview.length} on:click={addFacts}>Add {preview.length} question{preview.length === 1 ? "" : "s"}</button>
+        <button type="button" class="editor-ghost" on:click={onClose}>Done</button>
+        <button type="button" class="editor-save" disabled={!preview.length} on:click={addFacts}>Add</button>
       </div>
     </div>
   {:else}
@@ -142,8 +142,8 @@
 
       <div class="add-actions">
         {#if added}<p class="add-added" role="status">{added}</p>{/if}
-        <button type="button" class="editor-cancel add-done" on:click={onClose}>Done</button>
-        <button type="button" class="editor-save" disabled={Boolean(customIssue)} on:click={addCustom}>Add question</button>
+        <button type="button" class="editor-ghost" on:click={onClose}>Done</button>
+        <button type="button" class="editor-save" disabled={Boolean(customIssue)} on:click={addCustom}>Add</button>
       </div>
     </div>
   {/if}
