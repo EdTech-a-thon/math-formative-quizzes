@@ -57,9 +57,24 @@
     onInsert(preview);
     armed = false; // The questions are real now, so stop ghosting them.
   }
+
+  // The panel has no close button to reach for, so Escape or a click anywhere
+  // outside it drops the preview and leaves the quiz as it was.
+  function dismissOnEscape(event: KeyboardEvent) {
+    if (event.key === "Escape" && armed) armed = false;
+  }
+  function dismissOnOutsideClick(node: HTMLElement) {
+    function handle(event: MouseEvent) {
+      if (armed && !node.contains(event.target as Node)) armed = false;
+    }
+    document.addEventListener("click", handle);
+    return { destroy: () => document.removeEventListener("click", handle) };
+  }
 </script>
 
-<aside class="ff-panel op-{factOp}" aria-label="Insert a fact family">
+<svelte:window on:keydown={dismissOnEscape} />
+
+<aside class="ff-panel op-{factOp}" aria-label="Insert a fact family" use:dismissOnOutsideClick>
   <h2 class="ff-title">Insert a fact family</h2>
 
   <p class="ff-label">Operation</p>
@@ -111,7 +126,7 @@
 
   <div class="ff-actions">
     {#if armed}
-      <p class="ff-count">{preview.length} question{preview.length === 1 ? "" : "s"} shown in the quiz</p>
+      <p class="ff-count">{preview.length} question{preview.length === 1 ? "" : "s"} shown</p>
       <button type="button" class="editor-save ff-insert" disabled={!preview.length} on:click={insert}>Insert</button>
     {:else}
       <p class="ff-idle">Pick a fact family to see it in the quiz.</p>
