@@ -1,11 +1,14 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
+  import { onMount } from "svelte";
   import Icon from "$lib/Icon.svelte";
   import { pushToast } from "$lib/toasts";
   import type { Problem } from "$lib/quizProblems";
 
   export let classId: string;
   export let onClose: () => void;
+  export let initialFiles: File[] = [];
+  export let initialText = "";
 
   type QuizRecord = { title: string; problems: Problem[]; [key: string]: unknown };
   type ProgressionRecord = { name: string; quizzes: QuizRecord[]; passPercentage: number; [key: string]: unknown };
@@ -106,7 +109,7 @@
     }
   }
 
-  async function addFiles(files: FileList | null) {
+  async function addFiles(files: FileList | File[] | null) {
     for (const file of Array.from(files ?? [])) {
       const body = new FormData();
       body.append("file", file);
@@ -114,6 +117,18 @@
     }
     if (fileInput) fileInput.value = "";
   }
+
+  // A file dropped or quiz copied on a library page arrives with the dialog.
+  // Read it immediately so the teacher lands on the extracted preview.
+  onMount(() => {
+    if (initialFiles.length) {
+      addFiles(initialFiles);
+    } else if (initialText) {
+      const body = new FormData();
+      body.append("text", initialText);
+      read(body, "pasted text");
+    }
+  });
 
   // Paste anywhere while the dialog is open. A copied file comes through as one;
   // anything else is taken as text and read the same way a file would be.

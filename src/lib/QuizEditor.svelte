@@ -458,7 +458,7 @@
     </div>
 
     <div class="editor-bar-actions">
-      <button class="editor-ghost" type="button" disabled={importing} title="Add the questions from a PDF or JSON file to this quiz" on:click={() => importInput.click()}>
+      <button class="editor-ghost" type="button" disabled={importing} title="Add the questions from a PDF to this quiz" on:click={() => importInput.click()}>
         <Icon name="download" size={15} /> {importing ? "Reading…" : "Import"}
       </button>
       <div class="export-menu-wrap">

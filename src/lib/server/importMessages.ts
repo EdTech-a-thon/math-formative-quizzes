@@ -8,8 +8,8 @@ export const FAILURE_MESSAGES: Record<SourceFailure, { message: string; detail: 
     detail: "Import a PDF from an Export button, or paste a copied quiz.",
   },
   "damaged-json": {
-    message: "That JSON could not be read.",
-    detail: "It has a syntax error somewhere — check it parses as valid JSON and try again.",
+    message: "That file could not be read.",
+    detail: "It may be damaged or incomplete. Try choosing the file again.",
   },
   "not-a-pdf": {
     message: "That file is not a PDF.",
