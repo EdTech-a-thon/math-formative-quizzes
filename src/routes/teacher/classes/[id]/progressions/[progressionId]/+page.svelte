@@ -75,7 +75,7 @@
     </div>
     <div class="overview-actions">
       <a class="ghost-btn" href={`${base}/${data.progression.id}/edit`}><Icon name="pencil" size={14} /> Edit progression</a>
-      <a class="ghost-btn" href={`/api/progressions/${data.progression.id}/pdf`} title="Export this path and all its quizzes as one PDF"><Icon name="download" size={14} /> Export</a>
+      <a class="ghost-btn" href={`/api/progressions/${data.progression.id}/pdf`} title="Export this path and all its quizzes as one PDF"><Icon name="upload" size={14} /> Export</a>
       <button class="primary-action" type="button" disabled={!waitingCount || Boolean(releasing)} on:click={releaseAll}>
         <Icon name={waitingCount ? "unlock" : "check"} size={15} />
         {releasing === "all" ? "Releasing…" : waitingCount ? `Release ${waitingCount} waiting` : "Everyone released"}

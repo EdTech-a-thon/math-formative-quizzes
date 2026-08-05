@@ -100,7 +100,7 @@
             </div>
           </div>
           <span class="library-edit-hint"><Icon name="pencil" size={14} /> Edit</span>
-          <button type="button" class="ghost-btn" title="Export as PDF" on:click={(event) => exportQuiz(event, quiz.id)}><Icon name="download" size={14} /> Export</button>
+          <button type="button" class="ghost-btn" title="Export as PDF" on:click={(event) => exportQuiz(event, quiz.id)}><Icon name="upload" size={14} /> Export</button>
           <button type="button" class="ghost-btn danger" disabled={deletingId === quiz.id} on:click={(event) => deleteQuiz(event, quiz)}>{deletingId === quiz.id ? "Deleting…" : "Delete"}</button>
         </a>
       {:else}

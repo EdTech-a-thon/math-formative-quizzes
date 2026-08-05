@@ -39,6 +39,6 @@
 </script>
 
 <button type="button" class="ghost-btn" disabled={busy} on:click={() => input.click()}>
-  <Icon name="upload" size={14} /> {busy ? "Importing…" : label}
+  <Icon name="download" size={14} /> {busy ? "Importing…" : label}
 </button>
 <input class="sr-only" type="file" accept="application/pdf,.pdf" bind:this={input} on:change={chosen} />
