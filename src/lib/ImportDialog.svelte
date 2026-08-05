@@ -8,6 +8,7 @@
   export let classId: string;
   export let onClose: () => void;
   export let initialFiles: File[] = [];
+  export let initialText = "";
 
   type QuizRecord = { title: string; problems: Problem[]; [key: string]: unknown };
   type ProgressionRecord = { name: string; quizzes: QuizRecord[]; passPercentage: number; [key: string]: unknown };
@@ -117,10 +118,16 @@
     if (fileInput) fileInput.value = "";
   }
 
-  // Files dropped on a library page arrive with the dialog. Read them as soon
-  // as it opens so the teacher lands directly on the extracted preview.
+  // A file dropped or quiz copied on a library page arrives with the dialog.
+  // Read it immediately so the teacher lands on the extracted preview.
   onMount(() => {
-    if (initialFiles.length) addFiles(initialFiles);
+    if (initialFiles.length) {
+      addFiles(initialFiles);
+    } else if (initialText) {
+      const body = new FormData();
+      body.append("text", initialText);
+      read(body, "pasted text");
+    }
   });
 
   // Paste anywhere while the dialog is open. A copied file comes through as one;
