@@ -306,6 +306,9 @@
 
     <div class="editor-bar-actions">
       <button class="editor-ghost" type="button" on:click={printWorksheet}><Icon name="printer" size={15} /> Print</button>
+      {#if editing}
+        <a class="editor-ghost" href={`/api/quizzes/${quiz?.id}/pdf`} title="Export as a PDF that can be imported back"><Icon name="download" size={15} /> Export</a>
+      {/if}
       <a class="editor-cancel" href={`/teacher/classes/${classId}/quizzes`}>Cancel</a>
       <button class="editor-save" type="button" disabled={saving} on:click={save}>{saving ? "Saving…" : editing ? "Save changes" : "Save quiz"}</button>
     </div>

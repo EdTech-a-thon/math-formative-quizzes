@@ -61,8 +61,8 @@ export async function POST({ request, cookies }) {
     )
   );
 
-  // Creating the class triggers a PocketBase hook that seeds the default
-  // progressions (one ladder per operation) for this class.
+  // A new class starts empty. Quizzes and progressions arrive either by being
+  // built in the app or by importing a PDF someone exported.
   const classRoom = await pocketBaseRequest(
     "/api/collections/classes/records",
     auth,

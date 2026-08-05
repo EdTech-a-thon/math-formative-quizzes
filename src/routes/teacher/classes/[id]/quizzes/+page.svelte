@@ -3,6 +3,7 @@
   import { page } from "$app/stores";
   import Icon from "$lib/Icon.svelte";
   import IconGlyph from "$lib/IconGlyph.svelte";
+  import ImportPdfButton from "$lib/ImportPdfButton.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
   import type { Problem } from "$lib/quizProblems";
 
@@ -14,6 +15,15 @@
   $: base = `/teacher/classes/${$page.params.id}/quizzes`;
   let deletingId: string | null = null;
   let error = "";
+  let notice = "";
+
+  // Downloading through the browser rather than a link, because these cards are
+  // already links and a nested one would not be valid.
+  function exportQuiz(event: MouseEvent, id: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    window.location.href = `/api/quizzes/${id}/pdf`;
+  }
 
   // The filter only changes which quizzes are listed; the list keeps its
   // progression-membership order underneath. Values are "all", "progression:<id>"
@@ -58,8 +68,9 @@
 </script>
 
 <section class="workspace-page">
-  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Ordered by progression membership, in the order students work through them. Quizzes in no progression sit at the bottom.</p></div><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></header>
+  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Ordered by progression membership, in the order students work through them. Quizzes in no progression sit at the bottom.</p></div><div class="workspace-heading-actions"><ImportPdfButton classId={String($page.params.id)} onResult={(message, ok) => { notice = ok ? message : ""; error = ok ? "" : message; }} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></div></header>
   {#if error}<p class="message error">{error}</p>{/if}
+  {#if notice}<p class="message success">{notice}</p>{/if}
 
   {#if data.quizzes.length}
     <div class="picker-filters" role="group" aria-label="Show quizzes in a progression">
@@ -89,6 +100,7 @@
             </div>
           </div>
           <span class="library-edit-hint"><Icon name="pencil" size={14} /> Edit</span>
+          <button type="button" class="ghost-btn" title="Export as PDF" on:click={(event) => exportQuiz(event, quiz.id)}><Icon name="download" size={14} /> Export</button>
           <button type="button" class="ghost-btn danger" disabled={deletingId === quiz.id} on:click={(event) => deleteQuiz(event, quiz)}>{deletingId === quiz.id ? "Deleting…" : "Delete"}</button>
         </a>
       {:else}
