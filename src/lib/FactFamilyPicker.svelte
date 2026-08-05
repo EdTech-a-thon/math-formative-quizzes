@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { buildFactSet, operationDetails, operations, symbolFor, type Operation, type Problem } from "$lib/quizProblems";
+  import Icon from "$lib/Icon.svelte";
+  import { buildFactSet, isCommutative, operationDetails, operations, symbolFor, type Operation, type Problem } from "$lib/quizProblems";
 
   // The panel never shows its own preview. It reports the questions it would
   // insert, and the editor shows them in the quiz itself, highlighted, so you
@@ -15,6 +16,7 @@
   // and goes quiet again after an insert — otherwise every quiz would open with
   // a dozen questions it never asked to see.
   let armed = false;
+  let swapped = false; // Drill the family from the other side: 1×2 rather than 2×1.
 
   const RANGE_MAX = 12;
   const ticks = Array.from({ length: RANGE_MAX + 1 }, (_, index) => index);
@@ -27,13 +29,15 @@
     { length: operationDetails[factOp].max - operationDetails[factOp].min + 1 },
     (_, index) => operationDetails[factOp].min + index,
   );
-  $: preview = buildFactSet(factOp, family, from, to);
+  $: preview = buildFactSet(factOp, family, from, to, swapped);
   $: onPreview(armed ? preview : []);
 
   function pickOperation(next: Operation) {
     armed = true;
     if (next === factOp) return;
     factOp = next;
+    // Division and subtraction cannot be reordered, so the swap does not carry over.
+    if (!isCommutative(next)) swapped = false;
     // Keep the chosen family inside the new operation's range.
     family = Math.min(Math.max(family, operationDetails[next].min), operationDetails[next].max);
     from = operationDetails[next].factorMin;
@@ -67,7 +71,15 @@
     {/each}
   </div>
 
-  <p class="ff-label">{operationDetails[factOp].verb}</p>
+  <p class="ff-label">
+    {operationDetails[factOp].verb}
+    {#if isCommutative(factOp)}
+      <button type="button" class="ff-swap" aria-pressed={swapped} title="Swap the numbers around" on:click={() => { armed = true; swapped = !swapped; }}>
+        <Icon name="arrow-left-right" size={13} />
+        {swapped ? `n ${symbolFor(factOp)} ${family}` : `${family} ${symbolFor(factOp)} n`}
+      </button>
+    {/if}
+  </p>
   <div class="ff-family-grid">
     {#each familyChoices as choice}
       <button type="button" class="ff-family" class:on={armed && family === choice} aria-pressed={armed && family === choice} on:click={() => pickFamily(choice)}>{choice}</button>
@@ -99,7 +111,7 @@
 
   <div class="ff-actions">
     {#if armed}
-      <p class="ff-count">{preview.length} question{preview.length === 1 ? "" : "s"} shown below</p>
+      <p class="ff-count">{preview.length} question{preview.length === 1 ? "" : "s"} shown in the quiz</p>
       <button type="button" class="editor-save ff-insert" disabled={!preview.length} on:click={insert}>Insert</button>
     {:else}
       <p class="ff-idle">Pick a fact family to see it in the quiz.</p>

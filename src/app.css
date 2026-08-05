@@ -1182,6 +1182,10 @@ button span {
 /* The bar carries what used to sit in the document: the title, its icon, and
    the quiz's settings. Four columns so the title can take the slack. */
 .editor-bar-quiz { display: flex; align-items: center; gap: 12px 14px; }
+.bar-history { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.bar-icon-button { display: grid; place-items: center; width: 32px; height: 32px; margin: 0; padding: 0; border: 1px solid #e0dbe8; border-radius: 9px; background: #fff; box-shadow: none; color: #6b6479; }
+.bar-icon-button:hover:not(:disabled) { transform: none; border-color: var(--operation, #6748d1); color: var(--operation, #6748d1); }
+.bar-icon-button:disabled { cursor: default; opacity: .38; }
 .bar-settings { margin-left: auto; }
 /* The fact-family panel on the left holds its place while the quiz beside it
    scrolls, so inserting a family never means scrolling back up to the controls. */
@@ -1268,6 +1272,9 @@ button span {
 .ff-family { width: 100%; height: 46px; margin: 0; padding: 0; display: grid; place-items: center; border: 1px solid #e7e1ea; border-radius: 11px; background: #fff; box-shadow: none; color: #4c465c; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; font-weight: 700; }
 .ff-family:hover { transform: none; border-color: var(--operation); }
 .ff-family.on { border-color: var(--operation); background: var(--operation-soft); color: var(--operation); }
+.ff-swap { display: inline-flex; align-items: center; gap: 5px; width: auto; margin: 0 0 0 auto; padding: 4px 9px; border: 1px solid #e6dfed; border-radius: 999px; background: #fff; box-shadow: none; color: #6b6479; font-family: "DM Mono", monospace; font-size: .74rem; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.ff-swap:hover { transform: none; border-color: var(--operation); color: var(--operation); }
+.ff-swap[aria-pressed="true"] { border-color: var(--operation); background: var(--operation-soft); color: var(--operation); }
 .ff-readout { margin-left: auto; color: var(--operation); font-family: "DM Mono", monospace; font-size: .78rem; font-weight: 500; letter-spacing: 0; text-transform: none; }
 /* A number line with a handle at each end. The inputs are stacked over one
    shared track and only their thumbs take the pointer, so both stay grabbable. */

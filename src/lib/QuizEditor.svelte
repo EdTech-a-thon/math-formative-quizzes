@@ -42,7 +42,8 @@
 
   const snapshot = (values: unknown[]) => JSON.stringify(values);
   const savedState = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
-  $: dirty = !saving && snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]) !== savedState;
+  $: state = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
+  $: dirty = !saving && state !== savedState;
   beforeNavigate((navigation) => {
     if (!dirty) return;
     // Closing the tab can only be warned about by the browser's own dialog,
@@ -50,6 +51,66 @@
     if (navigation.type === "leave") { navigation.cancel(); return; }
     if (!confirm("You have unsaved changes to this quiz. Leave without saving?")) navigation.cancel();
   });
+
+  // ---- Undo and redo ----
+  // Whole-editor snapshots rather than a list of edit types: the state is small
+  // and it means every control is covered without each one reporting itself.
+  let past: string[] = [];
+  let future: string[] = [];
+  let last = savedState; // The newest state already accounted for.
+  let burstFrom: string | null = null; // State before the current run of quick edits.
+  let burstTimer: ReturnType<typeof setTimeout> | undefined;
+
+  $: record(state);
+  $: canUndo = past.length > 0 || burstFrom !== null;
+  $: canRedo = future.length > 0;
+
+  // A run of keystrokes lands as one undo step rather than one per character.
+  function record(next: string) {
+    if (next === last) return;
+    if (burstFrom === null) burstFrom = last;
+    last = next;
+    clearTimeout(burstTimer);
+    burstTimer = setTimeout(closeBurst, 400);
+  }
+  function closeBurst() {
+    if (burstFrom === null) return;
+    past = [...past, burstFrom].slice(-100);
+    burstFrom = null;
+    future = [];
+  }
+  function restore(json: string) {
+    const [nextTitle, nextProblems, nextTime, nextScore, nextMessage, nextIcon, nextShade] = JSON.parse(json);
+    title = nextTitle;
+    problems = nextProblems;
+    timeLimitMinutes = nextTime;
+    showScore = nextScore;
+    passMessage = nextMessage;
+    icon = nextIcon;
+    shade = nextShade;
+    // Marking this as the newest state stops the restore being recorded as an edit.
+    last = json;
+    burstFrom = null;
+    selected = new Set();
+  }
+  function undo() {
+    clearTimeout(burstTimer);
+    closeBurst(); // Anything still being typed becomes a step of its own first.
+    if (!past.length) return;
+    const target = past[past.length - 1];
+    past = past.slice(0, -1);
+    future = [last, ...future];
+    restore(target);
+  }
+  function redo() {
+    clearTimeout(burstTimer);
+    closeBurst();
+    if (!future.length) return;
+    const target = future[0];
+    future = future.slice(1);
+    past = [...past, last];
+    restore(target);
+  }
 
   // ---- Editing a question in place ----
   function setOperand(id: string, key: "top" | "bottom", raw: string) {
@@ -119,6 +180,17 @@
   }
   // Escape clears a selection and Delete removes it, but never while a field has focus.
   function onKeydown(event: KeyboardEvent) {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+      event.preventDefault();
+      if (event.shiftKey) redo();
+      else undo();
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") {
+      event.preventDefault();
+      redo();
+      return;
+    }
     const tag = (event.target as HTMLElement | null)?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
     if (event.key === "Escape") { selected = new Set(); return; }
@@ -199,6 +271,11 @@
     <div class="bar-title-row">
       <IconPicker {shade} name={icon} fallback="clipboard-list" compact title="Quiz icon and colour" onChange={(next) => { icon = next.name; shade = next.shade; }} />
       <input class="bar-title" class:invalid={titleInvalid} bind:this={titleInput} bind:value={title} placeholder="Untitled quiz" aria-label="Quiz name" aria-invalid={titleInvalid} spellcheck="false" />
+    </div>
+
+    <div class="bar-history">
+      <button type="button" class="bar-icon-button" disabled={!canUndo} title="Undo" aria-label="Undo" on:click={undo}><Icon name="rotate-ccw" size={15} /></button>
+      <button type="button" class="bar-icon-button" disabled={!canRedo} title="Redo" aria-label="Redo" on:click={redo}><Icon name="rotate-cw" size={15} /></button>
     </div>
 
     <div class="bar-settings">

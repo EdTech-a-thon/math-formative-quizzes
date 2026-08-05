@@ -59,17 +59,27 @@ export function makeProblem(op: Operation, top: number, bottom: number): Problem
   return { id: newId(), op, top, bottom };
 }
 
+// Only these two read the same both ways round, so only these two can have
+// their operands swapped without changing the answer.
+export function isCommutative(op: Operation): boolean {
+  return op === "multiplication" || op === "addition";
+}
+
 // Expand one fact family into questions, one per number in the range. Division
 // and subtraction put the larger number on top so answers stay whole and
 // non-negative: "divide by 3" over 1–12 is 3÷3, 6÷3, 9÷3 …
-export function buildFactSet(op: Operation, family: number, from: number, to: number): Problem[] {
+//
+// `swap` turns "2×1, 2×2 …" into "1×2, 2×2 …" — the same facts drilled from the
+// other side. It is ignored where the operands cannot be reordered safely.
+export function buildFactSet(op: Operation, family: number, from: number, to: number, swap = false): Problem[] {
   const low = Math.min(from, to);
   const high = Math.max(from, to);
+  const flip = swap && isCommutative(op);
   const out: Problem[] = [];
   for (let other = low; other <= high; other += 1) {
-    if (op === "multiplication") out.push(makeProblem(op, family, other));
+    if (op === "multiplication") out.push(flip ? makeProblem(op, other, family) : makeProblem(op, family, other));
     else if (op === "division") out.push(makeProblem(op, family * other, family));
-    else if (op === "addition") out.push(makeProblem(op, family, other));
+    else if (op === "addition") out.push(flip ? makeProblem(op, other, family) : makeProblem(op, family, other));
     else out.push(makeProblem(op, family + other, family));
   }
   return out;
