@@ -4,8 +4,8 @@ import type { SourceFailure } from "$lib/server/importSource";
 // with nothing to try next.
 export const FAILURE_MESSAGES: Record<SourceFailure, { message: string; detail: string }> = {
   "not-supported": {
-    message: "That file is neither a PDF nor JSON.",
-    detail: "Import a PDF from an Export button, or a .json file holding the quiz record.",
+    message: "That file could not be read.",
+    detail: "Import a PDF from an Export button, or paste a copied quiz.",
   },
   "damaged-json": {
     message: "That JSON could not be read.",

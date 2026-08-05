@@ -23,7 +23,6 @@
   };
 
   let staged: Staged[] = [];
-  let pasted = "";
   let dragging = false;
   let reading = false;
   let importing = false;
@@ -33,6 +32,15 @@
   $: chosenQuizzes = staged.flatMap((item) => item.quizzes.filter((quiz) => quiz.keep));
   $: chosenPaths = staged.filter((item) => item.kind === "progression" && item.keepProgression && item.quizzes.some((quiz) => quiz.keep));
   $: canImport = chosenQuizzes.length > 0 && !importing;
+  // Built here rather than in the markup: Svelte trims whitespace around block
+  // tags, which was running the two counts together.
+  $: summary = !staged.length
+    ? "Nothing added yet"
+    : !chosenQuizzes.length
+      ? "Nothing selected"
+      : `${[describe(chosenQuizzes.length, "quiz", "quizzes"), chosenPaths.length ? describe(chosenPaths.length, "progression", "progressions") : ""]
+          .filter(Boolean)
+          .join(" and ")} selected`;
 
   function describe(count: number, one: string, many: string) {
     return `${count} ${count === 1 ? one : many}`;
@@ -107,11 +115,23 @@
     if (fileInput) fileInput.value = "";
   }
 
-  async function addPasted() {
-    if (!pasted.trim()) return;
+  // Paste anywhere while the dialog is open. A copied file comes through as one;
+  // anything else is taken as text and read the same way a file would be.
+  function onPaste(event: ClipboardEvent) {
+    if ((event.target as HTMLElement | null)?.closest("input, textarea, [contenteditable]")) return;
+
+    const files = event.clipboardData?.files;
+    if (files?.length) {
+      event.preventDefault();
+      addFiles(files);
+      return;
+    }
+    const text = event.clipboardData?.getData("text/plain")?.trim();
+    if (!text) return;
+    event.preventDefault();
     const body = new FormData();
-    body.append("text", pasted);
-    if (await read(body, "pasted JSON")) pasted = "";
+    body.append("text", text);
+    read(body, "pasted text");
   }
 
   function onDrop(event: DragEvent) {
@@ -169,14 +189,14 @@
   }
 </script>
 
-<svelte:window on:keydown={(event) => event.key === "Escape" && !importing && onClose()} />
+<svelte:window on:keydown={(event) => event.key === "Escape" && !importing && onClose()} on:paste={onPaste} />
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="add-backdrop" role="presentation" on:click={() => !importing && onClose()}></div>
+<div class="modal-backdrop" role="presentation" on:click={() => !importing && onClose()}></div>
 <div class="import-dialog" role="dialog" aria-modal="true" aria-label="Import quizzes">
   <header class="import-head">
     <h2>Import</h2>
-    <button type="button" class="add-close" aria-label="Close" on:click={onClose}><Icon name="x" size={16} /></button>
+    <button type="button" class="modal-close" aria-label="Close" on:click={onClose}><Icon name="x" size={16} /></button>
   </header>
 
   <div class="import-body">
@@ -190,18 +210,12 @@
       on:drop|preventDefault={onDrop}
     >
       <Icon name="download" size={22} />
-      <strong>Drop a PDF or JSON file here</strong>
+      <strong>Drop a PDF here</strong>
       <button type="button" class="ghost-btn" disabled={reading} on:click={() => fileInput.click()}>
         {reading ? "Reading…" : "Choose a file"}
       </button>
-      <small>You can drop several at once.</small>
+      <small>Drop several at once, or paste a copied quiz.</small>
       <input class="sr-only" type="file" multiple accept="application/pdf,.pdf,application/json,.json" bind:this={fileInput} on:change={() => addFiles(fileInput.files)} />
-    </div>
-
-    <div class="import-paste">
-      <label for="import-json">Or paste JSON</label>
-      <textarea id="import-json" rows="4" bind:value={pasted} placeholder={'{ "title": "Times tables", "problems": [ … ] }'} spellcheck="false"></textarea>
-      <button type="button" class="ghost-btn" disabled={!pasted.trim() || reading} on:click={addPasted}>Add this JSON</button>
     </div>
 
     {#if staged.length}
@@ -239,15 +253,7 @@
   </div>
 
   <footer class="import-actions">
-    <p class="import-summary">
-      {#if chosenQuizzes.length}
-        {describe(chosenQuizzes.length, "quiz", "quizzes")}{#if chosenPaths.length} and {describe(chosenPaths.length, "progression", "progressions")}{/if} selected
-      {:else if staged.length}
-        Nothing selected
-      {:else}
-        Nothing added yet
-      {/if}
-    </p>
+    <p class="import-summary">{summary}</p>
     <button type="button" class="editor-ghost" disabled={importing} on:click={onClose}>Cancel</button>
     <button type="button" class="editor-save" disabled={!canImport} on:click={commit}>{importing ? "Importing…" : "Import"}</button>
   </footer>

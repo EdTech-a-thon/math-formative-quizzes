@@ -29,7 +29,7 @@ export async function POST({ request, cookies }) {
   } else if (typeof pasted === "string" && pasted.trim()) {
     bytes = new TextEncoder().encode(pasted);
   } else {
-    return json({ message: "Nothing to read.", detail: "Drop a file, choose one, or paste some JSON." }, { status: 400 });
+    return json({ message: "Nothing to read.", detail: "Drop a file, choose one, or paste a copied quiz." }, { status: 400 });
   }
 
   const extracted = await recordFromUpload(bytes);
