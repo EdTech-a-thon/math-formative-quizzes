@@ -3,7 +3,9 @@
   import { invalidateAll } from "$app/navigation";
   import Icon from "$lib/Icon.svelte";
   import IconGlyph from "$lib/IconGlyph.svelte";
+  import AssignDialog from "$lib/AssignDialog.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
+  import { assignmentSummary } from "$lib/assignments";
 
   type Enrollment = { id: string; progressionId: string; currentStep: string; progressionName: string; icon: string | null; shade: ShadeId | null; operation: string; position: number; totalSteps: number; currentQuiz: string; status: string; released: boolean };
   type Attempt = { id: string; title: string; position: number | null; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string };
@@ -13,33 +15,41 @@
   let busy = "";
   let error = "";
   let message = "";
-  let chosenProgression = "";
-  $: available = data.progressions.filter(
-    (progression) => !data.enrollments.some((enrollment) => enrollment.progressionId === progression.id),
-  );
 
-  // Put this student on another path, the same way the roster's Assign button
-  // does. Only paths they are not on yet are offered, so nothing is reset.
-  async function assign() {
-    if (!chosenProgression) return;
-    const progression = data.progressions.find((item) => item.id === chosenProgression);
-    busy = "assign";
-    error = "";
+  // The same picker as everywhere else, offering the paths this student is not
+  // on yet.
+  let picking = false;
+  let dialogBusy = false;
+  let dialogError = "";
+  $: available = data.progressions
+    .filter((progression) => !data.enrollments.some((enrollment) => enrollment.progressionId === progression.id))
+    .map((progression) => ({
+      id: progression.id,
+      name: progression.name,
+      detail: `${progression.stepCount} ${progression.stepCount === 1 ? "quiz" : "quizzes"}`,
+      shade: progression.shade,
+      operation: progression.operation,
+    }));
+
+  async function assign(progressionIds: string[]) {
+    dialogBusy = true;
+    dialogError = "";
     message = "";
     try {
-      const response = await fetch("/api/enrollments", {
+      const response = await fetch("/api/enrollments/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student: data.student.id, progression: chosenProgression }),
+        body: JSON.stringify({ students: [data.student.id], progressions: progressionIds }),
       });
-      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message);
       await invalidateAll();
-      message = `${data.student.name} is now on ${progression?.name ?? "this path"}.`;
-      chosenProgression = "";
+      picking = false;
+      message = assignmentSummary(result.assigned, result.skipped);
     } catch (caught) {
-      error = caught instanceof Error ? caught.message : "We could not assign this progression.";
+      dialogError = caught instanceof Error ? caught.message : "We could not assign these progressions.";
     } finally {
-      busy = "";
+      dialogBusy = false;
     }
   }
 
@@ -83,7 +93,13 @@
   {#if message}<p class="message success">{message}</p>{/if}
 
   <section aria-labelledby="current-progress-title">
-    <div class="student-detail-section-heading"><div><h2 id="current-progress-title">Current progress</h2><p>Where {data.student.name} is in each learning path.</p></div><span>{data.enrollments.length} {data.enrollments.length === 1 ? "progression" : "progressions"}</span></div>
+    <div class="student-detail-section-heading">
+      <div><h2 id="current-progress-title">Current progress</h2><p>Where {data.student.name} is in each learning path.</p></div>
+      <div class="student-detail-heading-actions">
+        <span>{data.enrollments.length} {data.enrollments.length === 1 ? "progression" : "progressions"}</span>
+        {#if data.progressions.length}<button type="button" class="assign-open" on:click={() => (picking = true)}><Icon name="plus" size={15} /> Assign</button>{/if}
+      </div>
+    </div>
     {#if data.enrollments.length}
       <div class="student-progression-grid">
         {#each data.enrollments as enrollment}
@@ -110,22 +126,6 @@
       <p class="student-detail-empty">No progressions have been assigned to this student.</p>
     {/if}
 
-    {#if available.length}
-      <div class="student-assign-row">
-        <label for="assign-progression">Add another progression</label>
-        <select id="assign-progression" bind:value={chosenProgression} disabled={Boolean(busy)}>
-          <option value="" disabled>Choose a progression…</option>
-          {#each available as progression}
-            <option value={progression.id}>{progression.name} · {progression.stepCount} {progression.stepCount === 1 ? "quiz" : "quizzes"}</option>
-          {/each}
-        </select>
-        <button class="primary-action" type="button" disabled={!chosenProgression || Boolean(busy)} on:click={assign}>
-          <Icon name="plus" size={15} /> {busy === "assign" ? "Assigning…" : "Assign"}
-        </button>
-      </div>
-    {:else if data.progressions.length}
-      <p class="student-assign-note">{data.student.name} is on every progression in this class.</p>
-    {/if}
   </section>
 
   <section class="student-attempts" aria-labelledby="attempt-history-title">
@@ -147,3 +147,16 @@
     {/if}
   </section>
 </section>
+
+{#if picking}
+  <AssignDialog
+    title={`Assign progressions to ${data.student.name}`}
+    subtitle="Pick as many as you like. They start at the first quiz in each one."
+    kind="progression"
+    items={available}
+    busy={dialogBusy}
+    error={dialogError}
+    onClose={() => { picking = false; dialogError = ""; }}
+    onConfirm={assign}
+  />
+{/if}

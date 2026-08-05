@@ -3,7 +3,9 @@
   import { page } from "$app/stores";
   import Icon from "$lib/Icon.svelte";
   import IconGlyph from "$lib/IconGlyph.svelte";
+  import AssignDialog from "$lib/AssignDialog.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
+  import { assignmentSummary } from "$lib/assignments";
 
   type Step = { id: string; position: number; title: string; questionCount: number };
   type Enrollment = { id: string; studentId: string; studentName: string; currentStep: string; position: number; status: string; released: boolean };
@@ -21,44 +23,34 @@
   let error = "";
   let message = "";
 
-  // Adding students to this path from here, without going back to the roster.
+  // The same picker the roster uses, pointed at students instead of paths.
   let picking = false;
-  let chosen = new Set<string>();
-  let adding = false;
+  let dialogBusy = false;
+  let dialogError = "";
   $: enrolledIds = new Set(data.enrollments.map((enrollment) => enrollment.studentId));
-  $: unassigned = data.students.filter((student) => !enrolledIds.has(student.id));
-  $: allChosen = unassigned.length > 0 && chosen.size === unassigned.length;
+  $: unassigned = data.students
+    .filter((student) => !enrolledIds.has(student.id))
+    .map((student) => ({ id: student.id, name: student.name, detail: student.loginName, shade: data.progression.shade ?? "" }));
 
-  function toggleStudent(studentId: string) {
-    if (chosen.has(studentId)) chosen.delete(studentId);
-    else chosen.add(studentId);
-    chosen = chosen;
-  }
-  function toggleAll() {
-    chosen = allChosen ? new Set() : new Set(unassigned.map((student) => student.id));
-  }
-
-  async function addStudents() {
-    if (!chosen.size) return;
-    adding = true;
-    error = "";
+  async function assignStudents(studentIds: string[]) {
+    dialogBusy = true;
+    dialogError = "";
     message = "";
     try {
       const response = await fetch("/api/enrollments/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ progression: data.progression.id, students: [...chosen] }),
+        body: JSON.stringify({ progressions: [data.progression.id], students: studentIds }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message);
       await invalidateAll();
-      message = `${result.assigned} ${result.assigned === 1 ? "student is" : "students are"} now on this path.`;
-      chosen = new Set();
       picking = false;
+      message = assignmentSummary(result.assigned, result.skipped);
     } catch (caught) {
-      error = caught instanceof Error ? caught.message : "We could not add these students.";
+      dialogError = caught instanceof Error ? caught.message : "We could not add these students.";
     } finally {
-      adding = false;
+      dialogBusy = false;
     }
   }
 
@@ -128,37 +120,13 @@
   {#if error}<p class="message error">{error}</p>{/if}
   {#if message}<p class="message success">{message}</p>{/if}
 
-  <section class={`add-students-panel ${shadeClass(data.progression.shade)}`}>
-    <header>
-      <div>
-        <h2>Students on this path</h2>
-        <p>{data.enrollments.length} of {data.students.length} in this class{unassigned.length ? ` · ${unassigned.length} not added yet` : " · everyone is added"}</p>
-      </div>
-      {#if unassigned.length}
-        <button type="button" class="ghost-btn" on:click={() => { picking = !picking; chosen = new Set(); }}>
-          <Icon name={picking ? "x" : "plus"} size={14} /> {picking ? "Cancel" : "Add students"}
-        </button>
-      {/if}
-    </header>
-    {#if picking}
-      <div class="add-students-toolbar">
-        <button type="button" class="ghost-btn" on:click={toggleAll}>{allChosen ? "Clear all" : `Select all ${unassigned.length}`}</button>
-        <span>{chosen.size} selected</span>
-      </div>
-      <div class="add-students-grid">
-        {#each unassigned as student}
-          <label class:on={chosen.has(student.id)}>
-            <input type="checkbox" checked={chosen.has(student.id)} on:change={() => toggleStudent(student.id)} />
-            <span class="student-avatar">{student.name[0]}</span>
-            <span class="add-student-name"><strong>{student.name}</strong><small>{student.loginName}</small></span>
-          </label>
-        {/each}
-      </div>
-      <footer>
-        <button class="primary-action" type="button" disabled={!chosen.size || adding} on:click={addStudents}>
-          <Icon name="plus" size={15} /> {adding ? "Adding…" : chosen.size ? `Add ${chosen.size} ${chosen.size === 1 ? "student" : "students"}` : "Add students"}
-        </button>
-      </footer>
+  <section class="add-students-panel">
+    <div>
+      <h2>Students on this path</h2>
+      <p>{data.enrollments.length} of {data.students.length} in this class{unassigned.length ? ` · ${unassigned.length} not added yet` : " · everyone is added"}</p>
+    </div>
+    {#if data.students.length}
+      <button type="button" class="assign-open" on:click={() => (picking = true)}><Icon name="plus" size={15} /> Assign</button>
     {/if}
   </section>
 
@@ -197,3 +165,16 @@
     <section class="progression-completed" id="completed"><h2><Icon name="check" size={17} /> Completed</h2><div class="completed-student-links">{#each completed as student}<a href={`/teacher/classes/${$page.params.id}/students/${student.studentId}`}>{student.studentName}</a>{/each}</div></section>
   {/if}
 </section>
+
+{#if picking}
+  <AssignDialog
+    title={`Assign students to ${data.progression.name}`}
+    subtitle="Everyone you pick starts at the first quiz in this path."
+    kind="student"
+    items={unassigned}
+    busy={dialogBusy}
+    error={dialogError}
+    onClose={() => { picking = false; dialogError = ""; }}
+    onConfirm={assignStudents}
+  />
+{/if}
