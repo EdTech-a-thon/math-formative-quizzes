@@ -96,7 +96,7 @@
             {#if enrollment.status === "completed"}
               <span class="student-release-state completed"><Icon name="check" size={13} /> Completed</span>
             {:else if enrollment.released}
-              <span class="student-release-state released"><Icon name="unlock" size={13} /> Released</span>
+              <span class="student-release-state ready"><Icon name="check" size={13} /> Ready</span>
             {:else}
               <span class="student-release-state waiting"><Icon name="lock" size={13} /> Waiting</span>
               <button class="student-release-button" type="button" disabled={Boolean(busy)} on:click={() => release(enrollment)}>

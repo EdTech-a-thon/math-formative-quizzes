@@ -28,7 +28,7 @@ export async function POST({ request, cookies }) {
       headers: { "Content-Type": "application/json", Authorization: authorization },
       body: JSON.stringify({ released: true }),
     });
-    if (!update.ok) return json({ message: "Some students were released, but we could not release everyone.", released }, { status: 500 });
+    if (!update.ok) return json({ message: "Some students are ready, but we could not release everyone.", released }, { status: 500 });
     released++;
   }
   return json({ released });

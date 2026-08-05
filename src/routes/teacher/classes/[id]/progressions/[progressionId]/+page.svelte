@@ -120,7 +120,7 @@
       <a class="ghost-btn" href={`/api/progressions/${data.progression.id}/pdf`} title="Export this path and all its quizzes as one PDF"><Icon name="upload" size={14} /> Export</a>
       <button class="primary-action" type="button" disabled={!waitingCount || Boolean(releasing)} on:click={releaseAll}>
         <Icon name={waitingCount ? "unlock" : "check"} size={15} />
-        {releasing === "all" ? "Releasing…" : waitingCount ? `Release ${waitingCount} waiting` : "Everyone released"}
+        {releasing === "all" ? "Releasing…" : waitingCount ? `Release ${waitingCount} waiting` : "Everyone ready"}
       </button>
     </div>
   </header>
@@ -177,7 +177,7 @@
                 <article>
                   <a class="step-student-link" href={`/teacher/classes/${$page.params.id}/students/${enrollment.studentId}`}><span class="student-avatar">{enrollment.studentName[0]}</span><strong>{enrollment.studentName}</strong></a>
                   {#if enrollment.released}
-                    <span class="release-status ready"><Icon name="check" size={12} /> Released</span>
+                    <span class="release-status ready"><Icon name="check" size={12} /> Ready</span>
                   {:else}
                     <span class="release-status waiting"><Icon name="lock" size={12} /> Waiting</span>
                     <button type="button" disabled={Boolean(releasing)} on:click={() => releaseOne(enrollment)}><Icon name="unlock" size={12} /> {releasing === enrollment.id ? "Releasing…" : "Release"}</button>
