@@ -29,6 +29,7 @@ export async function POST({ request, cookies }) {
       progression: body.progression,
       student: body.student,
       status: "active",
+      released: false,
       ...(firstStep ? { currentStep: firstStep } : {}),
     }),
   });

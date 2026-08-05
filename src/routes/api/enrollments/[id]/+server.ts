@@ -19,3 +19,23 @@ export async function DELETE({ cookies, params }) {
   }
   return json({ ok: true });
 }
+
+export async function PATCH({ cookies, params }) {
+  const authorization = auth(cookies);
+  const currentResponse = await fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records/${params.id}?fields=status,released`, {
+    headers: { Authorization: authorization },
+  });
+  const current = await currentResponse.json().catch(() => ({}));
+  if (!currentResponse.ok) return json({ message: current.message || "We could not find this assignment." }, { status: currentResponse.status });
+  if (current.status === "completed") return json({ message: "This progression is already complete." }, { status: 400 });
+  if (current.released) return json({ released: true });
+
+  const response = await fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records/${params.id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: authorization },
+    body: JSON.stringify({ released: true }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) return json({ message: result.message || "We could not release this attempt." }, { status: response.status });
+  return json({ released: true });
+}

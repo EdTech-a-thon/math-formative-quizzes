@@ -1,35 +1,12 @@
 import { error, json } from "@sveltejs/kit";
 import { appearanceOf } from "$lib/server/appearance";
 import { readEnvelope, type QuizRecord } from "$lib/server/exportRecord";
-import { extractRecord, type ExtractFailure } from "$lib/server/pdfcx";
+import { extractRecord } from "$lib/server/pdfcx";
+import { FAILURE_MESSAGES, NOT_OURS } from "$lib/server/importMessages";
 import { pocketBaseUrl } from "$lib/server/pdfResponse";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
-// Each failure gets its own wording, because "it did not work" leaves a teacher
-// with nothing to try next.
-const FAILURE_MESSAGES: Record<ExtractFailure, { message: string; detail: string }> = {
-  "not-a-pdf": {
-    message: "That file is not a PDF.",
-    detail: "Choose a PDF file — the one you get from an Export button.",
-  },
-  "unreadable-pdf": {
-    message: "That PDF could not be opened.",
-    detail: "It may be damaged or password protected. Try exporting it again.",
-  },
-  "no-attachments": {
-    message: "That PDF has no quiz data inside it.",
-    detail: "Only PDFs made by an Export button carry their questions. A scanned or printed copy cannot be read back.",
-  },
-  "no-record": {
-    message: "That PDF has attachments, but none of them hold quiz data.",
-    detail: "Export the quiz or progression again and import the file you get.",
-  },
-  "damaged-record": {
-    message: "That PDF's quiz data is damaged.",
-    detail: "It was found but could not be read. Export it again from the original class.",
-  },
-};
 
 // Importing only ever adds. Nothing already in the class is matched, changed or
 // removed, so re-importing a file you already have gives you a second copy
@@ -76,13 +53,7 @@ export async function POST({ request, cookies }) {
 
   const parsed = readEnvelope(extracted.record);
   if (!parsed) {
-    return json(
-      {
-        message: "That PDF holds data, but not a quiz or a progression.",
-        detail: "It carries a record this app does not recognise, or one with no questions in it.",
-      },
-      { status: 400 },
-    );
+    return json(NOT_OURS, { status: 400 });
   }
 
   // Tracked outside the try so a failure part-way can say what already landed

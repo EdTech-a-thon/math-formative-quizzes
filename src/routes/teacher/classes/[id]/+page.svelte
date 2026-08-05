@@ -5,10 +5,10 @@
   type Operation = "multiplication" | "division" | "addition" | "subtraction";
   type Student = { id: string; name: string; loginName: string };
   type Progression = { id: string; name: string; operation: Operation; stepCount: number };
-  type Enrollment = { id: string; student: string; progression: string; name: string; operation: Operation; position: number; totalSteps: number };
+  type Enrollment = { id: string; student: string; progression: string; name: string; operation: Operation; position: number; totalSteps: number; status: string; released: boolean };
 
   export let data: {
-    classRoom: { name: string; classCode: string };
+    classRoom: { id: string; name: string; classCode: string };
     students: Student[];
     progressions: Progression[];
     enrollments: Enrollment[];
@@ -19,6 +19,46 @@
   let openAssign: string | null = null;
   let busy = false;
   let error = "";
+
+  let selected = new Set<string>();
+  let bulkProgression = "";
+  let bulkBusy = false;
+  let bulkMessage = "";
+  $: allSelected = data.students.length > 0 && selected.size === data.students.length;
+  $: someSelected = selected.size > 0 && !allSelected;
+
+  function toggleStudent(studentId: string) {
+    if (selected.has(studentId)) selected.delete(studentId);
+    else selected.add(studentId);
+    selected = selected;
+    bulkMessage = "";
+  }
+  function toggleSelectAll() {
+    selected = allSelected ? new Set() : new Set(data.students.map((student) => student.id));
+    bulkMessage = "";
+  }
+  function setIndeterminate(node: HTMLInputElement) {
+    const update = () => (node.indeterminate = someSelected);
+    update();
+    return { update };
+  }
+
+  async function bulkAssign() {
+    if (!bulkProgression || !selected.size) return;
+    bulkBusy = true;
+    bulkMessage = "";
+    error = "";
+    try {
+      const response = await fetch("/api/enrollments/bulk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ progression: bulkProgression, students: [...selected] }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message);
+      await invalidateAll();
+      selected = new Set();
+      const skipped = result.skipped ? `, ${result.skipped} already assigned` : "";
+      bulkMessage = `Assigned ${result.assigned} ${result.assigned === 1 ? "student" : "students"}${skipped}.`;
+      bulkProgression = "";
+    } catch (caught) { error = caught instanceof Error ? caught.message : "We could not assign these students."; } finally { bulkBusy = false; }
+  }
 
   $: enrollmentsFor = (studentId: string) => data.enrollments.filter((item) => item.student === studentId);
   $: availableFor = (studentId: string) => {
@@ -44,6 +84,15 @@
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message);
       await invalidateAll();
     } catch (caught) { error = caught instanceof Error ? caught.message : "We could not remove this assignment."; } finally { busy = false; }
+  }
+  async function release(enrollmentId: string) {
+    busy = true;
+    error = "";
+    try {
+      const response = await fetch(`/api/enrollments/${enrollmentId}`, { method: "PATCH" });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message);
+      await invalidateAll();
+    } catch (caught) { error = caught instanceof Error ? caught.message : "We could not release this attempt."; } finally { busy = false; }
   }
 
   async function copyClassLink() {
@@ -71,14 +120,27 @@
   {#if error}<p class="message error">{error}</p>{/if}
 
   {#if data.students.length}
+    {#if selected.size}
+      <div class="bulk-bar" role="region" aria-label="Bulk actions">
+        <span class="bulk-count">{selected.size} selected</span>
+        <select class="bulk-progression" bind:value={bulkProgression} disabled={bulkBusy} aria-label="Progression to assign">
+          <option value="" disabled>Assign a progression…</option>
+          {#each data.progressions as progression}<option value={progression.id}>{progression.name} · {progression.stepCount} steps</option>{/each}
+        </select>
+        <button type="button" class="bulk-assign" disabled={bulkBusy || !bulkProgression} on:click={bulkAssign}>{bulkBusy ? "Assigning…" : "Assign"}</button>
+        <button type="button" class="bulk-clear" disabled={bulkBusy} on:click={() => (selected = new Set())}>Clear</button>
+      </div>
+    {/if}
+    {#if bulkMessage}<p class="message success">{bulkMessage}</p>{/if}
     <section class="roster-table" aria-label={`${data.classRoom.name} students`}>
-      <div class="roster-table-heading roster-assign-heading"><span>Student</span><span>Assigned progressions</span></div>
+      <div class="roster-table-heading roster-assign-heading"><span class="select-cell"><input type="checkbox" aria-label="Select all students" checked={allSelected} use:setIndeterminate on:change={toggleSelectAll} /></span><span>Student</span><span>Assigned progressions</span></div>
       {#each data.students as student}
-        <article class="roster-student roster-assign-row">
-          <div class="roster-student-name"><span class="student-avatar">{student.name[0]}</span><div><strong>{student.name}</strong><small>{student.loginName}</small></div></div>
+        <article class="roster-student roster-assign-row" class:row-selected={selected.has(student.id)}>
+          <span class="select-cell"><input type="checkbox" aria-label={`Select ${student.name}`} checked={selected.has(student.id)} on:change={() => toggleStudent(student.id)} /></span>
+          <a class="roster-student-name student-detail-link" href={`/teacher/classes/${data.classRoom.id}/students/${student.id}`}><span class="student-avatar">{student.name[0]}</span><div><strong>{student.name}</strong><small>{student.loginName}</small></div></a>
           <div class="assign-cell">
             {#each enrollmentsFor(student.id) as enrollment}
-              <span class={`assign-chip op-${enrollment.operation}`}><span class="assign-dot"></span><b>{enrollment.name}</b><small>step {enrollment.position}/{enrollment.totalSteps}</small><button type="button" class="assign-remove" aria-label={`Remove ${enrollment.name}`} disabled={busy} on:click={() => unassign(enrollment.id)}><Icon name="x" size={13} /></button></span>
+              <span class={`assign-chip op-${enrollment.operation}`}><span class="assign-dot"></span><b>{enrollment.name}</b><small>step {enrollment.position}/{enrollment.totalSteps}</small>{#if enrollment.status === "active"}{#if enrollment.released}<span class="attempt-ready"><Icon name="check" size={11} /> Ready</span>{:else}<button type="button" class="attempt-release" disabled={busy} on:click={() => release(enrollment.id)}><Icon name="unlock" size={12} /> Release</button>{/if}{/if}<button type="button" class="assign-remove" aria-label={`Remove ${enrollment.name}`} disabled={busy} on:click={() => unassign(enrollment.id)}><Icon name="x" size={13} /></button></span>
             {/each}
             {#if availableFor(student.id).length}
               <div class="assign-menu" use:closeMenuOutside={student.id}>

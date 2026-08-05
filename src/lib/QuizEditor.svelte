@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { browser } from "$app/environment";
+  import { onMount } from "svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import FactFamilyPicker from "$lib/FactFamilyPicker.svelte";
   import Icon from "$lib/Icon.svelte";
   import IconPicker from "$lib/IconPicker.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
+  import { pushToast } from "$lib/toasts";
   import { makeProblem, operations, problemProblem, readProblems, symbolFor, type Operation, type Problem } from "$lib/quizProblems";
 
   type QuizData = { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string; icon: string | null; shade: ShadeId | null };
@@ -112,6 +115,71 @@
     restore(target);
   }
 
+  // ---- Keeping a draft through a reload ----
+  // Everything unsaved lives only in this component, so a stray refresh used to
+  // take it. The draft is keyed per quiz, and cleared the moment it matches what
+  // is on the server or the quiz is saved.
+  const draftKey = `fact-friends:quiz-draft:${classId}:${quiz?.id ?? "new"}`;
+  let hydrated = false; // Nothing is written until any stored draft has been read.
+  let restoredFrom = ""; // When set, a draft was recovered and can still be discarded.
+  let draftTimer: ReturnType<typeof setTimeout> | undefined;
+
+  $: if (hydrated) rememberDraft(state);
+
+  function rememberDraft(next: string) {
+    if (!browser) return;
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+      try {
+        if (next === savedState) localStorage.removeItem(draftKey);
+        else localStorage.setItem(draftKey, JSON.stringify({ savedAt: new Date().toISOString(), state: next }));
+      } catch (_) {
+        // Storage can be full or switched off; the editor still works without it.
+      }
+    }, 400);
+  }
+  function forgetDraft() {
+    if (!browser) return;
+    try {
+      localStorage.removeItem(draftKey);
+    } catch (_) {}
+  }
+  // Throw the recovered changes away and go back to the saved quiz.
+  function discardDraft() {
+    forgetDraft();
+    restore(savedState);
+    past = [];
+    future = [];
+    restoredFrom = "";
+  }
+  // Keep the recovered changes, just stop saying so.
+  function dismissDraftNotice() {
+    restoredFrom = "";
+  }
+
+  onMount(() => {
+    try {
+      const stored = localStorage.getItem(draftKey);
+      const draft = stored ? JSON.parse(stored) : null;
+      // A draft matching the saved quiz is just noise, so it goes.
+      if (typeof draft?.state === "string" && draft.state !== savedState) {
+        restore(draft.state);
+        restoredFrom = typeof draft.savedAt === "string" ? draft.savedAt : "";
+      } else if (stored) {
+        forgetDraft();
+      }
+    } catch (_) {
+      forgetDraft();
+    }
+    hydrated = true;
+  });
+
+  function whenSaved(value: string): string {
+    const when = new Date(value);
+    if (!value || Number.isNaN(when.getTime())) return "earlier";
+    return when.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+
   // ---- Editing a question in place ----
   function setOperand(id: string, key: "top" | "bottom", raw: string) {
     const digits = raw.replace(/[^0-9]/g, "").slice(0, 4);
@@ -180,6 +248,11 @@
   }
   // Escape clears a selection and Delete removes it, but never while a field has focus.
   function onKeydown(event: KeyboardEvent) {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "p") {
+      event.preventDefault();
+      exportPdf();
+      return;
+    }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
       event.preventDefault();
       if (event.shiftKey) redo();
@@ -234,11 +307,62 @@
     problems = [...problems, ...incoming];
     pending = [];
   }
+  // Reorders the questions for good — it edits the list rather than randomising
+  // per student, so it lands on the undo stack like any other change.
+  function shuffleQuestions() {
+    const next = [...problems];
+    for (let index = next.length - 1; index > 0; index -= 1) {
+      const swap = Math.floor(Math.random() * (index + 1));
+      [next[index], next[swap]] = [next[swap], next[index]];
+    }
+    problems = next;
+    selected = new Set();
+  }
   function stepTime(delta: number) {
     timeLimitMinutes = Math.min(60, Math.max(1, timeLimitMinutes + delta));
   }
-  function printWorksheet() {
-    if (typeof window !== "undefined") window.print();
+  // Exporting supersedes printing: the PDF is the same worksheet and carries the
+  // quiz's data, so it can be imported back. A quiz has to exist to be exported.
+  function exportPdf() {
+    if (!editing || !quiz?.id) {
+      pushToast("error", "Save this quiz before exporting it.", "The PDF is built from the saved quiz, so it needs saving first.");
+      return;
+    }
+    window.location.href = `/api/quizzes/${quiz.id}/pdf`;
+  }
+
+  // Pulls the questions out of a PDF and adds them to the quiz being written —
+  // unlike the library's Import, which files a separate quiz away.
+  let importInput: HTMLInputElement;
+  let importing = false;
+
+  async function importQuestions() {
+    const file = importInput.files?.[0];
+    if (!file) return;
+    importing = true;
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch("/api/import/read", { method: "POST", body });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        pushToast("error", result.message || `We could not read ${file.name}.`, result.detail || "Please try again.");
+        return;
+      }
+      const incoming = readProblems(result.problems);
+      if (!incoming.length) {
+        pushToast("error", "That PDF has no questions in it.", "Nothing was added to this quiz.");
+        return;
+      }
+      problems = [...problems, ...incoming];
+      selected = new Set();
+      pushToast("success", `Added ${incoming.length} question${incoming.length === 1 ? "" : "s"} from “${result.title}”.`);
+    } catch (caught) {
+      pushToast("error", `We could not read ${file.name}.`, caught instanceof Error && caught.message ? caught.message : "Check your connection and try again.");
+    } finally {
+      importing = false;
+      importInput.value = "";
+    }
   }
 
   async function save() {
@@ -254,6 +378,8 @@
         : await fetch("/api/quizzes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ class: classId, data }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message);
+      clearTimeout(draftTimer);
+      forgetDraft();
       await goto(`/teacher/classes/${classId}/quizzes`);
     } catch (caught) {
       error = caught instanceof Error ? caught.message : "We could not save this quiz.";
@@ -276,6 +402,9 @@
     <div class="bar-history">
       <button type="button" class="bar-icon-button" disabled={!canUndo} title="Undo" aria-label="Undo" on:click={undo}><Icon name="rotate-ccw" size={15} /></button>
       <button type="button" class="bar-icon-button" disabled={!canRedo} title="Redo" aria-label="Redo" on:click={redo}><Icon name="rotate-cw" size={15} /></button>
+      <button type="button" class="bar-toggle" disabled={problems.length < 2} title="Put the questions in a random order" on:click={shuffleQuestions}>
+        <Icon name="shuffle" size={14} /> Shuffle
+      </button>
     </div>
 
     <div class="bar-settings">
@@ -305,10 +434,13 @@
     </div>
 
     <div class="editor-bar-actions">
-      <button class="editor-ghost" type="button" on:click={printWorksheet}><Icon name="printer" size={15} /> Print</button>
-      {#if editing}
-        <a class="editor-ghost" href={`/api/quizzes/${quiz?.id}/pdf`} title="Export as a PDF that can be imported back"><Icon name="upload" size={15} /> Export</a>
-      {/if}
+      <button class="editor-ghost" type="button" disabled={importing} title="Add the questions from a PDF to this quiz" on:click={() => importInput.click()}>
+        <Icon name="download" size={15} /> {importing ? "Reading…" : "Import"}
+      </button>
+      <button class="editor-ghost" type="button" title="Export as a PDF that can be imported back (Ctrl+P)" on:click={exportPdf}>
+        <Icon name="upload" size={15} /> Export
+      </button>
+      <input class="sr-only" type="file" accept="application/pdf,.pdf" bind:this={importInput} on:change={importQuestions} />
       <a class="editor-cancel" href={`/teacher/classes/${classId}/quizzes`}>Cancel</a>
       <button class="editor-save" type="button" disabled={saving} on:click={save}>{saving ? "Saving…" : editing ? "Save changes" : "Save quiz"}</button>
     </div>
@@ -321,6 +453,13 @@
 
     <div class="editor-canvas">
       <div class="doc-sheet">
+        {#if restoredFrom}
+          <div class="draft-note" role="status">
+            <span>Unsaved changes from {whenSaved(restoredFrom)} were brought back.</span>
+            <button type="button" on:click={discardDraft}>Discard them</button>
+            <button type="button" class="draft-dismiss" aria-label="Dismiss this message" title="Keep the changes and hide this" on:click={dismissDraftNotice}><Icon name="x" size={14} /></button>
+          </div>
+        {/if}
         <div class="sheet-head">
           <p class="doc-eyebrow">Quiz</p>
           <p class="doc-summary">{problems.length} question{problems.length === 1 ? "" : "s"} · {timeLimitMinutes} min · {showScore ? "score shown" : "score hidden"} at the end</p>

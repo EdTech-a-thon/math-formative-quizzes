@@ -1,4 +1,5 @@
 import { error, json } from "@sveltejs/kit";
+import { appearanceOf } from "$lib/server/appearance";
 
 const pocketBaseUrl = "http://127.0.0.1:8090";
 
@@ -13,7 +14,7 @@ export async function POST({ request, cookies }) {
   const create = await fetch(`${pocketBaseUrl}/api/collections/progressions/records`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ class: body.class, name: body.name.trim(), description: String(body.description || "").trim(), passPercentage: Number(body.passPercentage) || 80, status: "draft" }),
+    body: JSON.stringify({ class: body.class, name: body.name.trim(), description: String(body.description || "").trim(), passPercentage: Number(body.passPercentage) || 80, ...appearanceOf(body) }),
   });
   const progression = await create.json().catch(() => ({}));
   if (!create.ok) return json({ message: progression.message || "We could not save this progression." }, { status: create.status });

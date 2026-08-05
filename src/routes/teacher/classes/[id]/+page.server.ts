@@ -14,7 +14,7 @@ export async function load({ locals, cookies, params }) {
   const [classResponse, studentsResponse, progressionsResponse, enrollmentsResponse, stepsResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/classes/records/${params.id}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/students/records?perPage=500&sort=name&filter=${classFilter}`, { headers }),
-    globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=200&sort=created&filter=${classFilter}`, { headers }),
+    globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=200&sort=name&filter=${classFilter}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=1000&expand=progression,currentStep&filter=${nestedFilter("student")}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=2000&filter=${nestedFilter("progression")}`, { headers }),
   ]);
@@ -43,6 +43,7 @@ export async function load({ locals, cookies, params }) {
     student: string;
     progression: string;
     status: string;
+    released?: boolean;
     expand?: { progression?: { name: string; operation: Operation }; currentStep?: { position: number } };
   };
   const enrollments = (enrollmentItems as EnrollmentRecord[]).map((enrollment) => ({
@@ -54,6 +55,7 @@ export async function load({ locals, cookies, params }) {
     position: enrollment.expand?.currentStep?.position ?? 1,
     totalSteps: stepCount[enrollment.progression] ?? 0,
     status: enrollment.status,
+    released: Boolean((enrollment as EnrollmentRecord & { released?: boolean }).released),
   }));
 
   return { classRoom, students, progressions, enrollments };

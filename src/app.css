@@ -1212,6 +1212,12 @@ button span {
 .bar-popover .doc-note { margin: 0; }
 .bar-popover .doc-inline-input { margin-top: 9px; }
 
+.draft-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 18px; padding: 10px 14px; border: 1px solid #ded6ec; border-radius: 12px; background: #f7f4ff; color: #4d399b; font-size: .84rem; font-weight: 700; }
+.draft-note button { width: auto; margin: 0 0 0 auto; padding: 5px 10px; border: 1px solid #ded6ec; border-radius: 8px; background: #fff; box-shadow: none; color: #6b6479; font-size: .78rem; font-weight: 800; }
+.draft-note button:hover { transform: none; border-color: #7456e8; color: #4d399b; }
+.draft-note .draft-dismiss { display: grid; width: 26px; height: 26px; margin-left: 0; padding: 0; place-items: center; border-color: transparent; background: transparent; color: #8a8399; }
+.draft-note .draft-dismiss:hover { border-color: transparent; background: #fff; color: #4d399b; }
+.bar-history .bar-toggle:disabled { cursor: default; opacity: .38; }
 .sheet-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; }
 .sheet-head .doc-eyebrow, .sheet-head .doc-summary { margin: 0; }
 .sheet-hint { margin: 20px 0 14px; color: #a49dad; font-size: .82rem; font-weight: 700; }
