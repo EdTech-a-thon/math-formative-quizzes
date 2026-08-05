@@ -1,13 +1,12 @@
 <script lang="ts">
   import Icon from "$lib/Icon.svelte";
+  import IconGlyph from "$lib/IconGlyph.svelte";
+  import { shadeClass } from "$lib/shades";
 
-  type Operation = "multiplication" | "division" | "addition" | "subtraction" | "";
-  type Assigned = { stepId: string; progressionName: string; position: number; totalSteps: number; title: string; operation: Operation; questionCount: number; timeLimitMinutes: number };
-  type Finished = { id: string; title: string; operation: Operation; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string };
+  type Assigned = { stepId: string; progressionName: string; position: number; totalSteps: number; title: string; icon: string; shade: string; questionCount: number; timeLimitMinutes: number; released: boolean };
+  type Finished = { id: string; title: string; icon: string; shade: string; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string };
 
   export let data: { studentName: string; className: string; forYou: Assigned[]; history: Finished[] };
-
-  const symbols: Record<string, string> = { multiplication: "×", division: "÷", addition: "+", subtraction: "−" };
 
   // PocketBase hands dates over as "2026-08-04 14:30:00.000Z".
   function whenFinished(completedAt: string) {
@@ -33,12 +32,16 @@
       {#if data.forYou.length}
         <div class="assigned-grid">
           {#each data.forYou as assigned}
-            <article class={`assigned-card op-${assigned.operation}`}>
-              <span class="assigned-symbol">{symbols[assigned.operation] ?? "+"}</span>
+            <article class={`assigned-card ${shadeClass(assigned.shade)}`} class:attempt-waiting={!assigned.released}>
+              <span class="assigned-symbol"><IconGlyph name={assigned.icon || null} fallback="clipboard-list" size={22} /></span>
               <h3>{assigned.title}</h3>
               <p class="assigned-path">{assigned.progressionName} · step {assigned.position} of {assigned.totalSteps}</p>
               <p class="assigned-meta">{assigned.questionCount} questions{assigned.timeLimitMinutes ? ` · ${assigned.timeLimitMinutes} min` : ""}</p>
-              <a class="start-quiz" href="/quiz/{assigned.stepId}">Start quiz <Icon name="arrow-right" size={16} /></a>
+              {#if assigned.released}
+                <a class="start-quiz" href="/quiz/{assigned.stepId}">Start quiz <Icon name="arrow-right" size={16} /></a>
+              {:else}
+                <p class="waiting-for-release"><Icon name="lock" size={15} /> Waiting for your teacher</p>
+              {/if}
             </article>
           {/each}
         </div>
@@ -52,8 +55,8 @@
       {#if data.history.length}
         <div class="history-list">
           {#each data.history as finished}
-            <article class={`history-row op-${finished.operation}`}>
-              <span class="history-symbol">{symbols[finished.operation] ?? "+"}</span>
+            <article class={`history-row ${shadeClass(finished.shade)}`}>
+              <span class="history-symbol"><IconGlyph name={finished.icon || null} fallback="clipboard-list" size={18} /></span>
               <div class="history-name"><strong>{finished.title}</strong><small>{whenFinished(finished.completedAt)}</small></div>
               <span class="history-score">{finished.correct}/{finished.total}</span>
               <span class="history-badge" class:passed={finished.passed}>

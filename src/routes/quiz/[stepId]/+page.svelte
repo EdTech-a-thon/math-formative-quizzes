@@ -2,19 +2,19 @@
   import Icon from "$lib/Icon.svelte";
   import { applyAction, enhance } from "$app/forms";
   import { onDestroy, onMount } from "svelte";
-  import { buildProblems, type Operation, type StoredFactGroup } from "$lib/quizProblems";
+  import { symbolFor, type Problem } from "$lib/quizProblems";
 
   export let data: {
-    quiz: { title: string; operation: Operation; factGroups: StoredFactGroup[]; questionCount: number; timeLimitMinutes: number; showScore: boolean; passMessage: string };
+    quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string };
     progressionName: string;
     position: number;
     totalSteps: number;
     allowIncompleteAnswers: boolean;
-    seed: number;
   };
-  export let form: { finished?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; showScore?: boolean; passMessage?: string; operation?: Operation; progressionName?: string; position?: number; totalSteps?: number; error?: string } | null = null;
+  export let form: { finished?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; error?: string } | null = null;
 
-  $: problems = buildProblems(data.quiz.operation, data.quiz.factGroups, { cap: data.quiz.questionCount || undefined, seed: data.seed });
+  // Exactly the questions the teacher arranged, in their order.
+  $: problems = data.quiz.problems;
 
   let answers: string[] = [];
   let secondsLeft = data.quiz.timeLimitMinutes * 60;
@@ -57,7 +57,7 @@
   }
 </script>
 
-<main class={`quiz-page op-${form?.operation ?? data.quiz.operation}`}>
+<main class="quiz-page">
   {#if form?.finished}
     <section class="quiz-results" aria-labelledby="results-title">
       <div class="results-badge"><Icon name={form.passed ? "star" : "smile"} size={34} /></div>
@@ -70,7 +70,7 @@
       {#if form.finishedProgression}
         <p class="results-note">You finished {form.progressionName}. Every step is done!</p>
       {:else if form.leveledUp}
-        <p class="results-note">You moved up to step {(form.position ?? 0) + 1} of {form.totalSteps}.</p>
+        <p class="results-note">Next quiz: {form.nextQuizName}</p>
       {:else}
         <p class="results-note">You are still on step {form.position} of {form.totalSteps}. Have another go when you are ready.</p>
       {/if}
@@ -83,7 +83,6 @@
       bind:this={sheet}
       use:enhance={handIn}
     >
-      <input type="hidden" name="seed" value={data.seed} />
       <input type="hidden" name="secondsRemaining" value={Math.max(0, secondsLeft)} />
 
       <header class="quiz-head">
@@ -103,14 +102,14 @@
         {#each problems as problem, index}
           <div class="quiz-problem">
             <span class="quiz-num">{index + 1}</span>
-            <div class="quiz-stack"><b>{problem.top}</b><b>{problem.sym} {problem.bottom}</b><i></i></div>
+            <div class="quiz-stack"><b>{problem.top}</b><b>{symbolFor(problem.op)} {problem.bottom}</b><i></i></div>
             <input
               class="quiz-answer"
               name={`answer-${index}`}
               bind:value={answers[index]}
               inputmode="numeric"
               autocomplete="off"
-              aria-label={`Question ${index + 1}: ${problem.top} ${problem.sym} ${problem.bottom}`}
+              aria-label={`Question ${index + 1}: ${problem.top} ${symbolFor(problem.op)} ${problem.bottom}`}
             />
           </div>
         {/each}

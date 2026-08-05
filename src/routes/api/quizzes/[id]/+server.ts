@@ -1,4 +1,6 @@
 import { error, json } from "@sveltejs/kit";
+import { appearanceOf } from "$lib/server/appearance";
+import { readProblems } from "$lib/quizProblems";
 
 const pocketBaseUrl = "http://127.0.0.1:8090";
 
@@ -10,13 +12,13 @@ function auth(cookies: { get(name: string): string | undefined }) {
 
 export async function PATCH({ request, cookies, params }) {
   const body = await request.json();
-  if (!body.data?.title || !Array.isArray(body.data.factGroups) || !body.data.factGroups.length)
-    return json({ message: "Add a title and at least one fact group." }, { status: 400 });
+  if (!body.data?.title || !readProblems(body.data.problems).length)
+    return json({ message: "Add a title and at least one question." }, { status: 400 });
 
   const response = await fetch(`${pocketBaseUrl}/api/collections/quizzes/records/${params.id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: auth(cookies) },
-    body: JSON.stringify({ data: body.data }),
+    body: JSON.stringify({ data: { ...body.data, ...appearanceOf(body.data) } }),
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) return json({ message: result.message || "We could not save this quiz." }, { status: response.status });

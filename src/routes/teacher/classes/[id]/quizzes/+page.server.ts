@@ -2,9 +2,9 @@ import { error } from "@sveltejs/kit";
 
 const pocketBaseUrl = "http://127.0.0.1:8090";
 
-type Quiz = { id: string; class: string; data: unknown };
+type Quiz = { id: string; class: string; data: { title: string; icon?: string } };
 type Step = { quiz: string; progression: string; position: number };
-type Progression = { id: string; class: string; name: string; operation?: string };
+type Progression = { id: string; class: string; name: string; operation?: string; icon?: string; shade?: string };
 
 export async function load({ cookies, params }) {
   const headers = { Authorization: `Bearer ${cookies.get("teacher_session")}` };
@@ -40,23 +40,34 @@ export async function load({ cookies, params }) {
   };
   progressions.sort((a, b) => rankOf(a.operation) - rankOf(b.operation) || a.name.localeCompare(b.name));
 
-  // Group quizzes under their progression, ordered by step position. A quiz can
-  // appear in more than one progression; any quiz in none falls to the catch-all.
-  const quizById = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
-  const grouped = new Set<string>();
-  const progressionGroups = progressions
-    .map((progression) => {
-      const orderedQuizzes = steps
-        .filter((step) => step.progression === progression.id)
-        .sort((a, b) => a.position - b.position)
-        .map((step) => quizById.get(step.quiz))
-        .filter((quiz): quiz is Quiz => Boolean(quiz));
-      for (const quiz of orderedQuizzes) grouped.add(quiz.id);
-      return { id: progression.id, name: progression.name, operation: progression.operation ?? "", quizzes: orderedQuizzes };
-    })
-    .filter((group) => group.quizzes.length);
+  // Tag every quiz with the progressions it belongs to, and remember where it
+  // first shows up so the flat list can be ordered by that membership: quizzes
+  // sit under the progression that uses them, in step order, and quizzes in no
+  // progression fall to the end.
+  const quizIds = new Set(quizzes.map((quiz) => quiz.id));
+  const membership = new Map<string, { id: string; name: string; operation: string; icon: string; shade: string }[]>();
+  const rank = new Map<string, [number, number]>();
+  progressions.forEach((progression, progressionIndex) => {
+    const ordered = steps
+      .filter((step) => step.progression === progression.id && quizIds.has(step.quiz))
+      .sort((a, b) => a.position - b.position);
+    ordered.forEach((step, stepIndex) => {
+      const entry = { id: progression.id, name: progression.name, operation: progression.operation ?? "", icon: progression.icon ?? "", shade: progression.shade ?? "" };
+      const tags = membership.get(step.quiz);
+      if (tags) { if (!tags.some((tag) => tag.id === entry.id)) tags.push(entry); }
+      else { membership.set(step.quiz, [entry]); rank.set(step.quiz, [progressionIndex, stepIndex]); }
+    });
+  });
 
-  const ungrouped = quizzes.filter((quiz) => !grouped.has(quiz.id));
+  const ordered = quizzes
+    .map((quiz) => ({ ...quiz, progressions: membership.get(quiz.id) ?? [] }))
+    .sort((a, b) => {
+      const [aProgression, aStep] = rank.get(a.id) ?? [progressions.length, 0];
+      const [bProgression, bStep] = rank.get(b.id) ?? [progressions.length, 0];
+      if (aProgression !== bProgression) return aProgression - bProgression;
+      if (aStep !== bStep) return aStep - bStep;
+      return a.data.title.localeCompare(b.data.title, undefined, { sensitivity: "base" });
+    });
 
-  return { usage, ungrouped, progressionGroups };
+  return { usage, quizzes: ordered };
 }

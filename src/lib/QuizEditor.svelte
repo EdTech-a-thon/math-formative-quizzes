@@ -1,86 +1,133 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import QuizPreview from "$lib/QuizPreview.svelte";
+  import { beforeNavigate, goto } from "$app/navigation";
+  import AddQuestionsDialog from "$lib/AddQuestionsDialog.svelte";
   import Icon from "$lib/Icon.svelte";
-  import { buildProblems, groupCount, type FactGroup, type Operation } from "$lib/quizProblems";
+  import IconPicker from "$lib/IconPicker.svelte";
+  import { shadeClass, type ShadeId } from "$lib/shades";
+  import { readProblems, symbolFor, type Problem } from "$lib/quizProblems";
 
-  type QuizData = { title: string; operation: Operation; factGroups: FactGroup[]; questionCount: number; timeLimitMinutes: number; showScore: boolean; passMessage: string };
+  type QuizData = { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string; icon: string | null; shade: ShadeId | null };
 
   export let classId: string;
   export let quiz: { id: string; data: Partial<QuizData> } | null = null;
 
-  // `min`/`max` bound the fact family (the number you operate BY); `factorMin`/
-  // `factorMax` bound the second operand a new group ranges over by default.
-  const details: Record<Operation, { label: string; symbol: string; verb: string; min: number; max: number; factorMin: number; factorMax: number }> = {
-    multiplication: { label: "Multiplication", symbol: "×", verb: "Multiply by", min: 0, max: 12, factorMin: 1, factorMax: 12 },
-    division: { label: "Division", symbol: "÷", verb: "Divide by", min: 1, max: 12, factorMin: 1, factorMax: 12 },
-    addition: { label: "Addition", symbol: "+", verb: "Add", min: 0, max: 20, factorMin: 1, factorMax: 12 },
-    subtraction: { label: "Subtraction", symbol: "−", verb: "Subtract", min: 0, max: 9, factorMin: 1, factorMax: 12 },
-  };
-
   const editing = Boolean(quiz?.id);
-  // Remembers a family's range after it's deselected, keyed by operation+group,
-  // so an accidental deselect/reselect restores what the teacher had set.
-  const rememberedRanges: Record<string, { from: number; to: number }> = {};
-  const rangeKey = (op: Operation, group: number) => `${op}:${group}`;
   let title = quiz?.data?.title ?? "";
-  let operation: Operation = (quiz?.data?.operation as Operation) ?? "multiplication";
-  let groups: FactGroup[] = quiz?.data?.factGroups?.length
-    ? quiz.data.factGroups.map((item) => ({ group: item.group, from: item.from ?? 1, to: item.to ?? item.questions ?? 12 }))
-    : [defaultGroup("multiplication", 5)];
+  // The quiz is simply this list. Nothing generates it on the fly any more, so
+  // the order here is exactly the order a student sits.
+  let problems: Problem[] = readProblems(quiz?.data?.problems);
   let timeLimitMinutes = quiz?.data?.timeLimitMinutes ?? 2;
   let showScore = quiz?.data?.showScore ?? true;
   let passMessage = quiz?.data?.passMessage ?? "Great work! You finished this quiz.";
-  let seed: number | null = null; // Non-null once the teacher shuffles; drives preview + print order.
-  let hoverGroup: number | null = null; // Fact family the pointer is over.
-  let focusGroup: number | null = null; // Fact family whose range input is focused.
-  // Either hovering or editing a selected card lights up its questions; focus wins so the
-  // highlight stays while typing even if the pointer wanders off the card.
-  $: highlightGroup = focusGroup ?? hoverGroup;
+  let icon: string | null = quiz?.data?.icon ?? null;
+  let shade: ShadeId | null = quiz?.data?.shade ?? null;
+
+  let adding = false; // Add-questions dialog open.
+  let messageOpen = false; // Finished-message popover open.
   let error = "";
   let saving = false;
   let titleInvalid = false; // Set when a save is attempted with no name; clears as soon as one is typed.
   let titleInput: HTMLInputElement | undefined;
   $: if (title.trim()) titleInvalid = false;
 
-  $: total = groups.reduce((sum, item) => sum + groupCount(item), 0);
-  $: range = Array.from({ length: details[operation].max - details[operation].min + 1 }, (_, index) => details[operation].min + index);
-  // The full worksheet for printing — every question, in the order currently shown.
-  $: printProblems = buildProblems(operation, groups, { seed });
+  // A quiz has no operation of its own, so its colour is purely the shade the
+  // teacher picked, falling back to the house purple.
+  $: sheetClass = shadeClass(shade);
 
-  function defaultGroup(op: Operation, group: number): FactGroup {
-    const remembered = rememberedRanges[rangeKey(op, group)];
-    return { group, from: remembered?.from ?? details[op].factorMin, to: remembered?.to ?? details[op].factorMax };
-  }
-  function pickOperation(next: Operation) {
-    if (next === operation) return;
-    operation = next;
-    // Reset to a sensible starting fact for the new operation's range.
-    groups = [defaultGroup(next, details[next].min + (next === "multiplication" ? 5 : 2))];
-  }
-  function toggleGroup(group: number) {
-    const existing = groups.find((item) => item.group === group);
-    if (existing) {
-      rememberedRanges[rangeKey(operation, group)] = { from: existing.from, to: existing.to };
-      groups = groups.filter((item) => item.group !== group);
-      if (hoverGroup === group) hoverGroup = null;
+  const snapshot = (values: unknown[]) => JSON.stringify(values);
+  const savedState = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
+  $: dirty = !saving && snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]) !== savedState;
+  beforeNavigate((navigation) => {
+    if (!dirty) return;
+    // Closing the tab can only be warned about by the browser's own dialog,
+    // which cancelling a "leave" navigation asks for.
+    if (navigation.type === "leave") { navigation.cancel(); return; }
+    if (!confirm("You have unsaved changes to this quiz. Leave without saving?")) navigation.cancel();
+  });
+
+  // ---- Selecting questions: click one, shift-click a run, ctrl/cmd-click to pick out several ----
+  let selected = new Set<string>();
+  let anchor: string | null = null; // Where a shift-click measures its range from.
+
+  function pick(id: string, index: number, event: MouseEvent) {
+    if (event.shiftKey && anchor) {
+      const start = problems.findIndex((item) => item.id === anchor);
+      if (start >= 0) {
+        const [low, high] = start < index ? [start, index] : [index, start];
+        const run = problems.slice(low, high + 1).map((item) => item.id);
+        selected = new Set([...selected, ...run]);
+        return;
+      }
+    }
+    if (event.metaKey || event.ctrlKey) {
+      const next = new Set(selected);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      selected = next;
     } else {
-      groups = [...groups, defaultGroup(operation, group)].sort((a, b) => a.group - b.group);
-      hoverGroup = group; // Pointer is already over the card; light it up now without waiting for re-entry.
+      // Clicking the only selected tile again clears it, so a stray click undoes itself.
+      selected = selected.size === 1 && selected.has(id) ? new Set() : new Set([id]);
+    }
+    anchor = id;
+  }
+  function removeOne(id: string) {
+    problems = problems.filter((item) => item.id !== id);
+    if (selected.has(id)) { const next = new Set(selected); next.delete(id); selected = next; }
+  }
+  function removeSelected() {
+    problems = problems.filter((item) => !selected.has(item.id));
+    selected = new Set();
+    anchor = null;
+  }
+  function selectAll() {
+    selected = new Set(problems.map((item) => item.id));
+  }
+  // Escape clears a selection and Delete removes it, but never while a field has focus.
+  function onKeydown(event: KeyboardEvent) {
+    const tag = (event.target as HTMLElement | null)?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (event.key === "Escape") { selected = new Set(); return; }
+    if ((event.key === "Delete" || event.key === "Backspace") && selected.size) {
+      event.preventDefault();
+      removeSelected();
     }
   }
-  function changeRange(group: number, key: "from" | "to", value: number) {
-    const bounded = Math.max(0, Math.min(12, Number.isFinite(value) ? value : 0));
-    groups = groups.map((item) => (item.group === group ? { ...item, [key]: bounded } : item));
+
+  // ---- Dragging questions into order ----
+  let dragIndex: number | null = null;
+
+  function move(from: number, to: number) {
+    if (to < 0 || to >= problems.length || from === to) return;
+    const next = [...problems];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    problems = next;
+  }
+  function startDrag(index: number, event: DragEvent) {
+    dragIndex = index;
+    event.dataTransfer?.setData("text/plain", problems[index].id); // Firefox needs some payload to start a drag.
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+  }
+  // Reorder as the pointer passes over a neighbour, so the sheet previews the drop.
+  function dragOver(index: number, event: DragEvent) {
+    event.preventDefault();
+    if (dragIndex === null || dragIndex === index) return;
+    move(dragIndex, index);
+    dragIndex = index;
+  }
+  // Arrow keys move a question without a mouse; the grip keeps focus as it travels.
+  function nudge(index: number, event: KeyboardEvent) {
+    const delta = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : 0;
+    if (!delta) return;
+    event.preventDefault();
+    move(index, index + delta);
+  }
+
+  function addProblems(incoming: Problem[]) {
+    problems = [...problems, ...incoming];
   }
   function stepTime(delta: number) {
     timeLimitMinutes = Math.min(60, Math.max(1, timeLimitMinutes + delta));
-  }
-  function shuffleQuestions() {
-    seed = 1 + Math.floor(Math.random() * 2_000_000_000);
-  }
-  function resetOrder() {
-    seed = null; // Back to fact-card order.
   }
   function printWorksheet() {
     if (typeof window !== "undefined") window.print();
@@ -88,10 +135,10 @@
 
   async function save() {
     if (!title.trim()) { titleInvalid = true; error = ""; titleInput?.focus(); return; }
-    if (!groups.length) { error = "Choose at least one fact group to practice."; return; }
-    if (total > 150) { error = "Keep the quiz to 150 questions or fewer."; return; }
+    if (!problems.length) { error = "Add at least one question before saving."; return; }
+    if (problems.length > 150) { error = "Keep the quiz to 150 questions or fewer."; return; }
     saving = true; error = "";
-    const data = { title: title.trim(), operation, factGroups: groups, questionCount: total, timeLimitMinutes, showScore, passMessage: passMessage.trim() };
+    const data = { title: title.trim(), problems, timeLimitMinutes, showScore, passMessage: passMessage.trim(), icon, shade };
     try {
       const response = editing
         ? await fetch(`/api/quizzes/${quiz?.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data }) })
@@ -106,97 +153,129 @@
   }
 </script>
 
-<div class="editor-screen op-{operation}">
-  <header class="editor-bar">
+<svelte:window on:keydown={onKeydown} />
+
+<div class={`editor-screen ${sheetClass}`}>
+  <header class="editor-bar editor-bar-quiz">
     <a class="editor-back" href={`/teacher/classes/${classId}/quizzes`}><Icon name="arrow-left" size={14} /> Quizzes</a>
-    <span class="editor-crumb">{editing ? "Editing quiz" : "New quiz"}</span>
+
+    <div class="bar-title-row">
+      <IconPicker {shade} name={icon} fallback="clipboard-list" compact title="Quiz icon and colour" onChange={(next) => { icon = next.name; shade = next.shade; }} />
+      <input class="bar-title" class:invalid={titleInvalid} bind:this={titleInput} bind:value={title} placeholder="Untitled quiz" aria-label="Quiz name" aria-invalid={titleInvalid} spellcheck="false" />
+    </div>
+
+    <div class="bar-settings">
+      <div class="stepper stepper-compact" title="Time limit">
+        <button type="button" on:click={() => stepTime(-1)} aria-label="Less time"><Icon name="minus" size={15} /></button>
+        <b>{timeLimitMinutes}<small>min</small></b>
+        <button type="button" on:click={() => stepTime(1)} aria-label="More time"><Icon name="plus" size={15} /></button>
+      </div>
+
+      <button type="button" class="bar-toggle" class:on={showScore} role="switch" aria-checked={showScore} on:click={() => (showScore = !showScore)}>
+        <Icon name={showScore ? "check" : "x"} size={14} /> {showScore ? "Score shown" : "Score hidden"}
+      </button>
+
+      <div class="bar-popover-wrap">
+        <button type="button" class="bar-toggle" aria-expanded={messageOpen} aria-haspopup="dialog" on:click|stopPropagation={() => (messageOpen = !messageOpen)}>
+          <Icon name="smile" size={14} /> Finished message
+        </button>
+        {#if messageOpen}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div class="icon-picker-backdrop" role="presentation" on:click={() => (messageOpen = false)}></div>
+          <div class="bar-popover" role="dialog" aria-label="Finished message">
+            <p class="doc-note">The cheer students see when they finish this quiz.</p>
+            <input class="doc-inline-input" bind:value={passMessage} placeholder="Great work! You finished this quiz." maxlength="120" />
+          </div>
+        {/if}
+      </div>
+    </div>
+
     <div class="editor-bar-actions">
-      <button class="editor-ghost" type="button" on:click={shuffleQuestions}><Icon name="shuffle" size={15} /> Shuffle</button>
-      {#if seed != null}<button class="editor-ghost" type="button" on:click={resetOrder}><Icon name="rotate-ccw" size={15} /> Reset order</button>{/if}
       <button class="editor-ghost" type="button" on:click={printWorksheet}><Icon name="printer" size={15} /> Print</button>
       <a class="editor-cancel" href={`/teacher/classes/${classId}/quizzes`}>Cancel</a>
       <button class="editor-save" type="button" disabled={saving} on:click={save}>{saving ? "Saving…" : editing ? "Save changes" : "Save quiz"}</button>
     </div>
   </header>
 
-  <div class="editor-body">
+  <div class="editor-body editor-body-single">
     <div class="editor-canvas">
       <div class="doc-sheet">
-        <p class="doc-eyebrow">{details[operation].label} quiz</p>
-        <input class="doc-title" class:invalid={titleInvalid} bind:this={titleInput} bind:value={title} placeholder="Untitled quiz" aria-label="Quiz name" aria-invalid={titleInvalid} spellcheck="false" />
-        {#if titleInvalid}<p class="doc-title-error" role="alert">Give your quiz a name before saving.</p>{/if}
-        <p class="doc-summary">{total} question{total === 1 ? "" : "s"} · about {Math.max(1, Math.round(timeLimitMinutes))} min · {showScore ? "score shown" : "score hidden"} at the end{#if seed != null} · shuffled{/if}</p>
+        <div class="sheet-head">
+          <p class="doc-eyebrow">Quiz</p>
+          <p class="doc-summary">{problems.length} question{problems.length === 1 ? "" : "s"} · {timeLimitMinutes} min · {showScore ? "score shown" : "score hidden"} at the end</p>
+        </div>
+        {#if titleInvalid}<p class="doc-title-error" role="alert">Give your quiz a name up in the bar before saving.</p>{/if}
 
-        <section class="doc-block">
-          <h2 class="doc-heading">What are they practicing?</h2>
-          <div class="op-pills">
-            {#each Object.entries(details) as [id, item]}
-              <button type="button" class="op-pill op-{id}" class:on={operation === id} on:click={() => pickOperation(id as Operation)}><i>{item.symbol}</i> {item.label}</button>
-            {/each}
+        {#if selected.size}
+          <div class="bulk-bar" role="region" aria-label="Selected questions">
+            <span class="bulk-count">{selected.size} selected</span>
+            <button type="button" class="bulk-assign" on:click={removeSelected}>Delete</button>
+            <button type="button" class="bulk-clear" on:click={selectAll}>Select all</button>
+            <button type="button" class="bulk-clear" on:click={() => (selected = new Set())}>Clear</button>
           </div>
-        </section>
+        {/if}
 
-        <section class="doc-block">
-          <h2 class="doc-heading">{details[operation].verb} —<span class="doc-hint">tap a fact family, then set which facts it covers · hover a card to see its questions</span></h2>
-          <div class="fact-grid">
-            {#each range as group}
-              {@const selected = groups.find((item) => item.group === group)}
-              <div
-                class="fact-chip"
-                class:on={selected}
-                class:lit={highlightGroup === group && selected}
-                role="group"
-                on:pointerenter={() => { if (selected) hoverGroup = group; }}
-                on:pointerleave={() => { if (hoverGroup === group) hoverGroup = null; }}
-                on:focusin={(event) => { if (selected && (event.target as HTMLElement).tagName === "INPUT") focusGroup = group; }}
-                on:focusout={(event) => { if ((event.target as HTMLElement).tagName === "INPUT" && focusGroup === group) focusGroup = null; }}
+        {#if problems.length}
+          <p class="sheet-hint">Drag a question to move it · click to select, shift-click for a run</p>
+          <ol class="sheet-grid">
+            {#each problems as problem, index (problem.id)}
+              <li
+                class="sheet-tile"
+                class:selected={selected.has(problem.id)}
+                class:dragging={dragIndex === index}
+                draggable="true"
+                on:dragstart={(event) => startDrag(index, event)}
+                on:dragover={(event) => dragOver(index, event)}
+                on:drop|preventDefault={() => (dragIndex = null)}
+                on:dragend={() => (dragIndex = null)}
               >
-                <button type="button" class="fact-toggle" on:click={() => toggleGroup(group)} aria-pressed={Boolean(selected)}>{group}</button>
-                {#if selected}
-                  <div class="fact-range">
-                    <span class="fact-range-op">{details[operation].symbol}</span>
-                    <input class="fact-range-input" type="number" min="0" max="12" value={selected.from} aria-label={`Lowest fact for ${group}`} on:input={(event) => changeRange(group, "from", Number(event.currentTarget.value))} />
-                    <span class="fact-range-dash">–</span>
-                    <input class="fact-range-input" type="number" min="0" max="12" value={selected.to} aria-label={`Highest fact for ${group}`} on:input={(event) => changeRange(group, "to", Number(event.currentTarget.value))} />
-                  </div>
-                {/if}
-              </div>
+                <button type="button" class="sheet-pick" aria-pressed={selected.has(problem.id)} on:click={(event) => pick(problem.id, index, event)}>
+                  <span class="wp-num">{index + 1}</span>
+                  <span class="wp-stack">
+                    <b>{problem.top}</b>
+                    <b>{symbolFor(problem.op)} {problem.bottom}</b>
+                    <i></i>
+                    <span class="wp-blank"></span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="sheet-grip"
+                  aria-label={`Move ${problem.top} ${symbolFor(problem.op)} ${problem.bottom} — question ${index + 1} of ${problems.length}. Use the arrow keys.`}
+                  on:keydown={(event) => nudge(index, event)}
+                ><Icon name="grip-vertical" size={14} /></button>
+                <button type="button" class="sheet-remove" aria-label={`Remove question ${index + 1}`} on:click={() => removeOne(problem.id)}><Icon name="x" size={12} /></button>
+              </li>
             {/each}
-          </div>
-        </section>
-
-        <section class="doc-block doc-inline-rows">
-          <div class="doc-row">
-            <div><h2 class="doc-heading">Time limit</h2><p class="doc-note">How long learners have to finish.</p></div>
-            <div class="stepper"><button type="button" on:click={() => stepTime(-1)} aria-label="Less time"><Icon name="minus" size={17} /></button><b>{timeLimitMinutes}<small>min</small></b><button type="button" on:click={() => stepTime(1)} aria-label="More time"><Icon name="plus" size={17} /></button></div>
-          </div>
-          <div class="doc-row">
-            <div><h2 class="doc-heading">Show their score</h2><p class="doc-note">Reveal the number correct on the finished screen.</p></div>
-            <button type="button" class="switch" class:on={showScore} role="switch" aria-checked={showScore} aria-label="Show their score" on:click={() => (showScore = !showScore)}><span></span></button>
-          </div>
-          <div class="doc-row doc-row-stacked">
-            <div><h2 class="doc-heading">Finished message</h2><p class="doc-note">The cheer students see when they complete the quiz.</p></div>
-            <input class="doc-inline-input" bind:value={passMessage} placeholder="Great work! You finished this quiz." maxlength="120" />
-          </div>
-        </section>
+            <li class="sheet-add">
+              <button type="button" on:click={() => (adding = true)}><Icon name="plus" size={16} /> Add questions</button>
+            </li>
+          </ol>
+        {:else}
+          <button type="button" class="sheet-empty" on:click={() => (adding = true)}>
+            <Icon name="plus" size={22} />
+            <strong>Add your first question</strong>
+            <small>Build a set of math facts, or write one of your own.</small>
+          </button>
+        {/if}
 
         {#if error}<p class="doc-error">{error}</p>{/if}
       </div>
     </div>
-
-    <div class="editor-aside">
-      <QuizPreview {title} {operation} factGroups={groups} questionCount={total} {timeLimitMinutes} {showScore} {seed} {passMessage} {highlightGroup} />
-    </div>
   </div>
+
+  {#if adding}
+    <AddQuestionsDialog onAdd={addProblems} onClose={() => (adding = false)} />
+  {/if}
 
   <div class="print-sheet">
     <div class="print-head">
       <h1>{title.trim() || "Untitled quiz"}</h1>
-      <div class="print-meta"><span>Name: ____________________</span><span>Date: ____________</span><span>{Math.max(1, Math.round(timeLimitMinutes))} min · {total} questions</span></div>
+      <div class="print-meta"><span>Name: ____________________</span><span>Date: ____________</span><span>{timeLimitMinutes} min · {problems.length} questions</span></div>
     </div>
     <ol class="print-grid">
-      {#each printProblems as problem, index}
-        <li class="print-problem"><span class="pp-num">{index + 1}.</span><div class="pp-stack"><b>{problem.top}</b><b>{problem.sym} {problem.bottom}</b><i></i><span class="pp-answer"></span></div></li>
+      {#each problems as problem, index (problem.id)}
+        <li class="print-problem"><span class="pp-num">{index + 1}.</span><div class="pp-stack"><b>{problem.top}</b><b>{symbolFor(problem.op)} {problem.bottom}</b><i></i><span class="pp-answer"></span></div></li>
       {/each}
     </ol>
   </div>

@@ -1,17 +1,19 @@
 <script lang="ts">
   import Icon from "$lib/Icon.svelte";
+  import IconGlyph from "$lib/IconGlyph.svelte";
+  import { shadeClass, type ShadeId } from "$lib/shades";
 
-  type Step = { id: string; title: string; operation: string; questionCount: number };
+  type Step = { id: string; title: string; questionCount: number };
 
   export let name = "";
   export let description = "";
   export let passPercentage = 80;
   export let steps: Step[] = [];
+  export let iconName: string | null = null;
+  export let shade: ShadeId | null = null;
   // Called with the full list of quiz ids in their new order.
   export let onReorder: (ids: string[]) => void = () => {};
   export let onRemove: (id: string) => void = () => {};
-
-  const symbols: Record<string, string> = { multiplication: "×", division: "÷", addition: "+", subtraction: "−" };
 
   let dragIndex: number | null = null; // Which step is being dragged right now.
 
@@ -43,14 +45,14 @@
   }
 </script>
 
-<aside class="qp path-preview" aria-label="Progression preview">
+<aside class={`qp path-preview ${shadeClass(shade)}`} aria-label="Progression preview">
   <div class="qp-frame-label"><span><Icon name="circle-dot" size={12} /></span> Live path preview</div>
 
   <div class="qp-phone">
     <div class="qp-notch"></div>
     <div class="qp-screen">
       <header class="path-head">
-        <strong>{name.trim() || "Untitled path"}</strong>
+        <strong class="path-title"><span class="path-title-icon"><IconGlyph name={iconName} fallback="route" size={16} /></span>{name.trim() || "Untitled path"}</strong>
         {#if description.trim()}<p>{description}</p>{/if}
         <span class="path-badge">{passPercentage}% to pass each step</span>
       </header>
@@ -59,7 +61,7 @@
         <ol class="path-list">
           {#each steps as step, index (step.id)}
             <li
-              class="path-step op-{step.operation}"
+              class="path-step"
               class:dragging={dragIndex === index}
               draggable="true"
               on:dragstart={(event) => startDrag(index, event)}
@@ -70,7 +72,7 @@
               <span class="path-num">{index + 1}</span>
               <div class="path-info">
                 <strong>{step.title}</strong>
-                <small>{symbols[step.operation] ?? ""} {step.operation} · {step.questionCount} questions</small>
+                <small>{step.questionCount} questions</small>
               </div>
               <span class="path-state">
                 {#if index === 0}<em>Open</em>{:else}<Icon name="lock" size={13} />{/if}

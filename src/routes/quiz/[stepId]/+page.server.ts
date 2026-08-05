@@ -1,10 +1,10 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { answerFor, buildProblems, type Operation, type StoredFactGroup } from "$lib/quizProblems";
+import { answerFor, readProblems, type Problem } from "$lib/quizProblems";
 
 const pocketBaseUrl = "http://127.0.0.1:8090";
 
 type QuizStep = {
-  quiz: { title: string; operation: Operation; factGroups: StoredFactGroup[]; questionCount: number; timeLimitMinutes: number; showScore: boolean; passMessage: string };
+  quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string };
   progressionName: string;
   position: number;
   totalSteps: number;
@@ -25,7 +25,7 @@ async function pocketBasePost(path: string, payload: unknown) {
 // Handing in a passing quiz moves the student on, so the step they just sat is
 // no longer open to them. This stands in while their results are on screen.
 const finishedSheet = {
-  quiz: { title: "", operation: "multiplication" as Operation, factGroups: [] as StoredFactGroup[], questionCount: 0, timeLimitMinutes: 0, showScore: true, passMessage: "" },
+  quiz: { title: "", problems: [] as Problem[], timeLimitMinutes: 0, showScore: true, passMessage: "" },
   progressionName: "",
   position: 0,
   totalSteps: 0,
@@ -40,13 +40,13 @@ export async function load({ cookies, params, request }) {
   const { ok, body } = await pocketBasePost("/api/fact-friends/quiz-step", { studentId, stepId: params.stepId });
   // Not their quiz, or they have already moved past it.
   if (!ok) {
-    if (request.method === "POST") return { ...finishedSheet, seed: 0 };
+    if (request.method === "POST") return finishedSheet;
     redirect(303, "/home");
   }
 
-  // One shuffle per sitting. The same seed rebuilds the same worksheet when the
-  // answers come back, so marking lines up with what the student saw.
-  return { ...(body as QuizStep), seed: Math.floor(Math.random() * 1_000_000_000) };
+  const step = body as QuizStep;
+  // Students sit the questions in the order the teacher arranged them.
+  return { ...step, quiz: { ...step.quiz, problems: readProblems(step.quiz.problems) } };
 }
 
 export const actions = {
@@ -55,23 +55,23 @@ export const actions = {
     if (!studentId) redirect(303, "/");
 
     const data = await request.formData();
-    const seed = Number(data.get("seed") ?? 0);
     const secondsRemaining = Math.max(0, Number(data.get("secondsRemaining") ?? 0));
 
-    // Rebuild the worksheet from the teacher's quiz rather than trusting the
+    // Read the questions back from the teacher's quiz rather than trusting the
     // questions or the marking to the browser.
     const reopened = await pocketBasePost("/api/fact-friends/quiz-step", { studentId, stepId: params.stepId });
     if (!reopened.ok) redirect(303, "/home");
     const step = reopened.body as QuizStep;
-    const operation = step.quiz.operation;
-    const problems = buildProblems(operation, step.quiz.factGroups, { cap: step.quiz.questionCount || undefined, seed });
+    const problems = readProblems(step.quiz.problems);
 
     let correct = 0;
+    // Each response keeps its own operator, so this report still reads correctly
+    // even if the quiz is edited afterwards.
     const responses = problems.map((problem, index) => {
       const typed = String(data.get(`answer-${index}`) ?? "").trim();
-      const right = typed !== "" && Number(typed) === answerFor(problem, operation);
+      const right = typed !== "" && Number(typed) === answerFor(problem);
       if (right) correct += 1;
-      return { top: problem.top, bottom: problem.bottom, answer: typed, correct: right };
+      return { top: problem.top, bottom: problem.bottom, op: problem.op, answer: typed, correct: right };
     });
 
     const recorded = await pocketBasePost("/api/fact-friends/record-attempt", {
@@ -88,10 +88,9 @@ export const actions = {
     // passed can no longer open the step they just finished.
     return {
       finished: true,
-      ...(recorded.body as { correct: number; total: number; percentage: number; passed: boolean; leveledUp: boolean; finishedProgression: boolean }),
+      ...(recorded.body as { correct: number; total: number; percentage: number; passed: boolean; leveledUp: boolean; finishedProgression: boolean; nextQuizName: string }),
       showScore: step.quiz.showScore,
       passMessage: step.quiz.passMessage,
-      operation,
       progressionName: step.progressionName,
       position: step.position,
       totalSteps: step.totalSteps,

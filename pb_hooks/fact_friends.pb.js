@@ -26,13 +26,23 @@ onRecordAfterCreateSuccess((e) => {
 
       let position = 1;
       for (let group = ladder.from; group <= ladder.to; group++) {
+        // A quiz is just its list of questions, so the ladder writes them out.
+        // Division and subtraction put the larger number on top so every answer
+        // stays whole and non-negative.
+        const problems = [];
+        for (let other = 1; other <= 12; other++) {
+          const id = "q" + group + "x" + other + $security.randomString(6);
+          if (ladder.op === "multiplication") problems.push({ id: id, op: ladder.op, top: group, bottom: other });
+          else if (ladder.op === "division") problems.push({ id: id, op: ladder.op, top: group * other, bottom: group });
+          else if (ladder.op === "addition") problems.push({ id: id, op: ladder.op, top: group, bottom: other });
+          else problems.push({ id: id, op: ladder.op, top: group + other, bottom: group });
+        }
+
         const quiz = new Record(quizzes);
         quiz.set("class", classId);
         quiz.set("data", {
           title: ladder.verb + " " + group,
-          operation: ladder.op,
-          factGroups: [{ group: group, from: 1, to: 12 }],
-          questionCount: 12,
+          problems: problems,
           timeLimitMinutes: 2,
           showScore: true,
           passMessage: "Great work! You finished this quiz.",
@@ -144,7 +154,8 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
     className = e.app.findRecordById("classes", student.getString("class")).getString("name");
   } catch (_) {}
 
-  // Read a quiz's title and shape out of its JSON field.
+  // Read a quiz's title and shape out of its JSON field. A quiz has no operation
+  // of its own, so it is identified by the icon and colour the teacher picked.
   function quizDetails(quizId) {
     try {
       const quiz = e.app.findRecordById("quizzes", quizId);
@@ -152,8 +163,9 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
       return {
         quizId: quiz.id,
         title: details.title || "Quiz",
-        operation: details.operation || "",
-        questionCount: details.questionCount || 0,
+        icon: details.icon || "",
+        shade: details.shade || "",
+        questionCount: (details.problems || []).length,
         timeLimitMinutes: details.timeLimitMinutes || 0,
       };
     } catch (_) {
@@ -201,9 +213,11 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
       totalSteps: steps.length,
       quizId: quiz.quizId,
       title: quiz.title,
-      operation: quiz.operation || progression.getString("operation"),
+      icon: quiz.icon,
+      shade: quiz.shade,
       questionCount: quiz.questionCount,
       timeLimitMinutes: quiz.timeLimitMinutes,
+      released: enrollment.getBool("released"),
     });
   }
 
@@ -219,7 +233,8 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
     history.push({
       id: attempt.id,
       title: quiz ? quiz.title : "Quiz",
-      operation: quiz ? quiz.operation : "",
+      icon: quiz ? quiz.icon : "",
+      shade: quiz ? quiz.shade : "",
       correct: attempt.getInt("correct"),
       total: attempt.getInt("total"),
       passed: attempt.getBool("passed"),
@@ -269,9 +284,9 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
     allowIncompleteAnswers: allowIncompleteAnswers,
     quiz: {
       title: details.title || "Quiz",
-      operation: details.operation || "multiplication",
-      factGroups: details.factGroups || [],
-      questionCount: details.questionCount || 0,
+      // The stored questions, in the order the teacher arranged them. Marking
+      // reads this same list back, so it is the one source of truth.
+      problems: details.problems || [],
       timeLimitMinutes: details.timeLimitMinutes || 0,
       showScore: details.showScore !== false,
       passMessage: details.passMessage || "Great work! You finished this quiz.",
@@ -294,20 +309,29 @@ routerAdd("POST", "/api/fact-friends/record-attempt", (e) => {
   const percentage = total ? Math.round((correct / total) * 100) : 0;
   const passed = total > 0 && percentage >= found.progression.getInt("passPercentage");
 
-  // Passing moves them along the ladder; the last step finishes it.
+  // Every release allows exactly one attempt. Passing moves them along the
+  // ladder; falling short leaves them on this step for their next release.
+  found.enrollment.set("released", false);
   let leveledUp = false;
   let finishedProgression = false;
+  let nextQuizName = "";
   if (passed) {
     const nextStep = found.steps[found.position];
     if (nextStep) {
       found.enrollment.set("currentStep", nextStep.id);
       leveledUp = true;
+      try {
+        const nextQuiz = e.app.findRecordById("quizzes", nextStep.getString("quiz"));
+        nextQuizName = JSON.parse(nextQuiz.getString("data") || "{}").title || "Next quiz";
+      } catch (_) {
+        nextQuizName = "Next quiz";
+      }
     } else {
       found.enrollment.set("status", "completed");
       finishedProgression = true;
     }
-    e.app.save(found.enrollment);
   }
+  e.app.save(found.enrollment);
 
   const attempt = new Record(e.app.findCollectionByNameOrId("quiz_attempts"));
   attempt.set("quiz", found.step.getString("quiz"));
@@ -323,5 +347,5 @@ routerAdd("POST", "/api/fact-friends/record-attempt", (e) => {
   attempt.set("progressionStep", found.step.id);
   e.app.save(attempt);
 
-  return e.json(200, { correct: correct, total: total, percentage: percentage, passed: passed, leveledUp: leveledUp, finishedProgression: finishedProgression });
+  return e.json(200, { correct: correct, total: total, percentage: percentage, passed: passed, leveledUp: leveledUp, finishedProgression: finishedProgression, nextQuizName: nextQuizName });
 });
