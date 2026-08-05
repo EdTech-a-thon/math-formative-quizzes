@@ -46,7 +46,11 @@ export async function load({ cookies, params, request }) {
 
   const step = body as QuizStep;
   // Students sit the questions in the order the teacher arranged them.
-  return { ...step, quiz: { ...step.quiz, problems: readProblems(step.quiz.problems) } };
+  return {
+    ...step,
+    timerStorageKey: `quiz-deadline:${studentId}:${params.stepId}`,
+    quiz: { ...step.quiz, problems: readProblems(step.quiz.problems) },
+  };
 }
 
 export const actions = {

@@ -10,6 +10,7 @@
     position: number;
     totalSteps: number;
     allowIncompleteAnswers: boolean;
+    timerStorageKey: string;
   };
   export let form: { finished?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; error?: string } | null = null;
 
@@ -21,6 +22,7 @@
   let handingIn = false;
   let sheet: HTMLFormElement;
   let ticker = 0;
+  let deadline = 0;
 
   $: answered = problems.filter((_, index) => (answers[index] ?? "").trim() !== "").length;
   $: canHandIn = data.allowIncompleteAnswers || answered === problems.length;
@@ -29,8 +31,21 @@
   // Time is up: hand the quiz in exactly as it stands.
   onMount(() => {
     if (!secondsLeft) return;
+
+    const savedDeadline = Number(window.localStorage.getItem(data.timerStorageKey));
+    deadline = Number.isFinite(savedDeadline) && savedDeadline > 0
+      ? savedDeadline
+      : Date.now() + secondsLeft * 1000;
+    window.localStorage.setItem(data.timerStorageKey, String(deadline));
+
+    updateClock();
+    if (!secondsLeft) {
+      handingIn = true;
+      sheet.requestSubmit();
+      return;
+    }
     ticker = window.setInterval(() => {
-      secondsLeft -= 1;
+      updateClock();
       if (secondsLeft <= 0) {
         stopClock();
         if (!handingIn) sheet.requestSubmit();
@@ -38,6 +53,9 @@
     }, 1000);
   });
   onDestroy(stopClock);
+  function updateClock() {
+    secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  }
   function stopClock() {
     if (ticker) window.clearInterval(ticker);
     ticker = 0;
@@ -51,7 +69,10 @@
     stopClock();
     return async ({ result }: { result: { type: string; data?: Record<string, unknown> } }) => {
       handingIn = false;
-      if (result.type === "success" || result.type === "failure") form = result.data as typeof form;
+      if (result.type === "success" || result.type === "failure") {
+        form = result.data as typeof form;
+        if (form?.finished) window.localStorage.removeItem(data.timerStorageKey);
+      }
       else await applyAction(result as Parameters<typeof applyAction>[0]);
     };
   }
