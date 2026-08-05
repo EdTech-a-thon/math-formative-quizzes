@@ -1342,8 +1342,9 @@ button span {
 .modal-close:hover { transform: none; background: #f4f0f8; color: #4c465c; }
 
 /* ---- Import dialog: drop, choose or paste, then prune before committing ---- */
-.import-dialog { position: fixed; z-index: 41; top: 50%; left: 50%; display: flex; flex-direction: column; width: min(560px, calc(100vw - 32px)); max-height: min(86vh, 780px); transform: translate(-50%, -50%); border: 1px solid #e6dfed; border-radius: 18px; background: #fffdfa; box-shadow: 0 26px 64px rgba(44, 35, 62, .28); }
+.import-dialog { position: fixed; z-index: 41; overflow: hidden; top: 50%; left: 50%; display: flex; flex-direction: column; width: min(560px, calc(100vw - 32px)); max-height: min(86vh, 780px); transform: translate(-50%, -50%); border: 1px solid #e6dfed; border-radius: 18px; background: #fffdfa; box-shadow: 0 26px 64px rgba(44, 35, 62, .28); }
 .import-head { display: flex; align-items: center; gap: 10px; padding: 16px 16px 12px 20px; border-bottom: 1px solid #efeaf2; }
+.import-head .modal-close { margin-left: auto; }
 .import-head h2 { margin: 0; font-family: Fraunces, Georgia, serif; font-size: 1.2rem; font-weight: 600; }
 .import-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 20px; }
 
@@ -1353,8 +1354,14 @@ button span {
 .import-drop small { color: #a29aae; font-size: .78rem; }
 .import-drop .ghost-btn { margin-top: 2px; }
 
-.import-list { margin-top: 22px; padding-top: 18px; border-top: 1px solid #efeaf2; }
-.import-list-head { margin: 0 0 10px; color: #8a8399; font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.import-list { margin-top: 0; }
+.import-list-head { margin: 0; color: #8a8399; font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.import-list-head-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.import-add-more { margin-left: auto; padding: 6px 11px; font-size: .76rem; }
+/* Shown only once the drop zone has made way for the list, so a drag still has
+   somewhere obvious to land. It must not swallow the drop itself. */
+.import-dragover { position: absolute; z-index: 2; inset: 0; display: grid; place-items: center; border: 2px dashed #7456e8; border-radius: 18px; background: rgba(244, 240, 255, .93); color: #4d399b; pointer-events: none; }
+.import-dragover strong { font-family: Fraunces, Georgia, serif; font-size: 1.15rem; }
 .import-item { margin-bottom: 10px; padding: 12px 13px; border: 1px solid #ece6f0; border-radius: 13px; background: #fff; }
 .import-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
 .import-item-head strong { color: #26233a; font-size: .92rem; }
@@ -1371,6 +1378,7 @@ button span {
 .import-path-check { margin-top: 8px; color: #4d399b; font-weight: 700; }
 .import-quizzes { margin-top: 4px; padding-left: 10px; border-left: 2px solid #f1edf7; }
 
-.import-actions { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-top: 1px solid #efeaf2; }
-.import-summary { margin: 0 auto 0 0; color: #77728c; font-size: .82rem; font-weight: 700; }
+.import-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 20px; border-top: 1px solid #efeaf2; }
+.import-summary { flex: 1 1 auto; min-width: 0; margin: 0; margin-right: auto; color: #77728c; font-size: .82rem; font-weight: 700; }
+.import-actions .editor-ghost, .import-actions .editor-save { flex: 0 0 auto; }
 .import-actions .editor-save:disabled { cursor: not-allowed; opacity: .5; }

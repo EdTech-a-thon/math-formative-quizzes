@@ -134,9 +134,16 @@
     read(body, "pasted text");
   }
 
+  let dialogEl: HTMLElement;
+
   function onDrop(event: DragEvent) {
     dragging = false;
     addFiles(event.dataTransfer?.files ?? null);
+  }
+  // Moving between children fires dragleave, so only a pointer that has actually
+  // left the dialog counts as leaving.
+  function onDragLeave(event: DragEvent) {
+    if (!dialogEl?.contains(event.relatedTarget as Node | null)) dragging = false;
   }
   function removeStaged(id: number) {
     staged = staged.filter((item) => item.id !== id);
@@ -193,34 +200,49 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="modal-backdrop" role="presentation" on:click={() => !importing && onClose()}></div>
-<div class="import-dialog" role="dialog" aria-modal="true" aria-label="Import quizzes">
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<div
+  class="import-dialog"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Import quizzes"
+  tabindex="-1"
+  bind:this={dialogEl}
+  on:dragover|preventDefault={() => (dragging = true)}
+  on:dragleave={onDragLeave}
+  on:drop|preventDefault={onDrop}
+>
+  {#if dragging && staged.length}
+    <div class="import-dragover"><strong>Drop to add</strong></div>
+  {/if}
   <header class="import-head">
     <h2>Import</h2>
     <button type="button" class="modal-close" aria-label="Close" on:click={onClose}><Icon name="x" size={16} /></button>
   </header>
 
   <div class="import-body">
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div
-      class="import-drop"
-      class:on={dragging}
-      role="presentation"
-      on:dragover|preventDefault={() => (dragging = true)}
-      on:dragleave={() => (dragging = false)}
-      on:drop|preventDefault={onDrop}
-    >
-      <Icon name="download" size={22} />
-      <strong>Drop a PDF here</strong>
-      <button type="button" class="ghost-btn" disabled={reading} on:click={() => fileInput.click()}>
-        {reading ? "Reading…" : "Choose a file"}
-      </button>
-      <small>Drop several at once, or paste a copied quiz.</small>
-      <input class="sr-only" type="file" multiple accept="application/pdf,.pdf,application/json,.json" bind:this={fileInput} on:change={() => addFiles(fileInput.files)} />
-    </div>
+    <!-- The invitation is only worth the room before anything has been added. -->
+    {#if !staged.length}
+      <div class="import-drop" class:on={dragging}>
+        <Icon name="download" size={22} />
+        <strong>Drop a PDF here</strong>
+        <button type="button" class="ghost-btn" disabled={reading} on:click={() => fileInput.click()}>
+          {reading ? "Reading…" : "Choose a file"}
+        </button>
+        <small>Drop several at once, or paste a copied quiz.</small>
+      </div>
+    {/if}
+
+    <input class="sr-only" type="file" multiple accept="application/pdf,.pdf,application/json,.json" bind:this={fileInput} on:change={() => addFiles(fileInput.files)} />
 
     {#if staged.length}
       <div class="import-list">
-        <p class="import-list-head">Ready to import</p>
+        <div class="import-list-head-row">
+          <p class="import-list-head">Ready to import</p>
+          <button type="button" class="ghost-btn import-add-more" disabled={reading} on:click={() => fileInput.click()}>
+            <Icon name="plus" size={13} /> {reading ? "Reading…" : "Add another"}
+          </button>
+        </div>
         {#each staged as item (item.id)}
           <div class="import-item">
             <div class="import-item-head">
