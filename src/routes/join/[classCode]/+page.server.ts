@@ -14,10 +14,13 @@ async function pocketBasePost(path: string, payload: unknown) {
 
 // The name-submission screen. Re-check the code on the server so a stale or bad
 // link bounces back to the code entry instead of showing an empty screen.
-export async function load({ params }) {
+export async function load({ params, cookies }) {
   const code = String(params.classCode).replace(/\D/g, "").slice(0, 6);
-  const { ok, body } = await pocketBasePost("/api/fact-friends/class-code", { classCode: code });
+  const studentId = cookies.get("student_session") ?? "";
+  const { ok, body } = await pocketBasePost("/api/fact-friends/class-code", { classCode: code, studentId });
   if (!ok || !body.classId) redirect(303, `/?classCode=${encodeURIComponent(code)}`);
+  // Already signed in to this class on this device — no need to ask again.
+  if (body.studentInClass) redirect(303, "/home");
   return { classCode: code, className: body.className as string };
 }
 

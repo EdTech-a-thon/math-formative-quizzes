@@ -6,12 +6,13 @@ function sanitize(code: unknown) {
   return String(code ?? "").replace(/\D/g, "").slice(0, 6);
 }
 
-// Validate a class code against PocketBase's public endpoint.
-async function checkClassCode(code: string) {
+// Validate a class code against PocketBase's public endpoint. Passing the
+// device's signed-in student also reports whether they are in that class.
+async function checkClassCode(code: string, studentId = "") {
   const response = await globalThis.fetch(`${pocketBaseUrl}/api/fact-friends/class-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ classCode: code }),
+    body: JSON.stringify({ classCode: code, studentId }),
   });
   const body = await response.json().catch(() => ({}));
   return { ok: response.ok, body };
@@ -22,12 +23,15 @@ async function checkClassCode(code: string) {
 export async function load({ url, cookies }) {
   const code = sanitize(url.searchParams.get("classCode"));
   // A student who is still signed in on this device goes straight to their own
-  // home screen. A shared class link still leads to the name screen, so someone
-  // else can sign in on the same device.
-  if (!code && cookies.get("student_session")) redirect(303, "/home");
+  // home screen.
+  const studentId = cookies.get("student_session") ?? "";
+  if (!code && studentId) redirect(303, "/home");
   if (!code) return { prefill: "" };
   if (!/^\d{4,6}$/.test(code)) return { prefill: code, error: "Enter the class code your teacher shared." };
-  const { ok, body } = await checkClassCode(code);
+  const { ok, body } = await checkClassCode(code, studentId);
+  // A class link opened by someone already signed in to that class skips the
+  // name screen. Anyone else — new device, or a different class — still gets it.
+  if (ok && body.classId && body.studentInClass) redirect(303, "/home");
   if (ok && body.classId) redirect(303, `/join/${code}`);
   return { prefill: code, error: body.message || "That class code was not found. Check with your teacher and try again." };
 }
