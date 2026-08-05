@@ -1,10 +1,10 @@
 <script lang="ts">
   import { beforeNavigate, goto } from "$app/navigation";
-  import AddQuestionsDialog from "$lib/AddQuestionsDialog.svelte";
+  import FactFamilyPicker from "$lib/FactFamilyPicker.svelte";
   import Icon from "$lib/Icon.svelte";
   import IconPicker from "$lib/IconPicker.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
-  import { readProblems, symbolFor, type Problem } from "$lib/quizProblems";
+  import { makeProblem, operations, problemProblem, readProblems, symbolFor, type Operation, type Problem } from "$lib/quizProblems";
 
   type QuizData = { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string; icon: string | null; shade: ShadeId | null };
 
@@ -22,17 +22,23 @@
   let icon: string | null = quiz?.data?.icon ?? null;
   let shade: ShadeId | null = quiz?.data?.shade ?? null;
 
-  let adding = false; // Add-questions dialog open.
+  // Questions the fact-family panel would insert. They show in the quiz itself,
+  // highlighted, until they are inserted for real or the panel goes quiet.
+  let pending: Problem[] = [];
   let messageOpen = false; // Finished-message popover open.
   let error = "";
   let saving = false;
   let titleInvalid = false; // Set when a save is attempted with no name; clears as soon as one is typed.
   let titleInput: HTMLInputElement | undefined;
+  let sheetGrid: HTMLElement | undefined;
   $: if (title.trim()) titleInvalid = false;
 
   // A quiz has no operation of its own, so its colour is purely the shade the
   // teacher picked, falling back to the house purple.
   $: sheetClass = shadeClass(shade);
+  // Division that does not come out even, or subtraction that goes below zero.
+  // Flagged on the card as you type rather than blocking the edit.
+  $: faults = new Map(problems.map((item) => [item.id, problemProblem(item.op, item.top, item.bottom)]).filter(([, note]) => note) as [string, string][]);
 
   const snapshot = (values: unknown[]) => JSON.stringify(values);
   const savedState = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
@@ -44,6 +50,27 @@
     if (navigation.type === "leave") { navigation.cancel(); return; }
     if (!confirm("You have unsaved changes to this quiz. Leave without saving?")) navigation.cancel();
   });
+
+  // ---- Editing a question in place ----
+  function setOperand(id: string, key: "top" | "bottom", raw: string) {
+    const digits = raw.replace(/[^0-9]/g, "").slice(0, 4);
+    problems = problems.map((item) => (item.id === id ? { ...item, [key]: digits === "" ? 0 : Number(digits) } : item));
+  }
+  function setOperation(id: string, op: Operation) {
+    problems = problems.map((item) => (item.id === id ? { ...item, op } : item));
+  }
+  // A new question copies the last one's operator, since a quiz usually carries
+  // on in the same vein, and lands focused so it can be typed over immediately.
+  async function addQuestion() {
+    const op = problems.length ? problems[problems.length - 1].op : "multiplication";
+    const fresh = makeProblem(op, 2, 2);
+    problems = [...problems, fresh];
+    selected = new Set();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const field = sheetGrid?.querySelector<HTMLInputElement>(`[data-operand="${fresh.id}-top"]`);
+    field?.focus();
+    field?.select();
+  }
 
   // ---- Selecting questions: click one, shift-click a run, ctrl/cmd-click to pick out several ----
   let selected = new Set<string>();
@@ -70,11 +97,19 @@
     }
     anchor = id;
   }
+  // Clicking the card itself selects it, but not when the click landed on
+  // something you meant to use — a number, the operator, the grip, the cross.
+  function pickFromCard(id: string, index: number, event: MouseEvent) {
+    if ((event.target as HTMLElement | null)?.closest("input, select, button")) return;
+    pick(id, index, event);
+  }
   function removeOne(id: string) {
     problems = problems.filter((item) => item.id !== id);
     if (selected.has(id)) { const next = new Set(selected); next.delete(id); selected = next; }
   }
+  // Clearing out several at once is worth a second look; removing one is not.
   function removeSelected() {
+    if (selected.size > 1 && !confirm(`Delete ${selected.size} questions from this quiz?`)) return;
     problems = problems.filter((item) => !selected.has(item.id));
     selected = new Set();
     anchor = null;
@@ -85,7 +120,7 @@
   // Escape clears a selection and Delete removes it, but never while a field has focus.
   function onKeydown(event: KeyboardEvent) {
     const tag = (event.target as HTMLElement | null)?.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
     if (event.key === "Escape") { selected = new Set(); return; }
     if ((event.key === "Delete" || event.key === "Backspace") && selected.size) {
       event.preventDefault();
@@ -123,8 +158,9 @@
     move(index, index + delta);
   }
 
-  function addProblems(incoming: Problem[]) {
+  function insertFamily(incoming: Problem[]) {
     problems = [...problems, ...incoming];
+    pending = [];
   }
   function stepTime(delta: number) {
     timeLimitMinutes = Math.min(60, Math.max(1, timeLimitMinutes + delta));
@@ -137,6 +173,7 @@
     if (!title.trim()) { titleInvalid = true; error = ""; titleInput?.focus(); return; }
     if (!problems.length) { error = "Add at least one question before saving."; return; }
     if (problems.length > 150) { error = "Keep the quiz to 150 questions or fewer."; return; }
+    if (faults.size) { error = `Fix the highlighted question${faults.size === 1 ? "" : "s"}: ${[...faults.values()][0]}`; return; }
     saving = true; error = "";
     const data = { title: title.trim(), problems, timeLimitMinutes, showScore, passMessage: passMessage.trim(), icon, shade };
     try {
@@ -197,7 +234,11 @@
     </div>
   </header>
 
-  <div class="editor-body editor-body-single">
+  <div class="editor-body editor-body-picker">
+    <div class="editor-side">
+      <FactFamilyPicker onPreview={(next) => (pending = next)} onInsert={insertFamily} />
+    </div>
+
     <div class="editor-canvas">
       <div class="doc-sheet">
         <div class="sheet-head">
@@ -215,47 +256,86 @@
           </div>
         {/if}
 
-        {#if problems.length}
-          <p class="sheet-hint">Drag a question to move it · click to select, shift-click for a run</p>
-          <ol class="sheet-grid">
+        {#if problems.length || pending.length}
+          <p class="sheet-hint">Click a number or the sign to change it · drag a question to move it · click a card to select, shift-click for a run</p>
+          <ol class="sheet-grid" class:previewing={pending.length} bind:this={sheetGrid}>
             {#each problems as problem, index (problem.id)}
+              <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-noninteractive-element-interactions -->
               <li
                 class="sheet-tile"
                 class:selected={selected.has(problem.id)}
                 class:dragging={dragIndex === index}
+                class:faulty={faults.has(problem.id)}
                 draggable="true"
+                title={faults.get(problem.id) ?? ""}
+                on:click={(event) => pickFromCard(problem.id, index, event)}
                 on:dragstart={(event) => startDrag(index, event)}
                 on:dragover={(event) => dragOver(index, event)}
                 on:drop|preventDefault={() => (dragIndex = null)}
                 on:dragend={() => (dragIndex = null)}
               >
-                <button type="button" class="sheet-pick" aria-pressed={selected.has(problem.id)} on:click={(event) => pick(problem.id, index, event)}>
-                  <span class="wp-num">{index + 1}</span>
-                  <span class="wp-stack">
-                    <b>{problem.top}</b>
-                    <b>{symbolFor(problem.op)} {problem.bottom}</b>
-                    <i></i>
-                    <span class="wp-blank"></span>
-                  </span>
-                </button>
+                <span class="wp-num">{index + 1}</span>
+                <div class="sheet-fields">
+                  <input
+                    class="sheet-operand"
+                    data-operand={`${problem.id}-top`}
+                    value={problem.top}
+                    inputmode="numeric"
+                    aria-label={`First number of question ${index + 1}`}
+                    on:focus={(event) => event.currentTarget.select()}
+                    on:input={(event) => setOperand(problem.id, "top", event.currentTarget.value)}
+                  />
+                  <select
+                    class="sheet-op"
+                    value={problem.op}
+                    aria-label={`Operation for question ${index + 1}`}
+                    on:change={(event) => setOperation(problem.id, event.currentTarget.value as Operation)}
+                  >
+                    {#each operations as op}<option value={op}>{symbolFor(op)}</option>{/each}
+                  </select>
+                  <input
+                    class="sheet-operand"
+                    value={problem.bottom}
+                    inputmode="numeric"
+                    aria-label={`Second number of question ${index + 1}`}
+                    on:focus={(event) => event.currentTarget.select()}
+                    on:input={(event) => setOperand(problem.id, "bottom", event.currentTarget.value)}
+                  />
+                  <i></i>
+                </div>
                 <button
                   type="button"
                   class="sheet-grip"
-                  aria-label={`Move ${problem.top} ${symbolFor(problem.op)} ${problem.bottom} — question ${index + 1} of ${problems.length}. Use the arrow keys.`}
+                  aria-label={`Move question ${index + 1} of ${problems.length}. Use the arrow keys.`}
                   on:keydown={(event) => nudge(index, event)}
                 ><Icon name="grip-vertical" size={14} /></button>
                 <button type="button" class="sheet-remove" aria-label={`Remove question ${index + 1}`} on:click={() => removeOne(problem.id)}><Icon name="x" size={12} /></button>
               </li>
             {/each}
-            <li class="sheet-add">
-              <button type="button" on:click={() => (adding = true)}><Icon name="plus" size={16} /> Add questions</button>
-            </li>
+
+            {#each pending as problem, index (problem.id)}
+              <li class="sheet-tile pending">
+                <span class="wp-num">{problems.length + index + 1}</span>
+                <div class="sheet-fields">
+                  <span class="sheet-operand-static">{problem.top}</span>
+                  <span class="sheet-op-static">{symbolFor(problem.op)}</span>
+                  <span class="sheet-operand-static">{problem.bottom}</span>
+                  <i></i>
+                </div>
+              </li>
+            {/each}
+
+            {#if !pending.length}
+              <li class="sheet-add">
+                <button type="button" on:click={addQuestion}><Icon name="plus" size={16} /> Add question</button>
+              </li>
+            {/if}
           </ol>
         {:else}
-          <button type="button" class="sheet-empty" on:click={() => (adding = true)}>
+          <button type="button" class="sheet-empty" on:click={addQuestion}>
             <Icon name="plus" size={22} />
             <strong>Add your first question</strong>
-            <small>Build a set of math facts, or write one of your own.</small>
+            <small>Write one here, or insert a whole fact family from the panel on the left.</small>
           </button>
         {/if}
 
@@ -263,10 +343,6 @@
       </div>
     </div>
   </div>
-
-  {#if adding}
-    <AddQuestionsDialog onAdd={addProblems} onClose={() => (adding = false)} />
-  {/if}
 
   <div class="print-sheet">
     <div class="print-head">

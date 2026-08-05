@@ -1015,12 +1015,8 @@ button span {
 .qp-phone { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 14px; border-radius: 28px; background: #2b2740; box-shadow: 0 22px 44px rgba(43, 39, 64, .3); }
 .qp-notch { width: 78px; height: 6px; margin: 3px auto 12px; border-radius: 99px; background: rgba(255, 255, 255, .22); }
 .qp-screen { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 20px 18px 16px; border-radius: 20px; background: #fffdfa; }
-/* Question stack — shared by the editable sheet and the printout */
+/* The numbered badge on each question card */
 .wp-num { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 8px; background: var(--operation-soft); color: var(--operation); font-size: .78rem; font-weight: 900; }
-.wp-stack { display: grid; justify-items: end; font-family: "DM Mono", monospace; font-variant-numeric: tabular-nums; line-height: 1.15; }
-.wp-stack b { font-size: 1.6rem; font-weight: 500; color: #26233a; }
-.wp-stack i { width: 100%; height: 2px; margin-top: 5px; border-radius: 2px; background: #dcd4e6; }
-.wp-blank { grid-column: 2; justify-self: end; width: 58px; height: 30px; margin-top: 7px; border-radius: 8px; background: var(--operation-soft); }
 .qp-empty-problem { flex: 1; display: grid; place-items: center; padding: 24px; color: #a29aae; font-size: .86rem; text-align: center; }
 .qp-foot { margin: 0; color: #a49dad; font-size: .74rem; text-align: center; }
 
@@ -1185,19 +1181,22 @@ button span {
 /* ---- Quiz editor: the worksheet itself is the document you edit ---- */
 /* The bar carries what used to sit in the document: the title, its icon, and
    the quiz's settings. Four columns so the title can take the slack. */
-.editor-bar-quiz { grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px 20px; }
-/* The sheet takes the app's standard content width now that the editor is a
-   single column. The bar stays full width. */
-.editor-body-single .doc-sheet { width: min(var(--content-width), 100%); }
-.editor-body-single .editor-canvas { padding-top: clamp(20px, 3vw, 36px); }
-.bar-title-row { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.editor-bar-quiz { display: flex; align-items: center; gap: 12px 14px; }
+.bar-settings { margin-left: auto; }
+/* The fact-family panel on the left holds its place while the quiz beside it
+   scrolls, so inserting a family never means scrolling back up to the controls. */
+.editor-body-picker { grid-template-columns: minmax(0, 330px) minmax(0, 1fr); }
+.editor-side { position: sticky; top: 61px; align-self: start; max-height: calc(100vh - 61px); overflow-y: auto; padding: clamp(20px, 3vw, 34px) 0 24px clamp(16px, 2.5vw, 30px); }
+.editor-body-picker .doc-sheet { width: min(var(--content-width), 100%); }
+.editor-body-picker .editor-canvas { padding-top: clamp(20px, 3vw, 36px); }
+.bar-title-row { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 0 1 auto; }
 .bar-title { width: 100%; margin: 0; padding: 6px 10px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #26233a; font-family: Fraunces, Georgia, serif; font-size: 1.25rem; font-weight: 700; letter-spacing: -.03em; text-align: left; }
 .bar-title::placeholder { color: #cbc4d3; }
 .bar-title:hover { background: #faf8fd; }
 .bar-title:focus { outline: 0; border-color: #e4dcf0; background: #f8f5ff; box-shadow: none; }
 .bar-title.invalid { border-color: #e0708a; background: #fff4f6; }
 
-.bar-settings { display: flex; align-items: center; gap: 9px; }
+.bar-settings { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
 .stepper-compact { padding: 3px; border-radius: 11px; }
 .stepper-compact button { width: 26px; height: 26px; border-radius: 8px; }
 .stepper-compact b { min-width: 52px; font-size: .95rem; }
@@ -1213,24 +1212,42 @@ button span {
 .sheet-head .doc-eyebrow, .sheet-head .doc-summary { margin: 0; }
 .sheet-hint { margin: 20px 0 14px; color: #a49dad; font-size: .82rem; font-weight: 700; }
 
-/* The tiles are the questions, at the size a student sees them. They are drag
-   handles as much as they are text, so they are sized to be easy to grab. */
-.sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); gap: 13px; margin: 0; padding: 2px; list-style: none; }
-.sheet-tile { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: stretch; min-height: 104px; border: 1px solid #eee8f0; border-radius: 15px; background: #fff; cursor: grab; transition: border-color .12s, box-shadow .12s, opacity .12s; }
+/* The tiles are the questions themselves — the numbers and the sign are live
+   fields, plain until you hover or click them, the way the title bar behaves.
+   No answer blank: it only ate room a teacher never types into. */
+.sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 13px; margin: 0; padding: 2px; list-style: none; }
+.sheet-tile { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 96px; padding: 14px 10px 14px 14px; border: 1px solid #eee8f0; border-radius: 15px; background: #fff; cursor: grab; transition: border-color .12s, box-shadow .12s, opacity .12s; }
 .sheet-tile:hover { border-color: var(--operation, #6748d1); }
 .sheet-tile.selected { border-color: var(--operation, #6748d1); background: var(--operation-soft, #eee9ff); box-shadow: 0 0 0 2px var(--operation-soft, #eee9ff); }
 .sheet-tile.dragging { opacity: .45; border-style: dashed; border-color: var(--operation, #6748d1); box-shadow: none; cursor: grabbing; }
-.sheet-pick { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 11px; width: 100%; margin: 0; padding: 14px 6px 14px 14px; border: 0; border-radius: 15px; background: transparent; box-shadow: none; text-align: left; }
-.sheet-pick:hover { transform: none; }
-.sheet-pick:focus-visible { outline: 2px solid var(--operation, #6748d1); outline-offset: -2px; }
+.sheet-tile.faulty { border-color: #e0708a; box-shadow: 0 0 0 2px #fff0f2; }
+.sheet-tile .wp-num { align-self: start; }
+
+/* The stack: first number on top, sign and second number under it, then the rule. */
+.sheet-fields { display: grid; grid-template-columns: auto auto; justify-content: end; align-items: center; gap: 1px 5px; }
+.sheet-operand, .sheet-operand-static { grid-column: 2; width: 68px; margin: 0; padding: 1px 5px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #26233a; font-family: "DM Mono", monospace; font-variant-numeric: tabular-nums; font-size: 1.5rem; font-weight: 500; letter-spacing: 0; line-height: 1.2; text-align: right; }
+.sheet-operand:hover { background: #f6f2fc; }
+.sheet-operand:focus { outline: 0; border-color: var(--operation, #6748d1); background: #fff; box-shadow: 0 0 0 2px var(--operation-soft, #eee9ff); }
+.sheet-op, .sheet-op-static { grid-column: 1; width: auto; margin: 0; padding: 1px 4px; border: 1px solid transparent; border-radius: 8px; background: transparent; box-shadow: none; color: var(--operation, #6748d1); font-family: "DM Mono", monospace; font-size: 1.4rem; font-weight: 500; line-height: 1.2; text-align: center; appearance: none; -webkit-appearance: none; cursor: pointer; }
+.sheet-op:hover { transform: none; background: #f6f2fc; }
+.sheet-op:focus-visible { outline: 0; border-color: var(--operation, #6748d1); background: #fff; box-shadow: 0 0 0 2px var(--operation-soft, #eee9ff); }
+.sheet-fields i { grid-column: 1 / -1; width: 100%; height: 2px; margin-top: 5px; border-radius: 2px; background: #dcd4e6; }
+
 .sheet-grip, .sheet-remove { width: 30px; height: 30px; margin: 0; padding: 0; display: grid; place-items: center; border: 0; border-radius: 9px; background: transparent; box-shadow: none; color: #c3bbd0; }
 .sheet-grip { align-self: center; cursor: grab; }
-/* Always visible rather than hover-only — it is a small target to go hunting for. */
-.sheet-remove { position: absolute; top: 5px; right: 5px; opacity: .55; }
-.sheet-tile:hover .sheet-remove, .sheet-remove:focus-visible { opacity: 1; }
+/* The cross waits for a hover or a selection rather than crowding every card. */
+.sheet-remove { position: absolute; top: 5px; right: 5px; opacity: 0; pointer-events: none; }
+.sheet-tile:hover .sheet-remove, .sheet-tile.selected .sheet-remove, .sheet-remove:focus-visible { opacity: 1; pointer-events: auto; }
 .sheet-grip:hover, .sheet-remove:hover { transform: none; background: #f4f0f8; color: #6748d1; }
 .sheet-remove:hover { background: #fff0f2; color: #c0415f; }
 .sheet-grip:focus-visible { outline: 2px solid var(--operation, #6748d1); outline-offset: 1px; }
+
+/* While a fact family is being chosen, the questions it would add sit in place
+   at the end, lit up, and the rest of the quiz steps back. */
+.sheet-grid.previewing .sheet-tile { opacity: .34; }
+.sheet-tile.pending { opacity: 1; border-color: var(--operation, #6748d1); border-style: dashed; background: var(--operation-soft, #eee9ff); cursor: default; }
+.sheet-tile.pending .sheet-operand-static { color: var(--operation, #6748d1); }
+.sheet-tile.pending .sheet-fields i { background: var(--operation, #6748d1); opacity: .35; }
 
 /* The trailing "add" tile, and the dashed box a brand-new quiz opens on. */
 .sheet-add { display: grid; }
@@ -1241,47 +1258,34 @@ button span {
 .sheet-empty strong { color: #4c465c; font-family: Fraunces, Georgia, serif; font-size: 1.35rem; font-weight: 600; }
 .sheet-empty small { color: #a29aae; font-size: .92rem; font-weight: 400; }
 
-/* ---- Add-questions dialog ---- */
-.add-backdrop { position: fixed; z-index: 40; inset: 0; background: rgba(38, 35, 58, .34); }
-.add-dialog { position: fixed; z-index: 41; top: 50%; left: 50%; width: min(520px, calc(100vw - 32px)); max-height: min(88vh, 760px); overflow: hidden auto; transform: translate(-50%, -50%); border: 1px solid #e6dfed; border-radius: 18px; background: #fffdfa; box-shadow: 0 26px 64px rgba(44, 35, 62, .28); }
-.add-tabs { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 4px; padding: 12px 12px 0; background: #fffdfa; }
-.add-tabs button { width: auto; margin: 0; padding: 9px 14px; border: 0; border-radius: 10px; background: transparent; box-shadow: none; color: #77728c; font-size: .84rem; font-weight: 800; }
-.add-tabs button:hover { transform: none; color: #4d399b; }
-.add-tabs button.on { background: #f2eefb; color: #4d399b; }
-.add-close { margin-left: auto !important; width: 32px !important; height: 32px; padding: 0 !important; display: grid; place-items: center; color: #a29aae !important; }
-.add-close:hover { background: #f4f0f8 !important; }
-.add-body { padding: 6px 20px 20px; }
-.add-label { margin: 16px 0 8px; color: #8a8399; font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
-.add-family-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 7px; }
-.add-family { width: 100%; height: 50px; margin: 0; padding: 0; display: grid; place-items: center; border: 1px solid #e7e1ea; border-radius: 11px; background: #fff; box-shadow: none; color: #4c465c; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; font-weight: 700; }
-.add-family:hover { transform: none; border-color: var(--operation); }
-.add-family.on { border-color: var(--operation); background: var(--operation-soft); color: var(--operation); }
-.add-range { display: flex; align-items: center; gap: 9px; color: #8a8399; font-size: .84rem; font-weight: 700; }
-.add-range input { width: 64px; margin: 0; padding: 9px 6px; border: 1px solid #e7e1ea; border-radius: 10px; background: #fff; color: #26233a; font-family: "DM Mono", monospace; font-size: .95rem; letter-spacing: 0; text-align: center; -moz-appearance: textfield; appearance: textfield; }
-.add-range input::-webkit-outer-spin-button, .add-range input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.add-range input:focus { outline: 0; border-color: var(--operation); box-shadow: 0 0 0 3px var(--operation-soft); }
+/* ---- Insert fact family: a card beside the quiz. The questions it would add
+       are previewed in the quiz itself, not in here. ---- */
+.ff-panel { padding: 18px; border: 1px solid #e6dfed; border-radius: 16px; background: #fffdfa; box-shadow: 0 10px 26px rgba(44, 35, 62, .06); }
+.ff-title { margin: 0 0 4px; color: #2f2b40; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; font-weight: 600; }
+.ff-label { margin: 15px 0 8px; color: #8a8399; font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.ff-label:first-child { margin-top: 0; }
+.ff-family-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 7px; }
+.ff-family { width: 100%; height: 46px; margin: 0; padding: 0; display: grid; place-items: center; border: 1px solid #e7e1ea; border-radius: 11px; background: #fff; box-shadow: none; color: #4c465c; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; font-weight: 700; }
+.ff-family:hover { transform: none; border-color: var(--operation); }
+.ff-family.on { border-color: var(--operation); background: var(--operation-soft); color: var(--operation); }
+.ff-range { display: flex; align-items: center; gap: 9px; color: #8a8399; font-size: .84rem; font-weight: 700; }
+.ff-range input { width: 64px; margin: 0; padding: 9px 6px; border: 1px solid #e7e1ea; border-radius: 10px; background: #fff; color: #26233a; font-family: "DM Mono", monospace; font-size: .95rem; letter-spacing: 0; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+.ff-range input::-webkit-outer-spin-button, .ff-range input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ff-range input:focus { outline: 0; border-color: var(--operation); box-shadow: 0 0 0 3px var(--operation-soft); }
+.ff-actions { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 15px; border-top: 1px solid #efeaf2; }
+.ff-count { margin: 0 auto 0 0; color: var(--operation); font-size: .8rem; font-weight: 800; }
+.ff-idle { margin: 0; color: #a29aae; font-size: .8rem; line-height: 1.4; }
+.ff-insert { flex: 0 0 auto; }
+.ff-actions .editor-save:disabled { cursor: not-allowed; opacity: .5; }
 
-.add-preview { margin-top: 18px; padding: 14px; border: 1px solid #efeaf2; border-radius: 13px; background: #faf8fd; }
-.add-preview-head { margin: 0 0 9px; color: var(--operation); font-size: .78rem; font-weight: 900; }
-.add-preview-list { display: flex; flex-wrap: wrap; gap: 5px; max-height: 148px; overflow-y: auto; }
-.add-preview-chip { padding: 4px 9px; border-radius: 8px; background: #fff; color: #4c465c; font-family: "DM Mono", monospace; font-size: .82rem; white-space: nowrap; }
-.add-preview-more { align-self: center; color: #a29aae; font-size: .76rem; font-weight: 700; }
-
-.add-custom { display: flex; align-items: center; gap: 10px; }
-.add-custom input { width: 84px; margin: 0; padding: 12px 8px; border: 1px solid #e7e1ea; border-radius: 11px; background: #fff; color: #26233a; font-family: "DM Mono", monospace; font-size: 1.25rem; letter-spacing: 0; text-align: center; -moz-appearance: textfield; appearance: textfield; }
-.add-custom input::-webkit-outer-spin-button, .add-custom input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.add-custom input:focus { outline: 0; border-color: var(--operation); box-shadow: 0 0 0 3px var(--operation-soft); }
-.add-custom b { color: var(--operation); font-family: "DM Mono", monospace; font-size: 1.3rem; font-weight: 500; }
-.add-equals { color: #a29aae; font-family: "DM Mono", monospace; font-size: 1.3rem; }
-.add-answer { min-width: 56px; color: #26233a; font-family: "DM Mono", monospace; font-size: 1.3rem; }
-.add-issue { margin: 12px 0 0; padding: 10px 13px; border-radius: 10px; background: #fff0f2; color: #a92840; font-size: .82rem; font-weight: 700; }
-
-.add-actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #efeaf2; }
-.add-added { margin: 0 auto 0 0; color: #2f6a37; font-size: .82rem; font-weight: 800; }
-.add-actions .editor-save:disabled { cursor: not-allowed; opacity: .5; }
-
-@media (max-width: 900px) {
-  .editor-bar-quiz { grid-template-columns: 1fr auto; }
-  .bar-title-row { order: -1; grid-column: 1 / -1; }
-  .bar-settings { flex-wrap: wrap; }
+@media (max-width: 1100px) {
+  .editor-bar-quiz { flex-wrap: wrap; }
+  .bar-title-row { order: -1; flex: 1 0 100%; }
+  .bar-settings { margin-left: 0; }
+}
+@media (max-width: 960px) {
+  /* Too narrow to sit side by side: the panel goes above the quiz and scrolls with it. */
+  .editor-body-picker { grid-template-columns: minmax(0, 1fr); }
+  .editor-side { position: static; max-height: none; overflow: visible; padding: 22px clamp(16px, 4vw, 44px) 0; }
+  .editor-body-picker .editor-canvas { padding-top: 20px; }
 }
