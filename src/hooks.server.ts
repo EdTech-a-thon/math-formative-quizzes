@@ -1,4 +1,15 @@
+import { env } from "$env/dynamic/private";
+
 const pocketBaseUrl = "http://127.0.0.1:8090";
+
+// Cloudflare's visitor counter, switched on only when CF_BEACON_TOKEN is set.
+// Tokens are plain letters, digits, dashes and underscores; anything else is
+// ignored rather than written into the page.
+function beaconTag() {
+  const token = (env.CF_BEACON_TOKEN ?? "").trim();
+  if (!/^[A-Za-z0-9_-]+$/.test(token)) return "";
+  return `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"${token}"}'></script>`;
+}
 
 export async function handle({ event, resolve }) {
   const token = event.cookies.get("teacher_session");
@@ -24,5 +35,7 @@ export async function handle({ event, resolve }) {
     }
   }
 
-  return resolve(event);
+  return resolve(event, {
+    transformPageChunk: ({ html }) => html.replace("%cfBeacon%", beaconTag()),
+  });
 }
