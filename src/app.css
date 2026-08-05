@@ -1262,16 +1262,31 @@ button span {
        are previewed in the quiz itself, not in here. ---- */
 .ff-panel { padding: 18px; border: 1px solid #e6dfed; border-radius: 16px; background: #fffdfa; box-shadow: 0 10px 26px rgba(44, 35, 62, .06); }
 .ff-title { margin: 0 0 4px; color: #2f2b40; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; font-weight: 600; }
-.ff-label { margin: 15px 0 8px; color: #8a8399; font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.ff-label { display: flex; align-items: baseline; gap: 8px; margin: 15px 0 8px; color: #8a8399; font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .ff-label:first-child { margin-top: 0; }
 .ff-family-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 7px; }
 .ff-family { width: 100%; height: 46px; margin: 0; padding: 0; display: grid; place-items: center; border: 1px solid #e7e1ea; border-radius: 11px; background: #fff; box-shadow: none; color: #4c465c; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; font-weight: 700; }
 .ff-family:hover { transform: none; border-color: var(--operation); }
 .ff-family.on { border-color: var(--operation); background: var(--operation-soft); color: var(--operation); }
-.ff-range { display: flex; align-items: center; gap: 9px; color: #8a8399; font-size: .84rem; font-weight: 700; }
-.ff-range input { width: 64px; margin: 0; padding: 9px 6px; border: 1px solid #e7e1ea; border-radius: 10px; background: #fff; color: #26233a; font-family: "DM Mono", monospace; font-size: .95rem; letter-spacing: 0; text-align: center; -moz-appearance: textfield; appearance: textfield; }
-.ff-range input::-webkit-outer-spin-button, .ff-range input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.ff-range input:focus { outline: 0; border-color: var(--operation); box-shadow: 0 0 0 3px var(--operation-soft); }
+.ff-readout { margin-left: auto; color: var(--operation); font-family: "DM Mono", monospace; font-size: .78rem; font-weight: 500; letter-spacing: 0; text-transform: none; }
+/* A number line with a handle at each end. The inputs are stacked over one
+   shared track and only their thumbs take the pointer, so both stay grabbable. */
+.ff-line { position: relative; height: 52px; }
+.ff-line-track { position: absolute; top: 11px; left: 9px; right: 9px; height: 6px; border-radius: 99px; background: #ece6f2; }
+.ff-line-fill { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: var(--operation); }
+.ff-line-input { position: absolute; top: 0; left: 0; width: 100%; height: 28px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; appearance: none; -webkit-appearance: none; pointer-events: none; }
+.ff-line-input:focus { outline: 0; border: 0; box-shadow: none; }
+/* Once the upper handle is parked at the end it would cover the lower one, so
+   the lower one comes forward and stays reachable. */
+.ff-line-input.lift { z-index: 3; }
+.ff-line-input::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 18px; height: 18px; border: 2px solid var(--operation); border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(44, 35, 62, .25); cursor: grab; }
+.ff-line-input::-moz-range-thumb { pointer-events: auto; width: 18px; height: 18px; border: 2px solid var(--operation); border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(44, 35, 62, .25); cursor: grab; }
+.ff-line-input:active::-webkit-slider-thumb { cursor: grabbing; }
+.ff-line-input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--operation-soft); }
+.ff-line-input:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--operation-soft); }
+.ff-line-ticks { position: absolute; top: 31px; left: 0; right: 0; display: flex; justify-content: space-between; }
+.ff-line-ticks span { width: 18px; color: #bcb5c5; font-family: "DM Mono", monospace; font-size: .72rem; text-align: center; }
+.ff-line-ticks span.on { color: var(--operation); font-weight: 500; }
 .ff-actions { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 15px; border-top: 1px solid #efeaf2; }
 .ff-count { margin: 0 auto 0 0; color: var(--operation); font-size: .8rem; font-weight: 800; }
 .ff-idle { margin: 0; color: #a29aae; font-size: .8rem; line-height: 1.4; }

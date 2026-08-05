@@ -16,6 +16,13 @@
   // a dozen questions it never asked to see.
   let armed = false;
 
+  const RANGE_MAX = 12;
+  const ticks = Array.from({ length: RANGE_MAX + 1 }, (_, index) => index);
+  // Either handle can be dragged past the other; the line just reads whichever
+  // way round they end up, so nothing gets stuck.
+  $: low = Math.min(from, to);
+  $: high = Math.max(from, to);
+
   $: familyChoices = Array.from(
     { length: operationDetails[factOp].max - operationDetails[factOp].min + 1 },
     (_, index) => operationDetails[factOp].min + index,
@@ -38,7 +45,7 @@
   }
   function changeRange(key: "from" | "to", value: number) {
     armed = true;
-    const bounded = Math.max(0, Math.min(12, Number.isFinite(value) ? value : 0));
+    const bounded = Math.max(0, Math.min(RANGE_MAX, Number.isFinite(value) ? value : 0));
     if (key === "from") from = bounded;
     else to = bounded;
   }
@@ -67,12 +74,27 @@
     {/each}
   </div>
 
-  <p class="ff-label">Which facts</p>
-  <div class="ff-range">
-    <span>from</span>
-    <input type="number" min="0" max="12" value={from} aria-label="Lowest fact" on:input={(event) => changeRange("from", Number(event.currentTarget.value))} />
-    <span>to</span>
-    <input type="number" min="0" max="12" value={to} aria-label="Highest fact" on:input={(event) => changeRange("to", Number(event.currentTarget.value))} />
+  <p class="ff-label">Which facts <span class="ff-readout">{symbolFor(factOp)}{from} to {symbolFor(factOp)}{to}</span></p>
+  <!-- Two sliders sharing one track. Only the thumbs take the pointer, so each
+       handle is grabbable, and each is a real range input so arrow keys work. -->
+  <div class="ff-line">
+    <div class="ff-line-track"><span class="ff-line-fill" style={`left: ${(low / RANGE_MAX) * 100}%; right: ${100 - (high / RANGE_MAX) * 100}%`}></span></div>
+    <input
+      class="ff-line-input"
+      class:lift={to >= RANGE_MAX}
+      type="range" min="0" max={RANGE_MAX} step="1" value={from}
+      aria-label="Lowest fact"
+      on:input={(event) => changeRange("from", Number(event.currentTarget.value))}
+    />
+    <input
+      class="ff-line-input"
+      type="range" min="0" max={RANGE_MAX} step="1" value={to}
+      aria-label="Highest fact"
+      on:input={(event) => changeRange("to", Number(event.currentTarget.value))}
+    />
+    <div class="ff-line-ticks" aria-hidden="true">
+      {#each ticks as tick}<span class:on={tick >= low && tick <= high}>{tick}</span>{/each}
+    </div>
   </div>
 
   <div class="ff-actions">
