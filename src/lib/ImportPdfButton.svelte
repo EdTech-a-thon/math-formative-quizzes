@@ -3,8 +3,9 @@
   import Icon from "$lib/Icon.svelte";
   import { pushToast } from "$lib/toasts";
 
-  // One button for both kinds of file: the endpoint reads what the PDF carries,
-  // so importing a progression from the quiz library works just as well.
+  // One button for every shape of import: a PDF from an Export button, or the
+  // JSON record on its own. The endpoint reads what it holds, so importing a
+  // progression from the quiz library works just as well as a quiz.
   export let classId: string;
   export let label = "Import";
 
@@ -58,4 +59,4 @@
 <button type="button" class="ghost-btn" disabled={busy} on:click={() => input.click()}>
   <Icon name="download" size={14} /> {busy ? "Importing…" : label}
 </button>
-<input class="sr-only" type="file" accept="application/pdf,.pdf" bind:this={input} on:change={chosen} />
+<input class="sr-only" type="file" accept="application/pdf,.pdf,application/json,.json" bind:this={input} on:change={chosen} />

@@ -1,8 +1,8 @@
 import { error, json } from "@sveltejs/kit";
 import { appearanceOf } from "$lib/server/appearance";
 import { readEnvelope, type QuizRecord } from "$lib/server/exportRecord";
-import { extractRecord } from "$lib/server/pdfcx";
 import { FAILURE_MESSAGES, NOT_OURS } from "$lib/server/importMessages";
+import { recordFromUpload } from "$lib/server/importSource";
 import { pocketBaseUrl } from "$lib/server/pdfResponse";
 
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -39,7 +39,7 @@ export async function POST({ request, cookies }) {
   const classId = String(form.get("class") ?? "").trim();
   const file = form.get("file");
   if (!classId) return json({ message: "We could not tell which class to import into.", detail: "Reload the page and try again." }, { status: 400 });
-  if (!(file instanceof File)) return json({ message: "No file was chosen.", detail: "Pick a PDF to import." }, { status: 400 });
+  if (!(file instanceof File)) return json({ message: "No file was chosen.", detail: "Pick a PDF or a JSON file to import." }, { status: 400 });
   if (!file.size) return json({ message: "That file is empty.", detail: "Nothing was uploaded — try choosing the file again." }, { status: 400 });
   if (file.size > MAX_BYTES) {
     return json(
@@ -48,7 +48,7 @@ export async function POST({ request, cookies }) {
     );
   }
 
-  const extracted = await extractRecord(new Uint8Array(await file.arrayBuffer()));
+  const extracted = await recordFromUpload(new Uint8Array(await file.arrayBuffer()));
   if (!extracted.ok) return json(FAILURE_MESSAGES[extracted.reason], { status: 400 });
 
   const parsed = readEnvelope(extracted.record);

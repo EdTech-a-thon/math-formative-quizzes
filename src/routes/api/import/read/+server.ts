@@ -1,19 +1,19 @@
 import { error, json } from "@sveltejs/kit";
 import { readEnvelope } from "$lib/server/exportRecord";
 import { FAILURE_MESSAGES, NOT_OURS } from "$lib/server/importMessages";
-import { extractRecord } from "$lib/server/pdfcx";
+import { recordFromUpload } from "$lib/server/importSource";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
-// Reads a PDF and hands back the questions it carries without saving anything.
-// The quiz editor uses this to pull questions into the quiz being written,
-// rather than creating a separate one the way the library's import does.
+// Reads a PDF or a JSON record and hands back the questions it carries without
+// saving anything. The quiz editor uses this to pull questions into the quiz
+// being written, rather than creating a separate one the way the library does.
 export async function POST({ request, cookies }) {
   if (!cookies.get("teacher_session")) error(401, "Please sign in again.");
 
   const form = await request.formData();
   const file = form.get("file");
-  if (!(file instanceof File)) return json({ message: "No file was chosen.", detail: "Pick a PDF to import." }, { status: 400 });
+  if (!(file instanceof File)) return json({ message: "No file was chosen.", detail: "Pick a PDF or a JSON file to import." }, { status: 400 });
   if (!file.size) return json({ message: "That file is empty.", detail: "Nothing was uploaded — try choosing the file again." }, { status: 400 });
   if (file.size > MAX_BYTES) {
     return json(
@@ -22,7 +22,7 @@ export async function POST({ request, cookies }) {
     );
   }
 
-  const extracted = await extractRecord(new Uint8Array(await file.arrayBuffer()));
+  const extracted = await recordFromUpload(new Uint8Array(await file.arrayBuffer()));
   if (!extracted.ok) return json(FAILURE_MESSAGES[extracted.reason], { status: 400 });
 
   const parsed = readEnvelope(extracted.record);

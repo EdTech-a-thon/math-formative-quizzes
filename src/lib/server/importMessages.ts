@@ -1,8 +1,16 @@
-import type { ExtractFailure } from "$lib/server/pdfcx";
+import type { SourceFailure } from "$lib/server/importSource";
 
 // Each failure gets its own wording, because "it did not work" leaves a teacher
 // with nothing to try next.
-export const FAILURE_MESSAGES: Record<ExtractFailure, { message: string; detail: string }> = {
+export const FAILURE_MESSAGES: Record<SourceFailure, { message: string; detail: string }> = {
+  "not-supported": {
+    message: "That file is neither a PDF nor JSON.",
+    detail: "Import a PDF from an Export button, or a .json file holding the quiz record.",
+  },
+  "damaged-json": {
+    message: "That JSON could not be read.",
+    detail: "It has a syntax error somewhere — check it parses as valid JSON and try again.",
+  },
   "not-a-pdf": {
     message: "That file is not a PDF.",
     detail: "Choose a PDF file — the one you get from an Export button.",
@@ -26,6 +34,6 @@ export const FAILURE_MESSAGES: Record<ExtractFailure, { message: string; detail:
 };
 
 export const NOT_OURS = {
-  message: "That PDF holds data, but not a quiz or a progression.",
-  detail: "It carries a record this app does not recognise, or one with no questions in it.",
+  message: "That file holds data, but not a quiz or a progression.",
+  detail: "A quiz needs a title and questions; a progression needs a name and a list of quizzes.",
 };

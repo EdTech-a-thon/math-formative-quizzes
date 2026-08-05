@@ -331,8 +331,8 @@
     window.location.href = `/api/quizzes/${quiz.id}/pdf`;
   }
 
-  // Pulls the questions out of a PDF and adds them to the quiz being written —
-  // unlike the library's Import, which files a separate quiz away.
+  // Pulls the questions out of a PDF or a JSON record and adds them to the quiz
+  // being written — unlike the library's Import, which files a separate quiz away.
   let importInput: HTMLInputElement;
   let importing = false;
 
@@ -434,13 +434,13 @@
     </div>
 
     <div class="editor-bar-actions">
-      <button class="editor-ghost" type="button" disabled={importing} title="Add the questions from a PDF to this quiz" on:click={() => importInput.click()}>
+      <button class="editor-ghost" type="button" disabled={importing} title="Add the questions from a PDF or JSON file to this quiz" on:click={() => importInput.click()}>
         <Icon name="download" size={15} /> {importing ? "Reading…" : "Import"}
       </button>
       <button class="editor-ghost" type="button" title="Export as a PDF that can be imported back (Ctrl+P)" on:click={exportPdf}>
         <Icon name="upload" size={15} /> Export
       </button>
-      <input class="sr-only" type="file" accept="application/pdf,.pdf" bind:this={importInput} on:change={importQuestions} />
+      <input class="sr-only" type="file" accept="application/pdf,.pdf,application/json,.json" bind:this={importInput} on:change={importQuestions} />
       <a class="editor-cancel" href={`/teacher/classes/${classId}/quizzes`}>Cancel</a>
       <button class="editor-save" type="button" disabled={saving} on:click={save}>{saving ? "Saving…" : editing ? "Save changes" : "Save quiz"}</button>
     </div>
