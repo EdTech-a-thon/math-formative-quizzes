@@ -1,0 +1,2061 @@
+{
+  "name": "Subtract with 0–12",
+  "description": "Build subtraction fluency through addition fact families from 0 through 12.",
+  "passPercentage": 80,
+  "quizzes": [
+    {
+      "title": "Subtract with 0",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 0 complete!",
+      "problems": [
+        {
+          "id": "subtract-0-1",
+          "op": "subtraction",
+          "top": 4,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-2",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-0-3",
+          "op": "subtraction",
+          "top": 4,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-0-4",
+          "op": "subtraction",
+          "top": 1,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-0-5",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-6",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-0-7",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-8",
+          "op": "subtraction",
+          "top": 0,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-9",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-10",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-0-11",
+          "op": "subtraction",
+          "top": 3,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-0-12",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-0-13",
+          "op": "subtraction",
+          "top": 2,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-14",
+          "op": "subtraction",
+          "top": 2,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-0-15",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-16",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-0-17",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-18",
+          "op": "subtraction",
+          "top": 1,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-19",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-20",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-21",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-0-22",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-0-23",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-0-24",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-0-25",
+          "op": "subtraction",
+          "top": 3,
+          "bottom": 0
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 1",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 1 complete!",
+      "problems": [
+        {
+          "id": "subtract-1-1",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-2",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-1-3",
+          "op": "subtraction",
+          "top": 3,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-4",
+          "op": "subtraction",
+          "top": 1,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-5",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-6",
+          "op": "subtraction",
+          "top": 2,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-7",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-8",
+          "op": "subtraction",
+          "top": 4,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-1-9",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-1-10",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-11",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-1-12",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-1-13",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-14",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-1-15",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-16",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-1-17",
+          "op": "subtraction",
+          "top": 1,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-1-18",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-1-19",
+          "op": "subtraction",
+          "top": 3,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-1-20",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-21",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-1-22",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-23",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-1-24",
+          "op": "subtraction",
+          "top": 4,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-1-25",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 1
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 2",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 2 complete!",
+      "problems": [
+        {
+          "id": "subtract-2-1",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-2-2",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-3",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-2-4",
+          "op": "subtraction",
+          "top": 3,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-2-5",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-2-6",
+          "op": "subtraction",
+          "top": 4,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-7",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-2-8",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-9",
+          "op": "subtraction",
+          "top": 3,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-10",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-2-11",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-12",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-2-13",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-2-14",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-15",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-16",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-2-17",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-2-18",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-19",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-2-20",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-21",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-22",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-23",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-24",
+          "op": "subtraction",
+          "top": 2,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-2-25",
+          "op": "subtraction",
+          "top": 2,
+          "bottom": 0
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 3",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 3 complete!",
+      "problems": [
+        {
+          "id": "subtract-3-1",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-3-2",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-3",
+          "op": "subtraction",
+          "top": 3,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-3-4",
+          "op": "subtraction",
+          "top": 4,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-5",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-6",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-3-7",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-3-8",
+          "op": "subtraction",
+          "top": 4,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-3-9",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-3-10",
+          "op": "subtraction",
+          "top": 3,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-11",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-12",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-13",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-3-14",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-3-15",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-16",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-17",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-18",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-3-19",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-3-20",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-21",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-22",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-23",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-3-24",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-3-25",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 8
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 4",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 4 complete!",
+      "problems": [
+        {
+          "id": "subtract-4-1",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-4-2",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-3",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-4-4",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-5",
+          "op": "subtraction",
+          "top": 4,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-4-6",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-7",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-8",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-4-9",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-4-10",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-4-11",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-4-12",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-13",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-14",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-4-15",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-4-16",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-4-17",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-4-18",
+          "op": "subtraction",
+          "top": 4,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-19",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-4-20",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-21",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-22",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-23",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-24",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-4-25",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 4
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 5",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 5 complete!",
+      "problems": [
+        {
+          "id": "subtract-5-1",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-2",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-5-3",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-4",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-5-5",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-5-6",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-5-7",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-5-8",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-9",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-10",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-11",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-12",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-5-13",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-14",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-5-15",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-5-16",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-17",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-18",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-19",
+          "op": "subtraction",
+          "top": 5,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-5-20",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-21",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-5-22",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-5-23",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-24",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-5-25",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 12
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 6",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 6 complete!",
+      "problems": [
+        {
+          "id": "subtract-6-1",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-2",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-3",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-4",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-5",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-6",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-6-7",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-8",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-6-9",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-6-10",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-6-11",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-6-12",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-13",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-6-14",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-15",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-6-16",
+          "op": "subtraction",
+          "top": 6,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-17",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-18",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-19",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-6-20",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-21",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-6-22",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-6-23",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-6-24",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-6-25",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 7
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 7",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 7 complete!",
+      "problems": [
+        {
+          "id": "subtract-7-1",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-7-2",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-3",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-4",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-5",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-7-6",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-7",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-8",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-7-9",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-7-10",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-11",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-12",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-13",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-14",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-7-15",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-16",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-7-17",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-7-18",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-7-19",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-20",
+          "op": "subtraction",
+          "top": 7,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-7-21",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-7-22",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-23",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-7-24",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-7-25",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 9
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 8",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 8 complete!",
+      "problems": [
+        {
+          "id": "subtract-8-1",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-2",
+          "op": "subtraction",
+          "top": 20,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-3",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-4",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-5",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-6",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-8-7",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-8-8",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-8-9",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-10",
+          "op": "subtraction",
+          "top": 20,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-8-11",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-8-12",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-8-13",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-8-14",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-8-15",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-8-16",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-17",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-18",
+          "op": "subtraction",
+          "top": 8,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-19",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-8-20",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-21",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-22",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-23",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-8-24",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-8-25",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 3
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 9",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 9 complete!",
+      "problems": [
+        {
+          "id": "subtract-9-1",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-9-2",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-9-3",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-9-4",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-9-5",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-9-6",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-7",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-9-8",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-9",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-10",
+          "op": "subtraction",
+          "top": 9,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-11",
+          "op": "subtraction",
+          "top": 20,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-9-12",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-13",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-9-14",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-15",
+          "op": "subtraction",
+          "top": 20,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-16",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-17",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-9-18",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-19",
+          "op": "subtraction",
+          "top": 21,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-20",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-9-21",
+          "op": "subtraction",
+          "top": 21,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-9-22",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-9-23",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-24",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-9-25",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 9
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 10",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 10 complete!",
+      "problems": [
+        {
+          "id": "subtract-10-1",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-10-2",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-3",
+          "op": "subtraction",
+          "top": 22,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-10-4",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-5",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-6",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-10-7",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-10-8",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-9",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-10-10",
+          "op": "subtraction",
+          "top": 22,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-11",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-12",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-10-13",
+          "op": "subtraction",
+          "top": 21,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-10-14",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-15",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-10-16",
+          "op": "subtraction",
+          "top": 20,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-17",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-10-18",
+          "op": "subtraction",
+          "top": 10,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-19",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-10-20",
+          "op": "subtraction",
+          "top": 21,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-21",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-10-22",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-23",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-24",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-10-25",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 1
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 11",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 11 complete!",
+      "problems": [
+        {
+          "id": "subtract-11-1",
+          "op": "subtraction",
+          "top": 22,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-2",
+          "op": "subtraction",
+          "top": 21,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-3",
+          "op": "subtraction",
+          "top": 20,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-4",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-5",
+          "op": "subtraction",
+          "top": 20,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-11-6",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-7",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-8",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-9",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-11-10",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-11",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-12",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-13",
+          "op": "subtraction",
+          "top": 21,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-11-14",
+          "op": "subtraction",
+          "top": 23,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-11-15",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-11-16",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-11-17",
+          "op": "subtraction",
+          "top": 23,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-18",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-11-19",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-11-20",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-21",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-11-22",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-11-23",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 11
+        },
+        {
+          "id": "subtract-11-24",
+          "op": "subtraction",
+          "top": 11,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-11-25",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 6
+        }
+      ]
+    },
+    {
+      "title": "Subtract with 12",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Subtract with 12 complete!",
+      "problems": [
+        {
+          "id": "subtract-12-1",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 5
+        },
+        {
+          "id": "subtract-12-2",
+          "op": "subtraction",
+          "top": 21,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-3",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 1
+        },
+        {
+          "id": "subtract-12-4",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 6
+        },
+        {
+          "id": "subtract-12-5",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-6",
+          "op": "subtraction",
+          "top": 22,
+          "bottom": 10
+        },
+        {
+          "id": "subtract-12-7",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 7
+        },
+        {
+          "id": "subtract-12-8",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-9",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 4
+        },
+        {
+          "id": "subtract-12-10",
+          "op": "subtraction",
+          "top": 20,
+          "bottom": 8
+        },
+        {
+          "id": "subtract-12-11",
+          "op": "subtraction",
+          "top": 15,
+          "bottom": 3
+        },
+        {
+          "id": "subtract-12-12",
+          "op": "subtraction",
+          "top": 24,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-13",
+          "op": "subtraction",
+          "top": 19,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-14",
+          "op": "subtraction",
+          "top": 17,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-15",
+          "op": "subtraction",
+          "top": 22,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-16",
+          "op": "subtraction",
+          "top": 21,
+          "bottom": 9
+        },
+        {
+          "id": "subtract-12-17",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-18",
+          "op": "subtraction",
+          "top": 18,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-19",
+          "op": "subtraction",
+          "top": 14,
+          "bottom": 2
+        },
+        {
+          "id": "subtract-12-20",
+          "op": "subtraction",
+          "top": 20,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-21",
+          "op": "subtraction",
+          "top": 16,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-22",
+          "op": "subtraction",
+          "top": 13,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-23",
+          "op": "subtraction",
+          "top": 12,
+          "bottom": 0
+        },
+        {
+          "id": "subtract-12-24",
+          "op": "subtraction",
+          "top": 23,
+          "bottom": 12
+        },
+        {
+          "id": "subtract-12-25",
+          "op": "subtraction",
+          "top": 23,
+          "bottom": 11
+        }
+      ]
+    }
+  ]
+}
