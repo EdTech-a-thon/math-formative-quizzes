@@ -1334,3 +1334,43 @@ button span {
 @media (max-width: 560px) {
   .toast-stack { right: 12px; left: 12px; bottom: 12px; width: auto; }
 }
+
+/* ---- Import dialog: drop, choose or paste, then prune before committing ---- */
+.import-dialog { position: fixed; z-index: 41; top: 50%; left: 50%; display: flex; flex-direction: column; width: min(560px, calc(100vw - 32px)); max-height: min(86vh, 780px); transform: translate(-50%, -50%); border: 1px solid #e6dfed; border-radius: 18px; background: #fffdfa; box-shadow: 0 26px 64px rgba(44, 35, 62, .28); }
+.import-head { display: flex; align-items: center; gap: 10px; padding: 16px 16px 12px 20px; border-bottom: 1px solid #efeaf2; }
+.import-head h2 { margin: 0; font-family: Fraunces, Georgia, serif; font-size: 1.2rem; font-weight: 600; }
+.import-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 20px; }
+
+.import-drop { display: grid; justify-items: center; gap: 7px; padding: 26px 20px; border: 1px dashed #d8d1e4; border-radius: 14px; background: #fbf9fd; color: #a29aae; text-align: center; transition: border-color .12s, background .12s; }
+.import-drop.on { border-color: #7456e8; background: #f4f0ff; color: #6748d1; }
+.import-drop strong { color: #4c465c; font-size: .95rem; font-weight: 800; }
+.import-drop small { color: #a29aae; font-size: .78rem; }
+.import-drop .ghost-btn { margin-top: 2px; }
+
+.import-paste { display: grid; gap: 8px; margin-top: 18px; }
+.import-paste label { color: #8a8399; font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.import-paste textarea { width: 100%; padding: 11px 13px; border: 1px solid #e7e1ea; border-radius: 12px; background: #fff; color: #26233a; font-family: "DM Mono", monospace; font-size: .82rem; line-height: 1.5; resize: vertical; }
+.import-paste textarea:focus { outline: 0; border-color: #7456e8; box-shadow: 0 0 0 3px #eee9ff; }
+.import-paste .ghost-btn { justify-self: start; }
+
+.import-list { margin-top: 22px; padding-top: 18px; border-top: 1px solid #efeaf2; }
+.import-list-head { margin: 0 0 10px; color: #8a8399; font-size: .72rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.import-item { margin-bottom: 10px; padding: 12px 13px; border: 1px solid #ece6f0; border-radius: 13px; background: #fff; }
+.import-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.import-item-head strong { color: #26233a; font-size: .92rem; }
+.import-item-head small { color: #a29aae; font-size: .74rem; }
+.import-kind { padding: 3px 8px; border-radius: 999px; background: #f1edff; color: #6748d1; font-size: .66rem; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+.import-drop-item { width: 24px; height: 24px; margin: 0 0 0 auto; padding: 0; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; box-shadow: none; color: #bcb5c5; }
+.import-drop-item:hover { transform: none; background: #fff0f2; color: #c0415f; }
+
+.import-check { display: flex; align-items: center; gap: 9px; padding: 6px 4px; border-radius: 8px; color: #4c465c; font-size: .85rem; cursor: pointer; }
+.import-check:hover { background: #faf8fd; }
+.import-check input { width: 16px; height: 16px; flex: 0 0 auto; margin: 0; accent-color: #6748d1; cursor: pointer; }
+.import-check span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.import-check em { margin-left: auto; flex: 0 0 auto; color: #a29aae; font-family: "DM Mono", monospace; font-size: .74rem; font-style: normal; }
+.import-path-check { margin-top: 8px; color: #4d399b; font-weight: 700; }
+.import-quizzes { margin-top: 4px; padding-left: 10px; border-left: 2px solid #f1edf7; }
+
+.import-actions { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-top: 1px solid #efeaf2; }
+.import-summary { margin: 0 auto 0 0; color: #77728c; font-size: .82rem; font-weight: 700; }
+.import-actions .editor-save:disabled { cursor: not-allowed; opacity: .5; }

@@ -3,7 +3,7 @@
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/stores";
   import Icon from "$lib/Icon.svelte";
-  import ImportPdfButton from "$lib/ImportPdfButton.svelte";
+  import ImportButton from "$lib/ImportButton.svelte";
   import IconPicker from "$lib/IconPicker.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
   type Quiz = { id: string; data: { title: string; problems?: Problem[] } };
@@ -70,7 +70,7 @@
   }
 </script>
 
-<section class="workspace-page"><header class="workspace-heading"><div><p class="eyebrow">LEARNING PATHS</p><h1>Progressions</h1><p>Release one attempt when your class is ready. After each attempt, students wait for you to release the next one.</p></div><div class="workspace-heading-actions"><ImportPdfButton classId={String($page.params.id)} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New progression</a></div></header>
+<section class="workspace-page"><header class="workspace-heading"><div><p class="eyebrow">LEARNING PATHS</p><h1>Progressions</h1><p>Release one attempt when your class is ready. After each attempt, students wait for you to release the next one.</p></div><div class="workspace-heading-actions"><ImportButton classId={String($page.params.id)} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New progression</a></div></header>
   {#if error}<p class="message error">{error}</p>{/if}
   {#if message}<p class="message success">{message}</p>{/if}
   <section class="progression-list">{#if data.progressions.length}{#each data.progressions as progression (progression.id)}{@const titles = stepTitles(progression.id)}<article class={`progression-card ${shadeClass(progression.shade, progression.operation)}`}>

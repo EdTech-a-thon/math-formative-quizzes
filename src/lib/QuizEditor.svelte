@@ -349,14 +349,18 @@
         pushToast("error", result.message || `We could not read ${file.name}.`, result.detail || "Please try again.");
         return;
       }
-      const incoming = readProblems(result.problems);
+      // A progression holds a series of quizzes, so every question it carries
+      // comes across, in order.
+      const carried = result.kind === "progression" ? (result.progression?.quizzes ?? []).flatMap((item: { problems?: unknown }) => item.problems ?? []) : (result.quiz?.problems ?? []);
+      const incoming = readProblems(carried);
       if (!incoming.length) {
         pushToast("error", "That PDF has no questions in it.", "Nothing was added to this quiz.");
         return;
       }
       problems = [...problems, ...incoming];
       selected = new Set();
-      pushToast("success", `Added ${incoming.length} question${incoming.length === 1 ? "" : "s"} from “${result.title}”.`);
+      const from = result.kind === "progression" ? result.progression?.name : result.quiz?.title;
+      pushToast("success", `Added ${incoming.length} question${incoming.length === 1 ? "" : "s"}${from ? ` from “${from}”` : ""}.`);
     } catch (caught) {
       pushToast("error", `We could not read ${file.name}.`, caught instanceof Error && caught.message ? caught.message : "Check your connection and try again.");
     } finally {

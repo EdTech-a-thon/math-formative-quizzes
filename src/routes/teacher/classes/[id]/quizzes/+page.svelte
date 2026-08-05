@@ -3,7 +3,7 @@
   import { page } from "$app/stores";
   import Icon from "$lib/Icon.svelte";
   import IconGlyph from "$lib/IconGlyph.svelte";
-  import ImportPdfButton from "$lib/ImportPdfButton.svelte";
+  import ImportButton from "$lib/ImportButton.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
   import type { Problem } from "$lib/quizProblems";
 
@@ -67,7 +67,7 @@
 </script>
 
 <section class="workspace-page">
-  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Ordered by progression membership, in the order students work through them. Quizzes in no progression sit at the bottom.</p></div><div class="workspace-heading-actions"><ImportPdfButton classId={String($page.params.id)} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></div></header>
+  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Ordered by progression membership, in the order students work through them. Quizzes in no progression sit at the bottom.</p></div><div class="workspace-heading-actions"><ImportButton classId={String($page.params.id)} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></div></header>
   {#if error}<p class="message error">{error}</p>{/if}
 
   {#if data.quizzes.length}
