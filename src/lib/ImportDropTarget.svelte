@@ -45,7 +45,7 @@
   {#if dragging}
     <div class="import-page-overlay" aria-hidden="true">
       <strong>Drop to import</strong>
-      <span>PDF or JSON</span>
+      <span>Quiz or progression PDF</span>
     </div>
   {/if}
 </div>
