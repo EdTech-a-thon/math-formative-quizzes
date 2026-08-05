@@ -2,6 +2,10 @@
 
 :root {
   --content-width: 930px;
+  /* House colour, used by anything that has neither an operation nor a
+     teacher-chosen shade so a progression is never left uncoloured. */
+  --operation: #7456e8;
+  --operation-soft: #eee9ff;
   font-family: "Nunito Sans", sans-serif;
   color: #26233a;
   background: #f7f3ed;
@@ -711,6 +715,24 @@ button span {
 .overview-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; }
 .overview-actions .ghost-btn { display: inline-flex; align-items: center; gap: 5px; padding: 10px 12px; text-decoration: none; }
 .overview-actions .primary-action { display: inline-flex; align-items: center; gap: 6px; }
+/* Adding students to a path from the progression page itself. */
+.add-students-panel { margin-top: 22px; padding: 16px 18px; border: 1px solid #e9e4df; border-radius: 15px; background: #fffdfa; }
+.add-students-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.add-students-panel h2 { margin: 0 0 3px; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; }
+.add-students-panel > header p { margin: 0; color: #81799a; font-size: .8rem; }
+.add-students-panel .ghost-btn { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.add-students-toolbar { display: flex; align-items: center; gap: 12px; margin-top: 14px; color: #81799a; font-size: .78rem; font-weight: 700; }
+.add-students-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; margin-top: 12px; }
+.add-students-grid label { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 11px; border: 1px solid #e6dfed; border-radius: 11px; background: #fff; cursor: pointer; }
+.add-students-grid label:hover { border-color: #c0b5d5; }
+.add-students-grid label.on { border-color: var(--operation); background: var(--operation-soft); }
+.add-students-grid input { flex: 0 0 auto; width: 16px; height: 16px; accent-color: var(--operation); }
+.add-students-grid .student-avatar { width: 30px; height: 30px; border-radius: 8px; font-size: .9rem; }
+.add-student-name { min-width: 0; }
+.add-student-name strong, .add-student-name small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+.add-student-name small { margin-top: 1px; color: #81799a; font-family: "DM Mono", monospace; font-size: .68rem; }
+.add-students-panel > footer { display: flex; justify-content: flex-end; margin-top: 14px; }
+.add-students-panel > footer .primary-action { display: inline-flex; align-items: center; gap: 6px; width: auto; margin: 0; }
 .progression-overview-heading { display: flex; align-items: end; justify-content: space-between; margin: 30px 0 14px; }
 .progression-overview-heading h2 { margin: 0 0 4px; font-family: Fraunces, Georgia, serif; font-size: 1.25rem; }
 .progression-overview-heading p { margin: 0; color: #81799a; font-size: .8rem; }

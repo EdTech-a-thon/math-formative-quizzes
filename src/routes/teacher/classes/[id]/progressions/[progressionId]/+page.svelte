@@ -8,7 +8,8 @@
   type Step = { id: string; position: number; title: string; questionCount: number };
   type Enrollment = { id: string; studentId: string; studentName: string; currentStep: string; position: number; status: string; released: boolean };
   type Progression = { id: string; name: string; description: string; passPercentage: number; icon: string | null; shade: ShadeId | null };
-  export let data: { progression: Progression; steps: Step[]; enrollments: Enrollment[] };
+  type Student = { id: string; name: string; loginName: string };
+  export let data: { progression: Progression; steps: Step[]; enrollments: Enrollment[]; students: Student[] };
 
   $: base = `/teacher/classes/${$page.params.id}/progressions`;
   $: activeEnrollments = data.enrollments.filter((enrollment) => enrollment.status === "active");
@@ -19,6 +20,47 @@
   let releasing = "";
   let error = "";
   let message = "";
+
+  // Adding students to this path from here, without going back to the roster.
+  let picking = false;
+  let chosen = new Set<string>();
+  let adding = false;
+  $: enrolledIds = new Set(data.enrollments.map((enrollment) => enrollment.studentId));
+  $: unassigned = data.students.filter((student) => !enrolledIds.has(student.id));
+  $: allChosen = unassigned.length > 0 && chosen.size === unassigned.length;
+
+  function toggleStudent(studentId: string) {
+    if (chosen.has(studentId)) chosen.delete(studentId);
+    else chosen.add(studentId);
+    chosen = chosen;
+  }
+  function toggleAll() {
+    chosen = allChosen ? new Set() : new Set(unassigned.map((student) => student.id));
+  }
+
+  async function addStudents() {
+    if (!chosen.size) return;
+    adding = true;
+    error = "";
+    message = "";
+    try {
+      const response = await fetch("/api/enrollments/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progression: data.progression.id, students: [...chosen] }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message);
+      await invalidateAll();
+      message = `${result.assigned} ${result.assigned === 1 ? "student is" : "students are"} now on this path.`;
+      chosen = new Set();
+      picking = false;
+    } catch (caught) {
+      error = caught instanceof Error ? caught.message : "We could not add these students.";
+    } finally {
+      adding = false;
+    }
+  }
 
   async function releaseOne(enrollment: Enrollment) {
     releasing = enrollment.id;
@@ -85,6 +127,40 @@
 
   {#if error}<p class="message error">{error}</p>{/if}
   {#if message}<p class="message success">{message}</p>{/if}
+
+  <section class={`add-students-panel ${shadeClass(data.progression.shade)}`}>
+    <header>
+      <div>
+        <h2>Students on this path</h2>
+        <p>{data.enrollments.length} of {data.students.length} in this class{unassigned.length ? ` · ${unassigned.length} not added yet` : " · everyone is added"}</p>
+      </div>
+      {#if unassigned.length}
+        <button type="button" class="ghost-btn" on:click={() => { picking = !picking; chosen = new Set(); }}>
+          <Icon name={picking ? "x" : "plus"} size={14} /> {picking ? "Cancel" : "Add students"}
+        </button>
+      {/if}
+    </header>
+    {#if picking}
+      <div class="add-students-toolbar">
+        <button type="button" class="ghost-btn" on:click={toggleAll}>{allChosen ? "Clear all" : `Select all ${unassigned.length}`}</button>
+        <span>{chosen.size} selected</span>
+      </div>
+      <div class="add-students-grid">
+        {#each unassigned as student}
+          <label class:on={chosen.has(student.id)}>
+            <input type="checkbox" checked={chosen.has(student.id)} on:change={() => toggleStudent(student.id)} />
+            <span class="student-avatar">{student.name[0]}</span>
+            <span class="add-student-name"><strong>{student.name}</strong><small>{student.loginName}</small></span>
+          </label>
+        {/each}
+      </div>
+      <footer>
+        <button class="primary-action" type="button" disabled={!chosen.size || adding} on:click={addStudents}>
+          <Icon name="plus" size={15} /> {adding ? "Adding…" : chosen.size ? `Add ${chosen.size} ${chosen.size === 1 ? "student" : "students"}` : "Add students"}
+        </button>
+      </footer>
+    {/if}
+  </section>
 
   <div class="progression-overview-heading"><div><h2>Quiz order and student progress</h2><p>Students appear beside the quiz they are currently working toward.</p></div></div>
 

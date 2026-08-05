@@ -31,10 +31,11 @@ export async function load({ locals, cookies, params }) {
   const stepCount: Record<string, number> = {};
   for (const step of stepItems as { progression: string }[]) stepCount[step.progression] = (stepCount[step.progression] ?? 0) + 1;
 
-  const progressions = (progressionItems as { id: string; name: string; operation: Operation }[]).map((progression) => ({
+  const progressions = (progressionItems as { id: string; name: string; operation: Operation; shade?: string }[]).map((progression) => ({
     id: progression.id,
     name: progression.name,
     operation: progression.operation,
+    shade: progression.shade || "",
     stepCount: stepCount[progression.id] ?? 0,
   }));
 
@@ -44,7 +45,7 @@ export async function load({ locals, cookies, params }) {
     progression: string;
     status: string;
     released?: boolean;
-    expand?: { progression?: { name: string; operation: Operation }; currentStep?: { position: number } };
+    expand?: { progression?: { name: string; operation: Operation; shade?: string }; currentStep?: { position: number } };
   };
   const enrollments = (enrollmentItems as EnrollmentRecord[]).map((enrollment) => ({
     id: enrollment.id,
@@ -52,6 +53,7 @@ export async function load({ locals, cookies, params }) {
     progression: enrollment.progression,
     name: enrollment.expand?.progression?.name ?? "Path",
     operation: enrollment.expand?.progression?.operation,
+    shade: enrollment.expand?.progression?.shade || "",
     position: enrollment.expand?.currentStep?.position ?? 1,
     totalSteps: stepCount[enrollment.progression] ?? 0,
     status: enrollment.status,

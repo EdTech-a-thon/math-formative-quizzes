@@ -7,11 +7,12 @@ type Step = { id: string; quiz: string; position: number };
 
 export async function load({ cookies, params }) {
   const headers = { Authorization: `Bearer ${cookies.get("teacher_session")}` };
-  const [progressionResponse, quizzesResponse, stepsResponse, enrollmentsResponse] = await Promise.all([
+  const [progressionResponse, quizzesResponse, stepsResponse, enrollmentsResponse, studentsResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records/${params.progressionId}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/quizzes/records?perPage=500`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=500&sort=position&filter=${encodeURIComponent(`progression="${params.progressionId}"`)}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=2000&expand=student,currentStep&filter=${encodeURIComponent(`progression="${params.progressionId}"`)}`, { headers }),
+    globalThis.fetch(`${pocketBaseUrl}/api/collections/students/records?perPage=500&sort=name&filter=${encodeURIComponent(`class="${params.id}"`)}`, { headers }),
   ]);
   if (progressionResponse.status === 404) error(404, "Progression not found.");
   if (!progressionResponse.ok) error(500, "We could not load this progression.");
@@ -25,9 +26,17 @@ export async function load({ cookies, params }) {
   const steps: Step[] = (await stepsResponse.json()).items.sort((a: Step, b: Step) => a.position - b.position);
   const quizById = new Map(quizzes.map((quiz: { id: string }) => [quiz.id, quiz]));
   const enrollmentItems = enrollmentsResponse.ok ? (await enrollmentsResponse.json()).items : [];
+  // The whole class roster, so the page can offer the students who are not on
+  // this path yet.
+  const classStudents = studentsResponse.ok ? (await studentsResponse.json()).items : [];
 
   return {
     quizzes,
+    students: (classStudents as { id: string; name: string; loginName: string }[]).map((student) => ({
+      id: student.id,
+      name: student.name,
+      loginName: student.loginName,
+    })),
     progression: {
       id: progression.id,
       name: progression.name,
