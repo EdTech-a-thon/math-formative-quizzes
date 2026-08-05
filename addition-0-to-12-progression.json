@@ -1,0 +1,2061 @@
+{
+  "name": "Add 0–12",
+  "description": "Build addition fluency one addend at a time, from 0 through 12.",
+  "passPercentage": 80,
+  "quizzes": [
+    {
+      "title": "Add 0",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 0 complete!",
+      "problems": [
+        {
+          "id": "add-0-1",
+          "op": "addition",
+          "top": 0,
+          "bottom": 7
+        },
+        {
+          "id": "add-0-2",
+          "op": "addition",
+          "top": 9,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-3",
+          "op": "addition",
+          "top": 7,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-4",
+          "op": "addition",
+          "top": 8,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-5",
+          "op": "addition",
+          "top": 0,
+          "bottom": 1
+        },
+        {
+          "id": "add-0-6",
+          "op": "addition",
+          "top": 10,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-7",
+          "op": "addition",
+          "top": 0,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-8",
+          "op": "addition",
+          "top": 4,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-9",
+          "op": "addition",
+          "top": 3,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-10",
+          "op": "addition",
+          "top": 0,
+          "bottom": 5
+        },
+        {
+          "id": "add-0-11",
+          "op": "addition",
+          "top": 0,
+          "bottom": 9
+        },
+        {
+          "id": "add-0-12",
+          "op": "addition",
+          "top": 11,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-13",
+          "op": "addition",
+          "top": 0,
+          "bottom": 2
+        },
+        {
+          "id": "add-0-14",
+          "op": "addition",
+          "top": 5,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-15",
+          "op": "addition",
+          "top": 0,
+          "bottom": 12
+        },
+        {
+          "id": "add-0-16",
+          "op": "addition",
+          "top": 2,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-17",
+          "op": "addition",
+          "top": 0,
+          "bottom": 11
+        },
+        {
+          "id": "add-0-18",
+          "op": "addition",
+          "top": 0,
+          "bottom": 8
+        },
+        {
+          "id": "add-0-19",
+          "op": "addition",
+          "top": 12,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-20",
+          "op": "addition",
+          "top": 0,
+          "bottom": 3
+        },
+        {
+          "id": "add-0-21",
+          "op": "addition",
+          "top": 1,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-22",
+          "op": "addition",
+          "top": 0,
+          "bottom": 6
+        },
+        {
+          "id": "add-0-23",
+          "op": "addition",
+          "top": 6,
+          "bottom": 0
+        },
+        {
+          "id": "add-0-24",
+          "op": "addition",
+          "top": 0,
+          "bottom": 4
+        },
+        {
+          "id": "add-0-25",
+          "op": "addition",
+          "top": 0,
+          "bottom": 10
+        }
+      ]
+    },
+    {
+      "title": "Add 1",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 1 complete!",
+      "problems": [
+        {
+          "id": "add-1-1",
+          "op": "addition",
+          "top": 2,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-2",
+          "op": "addition",
+          "top": 1,
+          "bottom": 8
+        },
+        {
+          "id": "add-1-3",
+          "op": "addition",
+          "top": 10,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-4",
+          "op": "addition",
+          "top": 1,
+          "bottom": 9
+        },
+        {
+          "id": "add-1-5",
+          "op": "addition",
+          "top": 11,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-6",
+          "op": "addition",
+          "top": 1,
+          "bottom": 10
+        },
+        {
+          "id": "add-1-7",
+          "op": "addition",
+          "top": 12,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-8",
+          "op": "addition",
+          "top": 1,
+          "bottom": 11
+        },
+        {
+          "id": "add-1-9",
+          "op": "addition",
+          "top": 1,
+          "bottom": 0
+        },
+        {
+          "id": "add-1-10",
+          "op": "addition",
+          "top": 3,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-11",
+          "op": "addition",
+          "top": 1,
+          "bottom": 2
+        },
+        {
+          "id": "add-1-12",
+          "op": "addition",
+          "top": 8,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-13",
+          "op": "addition",
+          "top": 0,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-14",
+          "op": "addition",
+          "top": 1,
+          "bottom": 3
+        },
+        {
+          "id": "add-1-15",
+          "op": "addition",
+          "top": 1,
+          "bottom": 12
+        },
+        {
+          "id": "add-1-16",
+          "op": "addition",
+          "top": 9,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-17",
+          "op": "addition",
+          "top": 6,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-18",
+          "op": "addition",
+          "top": 1,
+          "bottom": 4
+        },
+        {
+          "id": "add-1-19",
+          "op": "addition",
+          "top": 1,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-20",
+          "op": "addition",
+          "top": 4,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-21",
+          "op": "addition",
+          "top": 1,
+          "bottom": 7
+        },
+        {
+          "id": "add-1-22",
+          "op": "addition",
+          "top": 1,
+          "bottom": 6
+        },
+        {
+          "id": "add-1-23",
+          "op": "addition",
+          "top": 5,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-24",
+          "op": "addition",
+          "top": 7,
+          "bottom": 1
+        },
+        {
+          "id": "add-1-25",
+          "op": "addition",
+          "top": 1,
+          "bottom": 5
+        }
+      ]
+    },
+    {
+      "title": "Add 2",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 2 complete!",
+      "problems": [
+        {
+          "id": "add-2-1",
+          "op": "addition",
+          "top": 3,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-2",
+          "op": "addition",
+          "top": 12,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-3",
+          "op": "addition",
+          "top": 2,
+          "bottom": 5
+        },
+        {
+          "id": "add-2-4",
+          "op": "addition",
+          "top": 2,
+          "bottom": 11
+        },
+        {
+          "id": "add-2-5",
+          "op": "addition",
+          "top": 2,
+          "bottom": 3
+        },
+        {
+          "id": "add-2-6",
+          "op": "addition",
+          "top": 4,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-7",
+          "op": "addition",
+          "top": 9,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-8",
+          "op": "addition",
+          "top": 2,
+          "bottom": 4
+        },
+        {
+          "id": "add-2-9",
+          "op": "addition",
+          "top": 0,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-10",
+          "op": "addition",
+          "top": 8,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-11",
+          "op": "addition",
+          "top": 2,
+          "bottom": 0
+        },
+        {
+          "id": "add-2-12",
+          "op": "addition",
+          "top": 5,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-13",
+          "op": "addition",
+          "top": 1,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-14",
+          "op": "addition",
+          "top": 2,
+          "bottom": 6
+        },
+        {
+          "id": "add-2-15",
+          "op": "addition",
+          "top": 2,
+          "bottom": 12
+        },
+        {
+          "id": "add-2-16",
+          "op": "addition",
+          "top": 2,
+          "bottom": 8
+        },
+        {
+          "id": "add-2-17",
+          "op": "addition",
+          "top": 11,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-18",
+          "op": "addition",
+          "top": 2,
+          "bottom": 7
+        },
+        {
+          "id": "add-2-19",
+          "op": "addition",
+          "top": 2,
+          "bottom": 9
+        },
+        {
+          "id": "add-2-20",
+          "op": "addition",
+          "top": 7,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-21",
+          "op": "addition",
+          "top": 2,
+          "bottom": 10
+        },
+        {
+          "id": "add-2-22",
+          "op": "addition",
+          "top": 2,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-23",
+          "op": "addition",
+          "top": 2,
+          "bottom": 1
+        },
+        {
+          "id": "add-2-24",
+          "op": "addition",
+          "top": 10,
+          "bottom": 2
+        },
+        {
+          "id": "add-2-25",
+          "op": "addition",
+          "top": 6,
+          "bottom": 2
+        }
+      ]
+    },
+    {
+      "title": "Add 3",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 3 complete!",
+      "problems": [
+        {
+          "id": "add-3-1",
+          "op": "addition",
+          "top": 3,
+          "bottom": 11
+        },
+        {
+          "id": "add-3-2",
+          "op": "addition",
+          "top": 3,
+          "bottom": 6
+        },
+        {
+          "id": "add-3-3",
+          "op": "addition",
+          "top": 3,
+          "bottom": 12
+        },
+        {
+          "id": "add-3-4",
+          "op": "addition",
+          "top": 9,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-5",
+          "op": "addition",
+          "top": 3,
+          "bottom": 1
+        },
+        {
+          "id": "add-3-6",
+          "op": "addition",
+          "top": 7,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-7",
+          "op": "addition",
+          "top": 5,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-8",
+          "op": "addition",
+          "top": 10,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-9",
+          "op": "addition",
+          "top": 8,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-10",
+          "op": "addition",
+          "top": 0,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-11",
+          "op": "addition",
+          "top": 3,
+          "bottom": 9
+        },
+        {
+          "id": "add-3-12",
+          "op": "addition",
+          "top": 4,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-13",
+          "op": "addition",
+          "top": 3,
+          "bottom": 5
+        },
+        {
+          "id": "add-3-14",
+          "op": "addition",
+          "top": 3,
+          "bottom": 10
+        },
+        {
+          "id": "add-3-15",
+          "op": "addition",
+          "top": 6,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-16",
+          "op": "addition",
+          "top": 2,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-17",
+          "op": "addition",
+          "top": 3,
+          "bottom": 0
+        },
+        {
+          "id": "add-3-18",
+          "op": "addition",
+          "top": 3,
+          "bottom": 4
+        },
+        {
+          "id": "add-3-19",
+          "op": "addition",
+          "top": 3,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-20",
+          "op": "addition",
+          "top": 3,
+          "bottom": 8
+        },
+        {
+          "id": "add-3-21",
+          "op": "addition",
+          "top": 3,
+          "bottom": 2
+        },
+        {
+          "id": "add-3-22",
+          "op": "addition",
+          "top": 11,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-23",
+          "op": "addition",
+          "top": 3,
+          "bottom": 7
+        },
+        {
+          "id": "add-3-24",
+          "op": "addition",
+          "top": 12,
+          "bottom": 3
+        },
+        {
+          "id": "add-3-25",
+          "op": "addition",
+          "top": 1,
+          "bottom": 3
+        }
+      ]
+    },
+    {
+      "title": "Add 4",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 4 complete!",
+      "problems": [
+        {
+          "id": "add-4-1",
+          "op": "addition",
+          "top": 3,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-2",
+          "op": "addition",
+          "top": 4,
+          "bottom": 1
+        },
+        {
+          "id": "add-4-3",
+          "op": "addition",
+          "top": 7,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-4",
+          "op": "addition",
+          "top": 8,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-5",
+          "op": "addition",
+          "top": 1,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-6",
+          "op": "addition",
+          "top": 2,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-7",
+          "op": "addition",
+          "top": 4,
+          "bottom": 3
+        },
+        {
+          "id": "add-4-8",
+          "op": "addition",
+          "top": 10,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-9",
+          "op": "addition",
+          "top": 6,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-10",
+          "op": "addition",
+          "top": 4,
+          "bottom": 8
+        },
+        {
+          "id": "add-4-11",
+          "op": "addition",
+          "top": 4,
+          "bottom": 6
+        },
+        {
+          "id": "add-4-12",
+          "op": "addition",
+          "top": 11,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-13",
+          "op": "addition",
+          "top": 4,
+          "bottom": 9
+        },
+        {
+          "id": "add-4-14",
+          "op": "addition",
+          "top": 4,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-15",
+          "op": "addition",
+          "top": 4,
+          "bottom": 5
+        },
+        {
+          "id": "add-4-16",
+          "op": "addition",
+          "top": 4,
+          "bottom": 0
+        },
+        {
+          "id": "add-4-17",
+          "op": "addition",
+          "top": 4,
+          "bottom": 11
+        },
+        {
+          "id": "add-4-18",
+          "op": "addition",
+          "top": 0,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-19",
+          "op": "addition",
+          "top": 12,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-20",
+          "op": "addition",
+          "top": 4,
+          "bottom": 12
+        },
+        {
+          "id": "add-4-21",
+          "op": "addition",
+          "top": 9,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-22",
+          "op": "addition",
+          "top": 4,
+          "bottom": 10
+        },
+        {
+          "id": "add-4-23",
+          "op": "addition",
+          "top": 4,
+          "bottom": 7
+        },
+        {
+          "id": "add-4-24",
+          "op": "addition",
+          "top": 5,
+          "bottom": 4
+        },
+        {
+          "id": "add-4-25",
+          "op": "addition",
+          "top": 4,
+          "bottom": 2
+        }
+      ]
+    },
+    {
+      "title": "Add 5",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 5 complete!",
+      "problems": [
+        {
+          "id": "add-5-1",
+          "op": "addition",
+          "top": 5,
+          "bottom": 0
+        },
+        {
+          "id": "add-5-2",
+          "op": "addition",
+          "top": 3,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-3",
+          "op": "addition",
+          "top": 5,
+          "bottom": 4
+        },
+        {
+          "id": "add-5-4",
+          "op": "addition",
+          "top": 5,
+          "bottom": 3
+        },
+        {
+          "id": "add-5-5",
+          "op": "addition",
+          "top": 12,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-6",
+          "op": "addition",
+          "top": 0,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-7",
+          "op": "addition",
+          "top": 5,
+          "bottom": 12
+        },
+        {
+          "id": "add-5-8",
+          "op": "addition",
+          "top": 2,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-9",
+          "op": "addition",
+          "top": 5,
+          "bottom": 6
+        },
+        {
+          "id": "add-5-10",
+          "op": "addition",
+          "top": 5,
+          "bottom": 7
+        },
+        {
+          "id": "add-5-11",
+          "op": "addition",
+          "top": 5,
+          "bottom": 10
+        },
+        {
+          "id": "add-5-12",
+          "op": "addition",
+          "top": 5,
+          "bottom": 1
+        },
+        {
+          "id": "add-5-13",
+          "op": "addition",
+          "top": 5,
+          "bottom": 9
+        },
+        {
+          "id": "add-5-14",
+          "op": "addition",
+          "top": 5,
+          "bottom": 8
+        },
+        {
+          "id": "add-5-15",
+          "op": "addition",
+          "top": 5,
+          "bottom": 11
+        },
+        {
+          "id": "add-5-16",
+          "op": "addition",
+          "top": 10,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-17",
+          "op": "addition",
+          "top": 5,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-18",
+          "op": "addition",
+          "top": 1,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-19",
+          "op": "addition",
+          "top": 8,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-20",
+          "op": "addition",
+          "top": 9,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-21",
+          "op": "addition",
+          "top": 11,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-22",
+          "op": "addition",
+          "top": 4,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-23",
+          "op": "addition",
+          "top": 5,
+          "bottom": 2
+        },
+        {
+          "id": "add-5-24",
+          "op": "addition",
+          "top": 7,
+          "bottom": 5
+        },
+        {
+          "id": "add-5-25",
+          "op": "addition",
+          "top": 6,
+          "bottom": 5
+        }
+      ]
+    },
+    {
+      "title": "Add 6",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 6 complete!",
+      "problems": [
+        {
+          "id": "add-6-1",
+          "op": "addition",
+          "top": 4,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-2",
+          "op": "addition",
+          "top": 7,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-3",
+          "op": "addition",
+          "top": 10,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-4",
+          "op": "addition",
+          "top": 9,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-5",
+          "op": "addition",
+          "top": 6,
+          "bottom": 11
+        },
+        {
+          "id": "add-6-6",
+          "op": "addition",
+          "top": 3,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-7",
+          "op": "addition",
+          "top": 2,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-8",
+          "op": "addition",
+          "top": 6,
+          "bottom": 7
+        },
+        {
+          "id": "add-6-9",
+          "op": "addition",
+          "top": 6,
+          "bottom": 2
+        },
+        {
+          "id": "add-6-10",
+          "op": "addition",
+          "top": 6,
+          "bottom": 0
+        },
+        {
+          "id": "add-6-11",
+          "op": "addition",
+          "top": 12,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-12",
+          "op": "addition",
+          "top": 6,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-13",
+          "op": "addition",
+          "top": 6,
+          "bottom": 1
+        },
+        {
+          "id": "add-6-14",
+          "op": "addition",
+          "top": 0,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-15",
+          "op": "addition",
+          "top": 11,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-16",
+          "op": "addition",
+          "top": 6,
+          "bottom": 12
+        },
+        {
+          "id": "add-6-17",
+          "op": "addition",
+          "top": 6,
+          "bottom": 5
+        },
+        {
+          "id": "add-6-18",
+          "op": "addition",
+          "top": 6,
+          "bottom": 9
+        },
+        {
+          "id": "add-6-19",
+          "op": "addition",
+          "top": 8,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-20",
+          "op": "addition",
+          "top": 6,
+          "bottom": 3
+        },
+        {
+          "id": "add-6-21",
+          "op": "addition",
+          "top": 6,
+          "bottom": 4
+        },
+        {
+          "id": "add-6-22",
+          "op": "addition",
+          "top": 5,
+          "bottom": 6
+        },
+        {
+          "id": "add-6-23",
+          "op": "addition",
+          "top": 6,
+          "bottom": 8
+        },
+        {
+          "id": "add-6-24",
+          "op": "addition",
+          "top": 6,
+          "bottom": 10
+        },
+        {
+          "id": "add-6-25",
+          "op": "addition",
+          "top": 1,
+          "bottom": 6
+        }
+      ]
+    },
+    {
+      "title": "Add 7",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 7 complete!",
+      "problems": [
+        {
+          "id": "add-7-1",
+          "op": "addition",
+          "top": 7,
+          "bottom": 4
+        },
+        {
+          "id": "add-7-2",
+          "op": "addition",
+          "top": 4,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-3",
+          "op": "addition",
+          "top": 6,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-4",
+          "op": "addition",
+          "top": 7,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-5",
+          "op": "addition",
+          "top": 7,
+          "bottom": 12
+        },
+        {
+          "id": "add-7-6",
+          "op": "addition",
+          "top": 7,
+          "bottom": 8
+        },
+        {
+          "id": "add-7-7",
+          "op": "addition",
+          "top": 1,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-8",
+          "op": "addition",
+          "top": 3,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-9",
+          "op": "addition",
+          "top": 9,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-10",
+          "op": "addition",
+          "top": 10,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-11",
+          "op": "addition",
+          "top": 7,
+          "bottom": 2
+        },
+        {
+          "id": "add-7-12",
+          "op": "addition",
+          "top": 7,
+          "bottom": 9
+        },
+        {
+          "id": "add-7-13",
+          "op": "addition",
+          "top": 7,
+          "bottom": 0
+        },
+        {
+          "id": "add-7-14",
+          "op": "addition",
+          "top": 5,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-15",
+          "op": "addition",
+          "top": 0,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-16",
+          "op": "addition",
+          "top": 11,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-17",
+          "op": "addition",
+          "top": 8,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-18",
+          "op": "addition",
+          "top": 7,
+          "bottom": 11
+        },
+        {
+          "id": "add-7-19",
+          "op": "addition",
+          "top": 12,
+          "bottom": 7
+        },
+        {
+          "id": "add-7-20",
+          "op": "addition",
+          "top": 7,
+          "bottom": 10
+        },
+        {
+          "id": "add-7-21",
+          "op": "addition",
+          "top": 7,
+          "bottom": 3
+        },
+        {
+          "id": "add-7-22",
+          "op": "addition",
+          "top": 7,
+          "bottom": 6
+        },
+        {
+          "id": "add-7-23",
+          "op": "addition",
+          "top": 7,
+          "bottom": 5
+        },
+        {
+          "id": "add-7-24",
+          "op": "addition",
+          "top": 7,
+          "bottom": 1
+        },
+        {
+          "id": "add-7-25",
+          "op": "addition",
+          "top": 2,
+          "bottom": 7
+        }
+      ]
+    },
+    {
+      "title": "Add 8",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 8 complete!",
+      "problems": [
+        {
+          "id": "add-8-1",
+          "op": "addition",
+          "top": 12,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-2",
+          "op": "addition",
+          "top": 4,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-3",
+          "op": "addition",
+          "top": 8,
+          "bottom": 11
+        },
+        {
+          "id": "add-8-4",
+          "op": "addition",
+          "top": 2,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-5",
+          "op": "addition",
+          "top": 8,
+          "bottom": 7
+        },
+        {
+          "id": "add-8-6",
+          "op": "addition",
+          "top": 8,
+          "bottom": 10
+        },
+        {
+          "id": "add-8-7",
+          "op": "addition",
+          "top": 8,
+          "bottom": 2
+        },
+        {
+          "id": "add-8-8",
+          "op": "addition",
+          "top": 6,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-9",
+          "op": "addition",
+          "top": 8,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-10",
+          "op": "addition",
+          "top": 11,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-11",
+          "op": "addition",
+          "top": 8,
+          "bottom": 6
+        },
+        {
+          "id": "add-8-12",
+          "op": "addition",
+          "top": 1,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-13",
+          "op": "addition",
+          "top": 8,
+          "bottom": 12
+        },
+        {
+          "id": "add-8-14",
+          "op": "addition",
+          "top": 8,
+          "bottom": 0
+        },
+        {
+          "id": "add-8-15",
+          "op": "addition",
+          "top": 8,
+          "bottom": 9
+        },
+        {
+          "id": "add-8-16",
+          "op": "addition",
+          "top": 8,
+          "bottom": 5
+        },
+        {
+          "id": "add-8-17",
+          "op": "addition",
+          "top": 9,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-18",
+          "op": "addition",
+          "top": 0,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-19",
+          "op": "addition",
+          "top": 3,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-20",
+          "op": "addition",
+          "top": 7,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-21",
+          "op": "addition",
+          "top": 5,
+          "bottom": 8
+        },
+        {
+          "id": "add-8-22",
+          "op": "addition",
+          "top": 8,
+          "bottom": 4
+        },
+        {
+          "id": "add-8-23",
+          "op": "addition",
+          "top": 8,
+          "bottom": 3
+        },
+        {
+          "id": "add-8-24",
+          "op": "addition",
+          "top": 8,
+          "bottom": 1
+        },
+        {
+          "id": "add-8-25",
+          "op": "addition",
+          "top": 10,
+          "bottom": 8
+        }
+      ]
+    },
+    {
+      "title": "Add 9",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 9 complete!",
+      "problems": [
+        {
+          "id": "add-9-1",
+          "op": "addition",
+          "top": 9,
+          "bottom": 0
+        },
+        {
+          "id": "add-9-2",
+          "op": "addition",
+          "top": 9,
+          "bottom": 1
+        },
+        {
+          "id": "add-9-3",
+          "op": "addition",
+          "top": 9,
+          "bottom": 4
+        },
+        {
+          "id": "add-9-4",
+          "op": "addition",
+          "top": 10,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-5",
+          "op": "addition",
+          "top": 9,
+          "bottom": 7
+        },
+        {
+          "id": "add-9-6",
+          "op": "addition",
+          "top": 9,
+          "bottom": 12
+        },
+        {
+          "id": "add-9-7",
+          "op": "addition",
+          "top": 4,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-8",
+          "op": "addition",
+          "top": 9,
+          "bottom": 2
+        },
+        {
+          "id": "add-9-9",
+          "op": "addition",
+          "top": 1,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-10",
+          "op": "addition",
+          "top": 0,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-11",
+          "op": "addition",
+          "top": 12,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-12",
+          "op": "addition",
+          "top": 9,
+          "bottom": 8
+        },
+        {
+          "id": "add-9-13",
+          "op": "addition",
+          "top": 9,
+          "bottom": 6
+        },
+        {
+          "id": "add-9-14",
+          "op": "addition",
+          "top": 9,
+          "bottom": 5
+        },
+        {
+          "id": "add-9-15",
+          "op": "addition",
+          "top": 6,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-16",
+          "op": "addition",
+          "top": 5,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-17",
+          "op": "addition",
+          "top": 7,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-18",
+          "op": "addition",
+          "top": 8,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-19",
+          "op": "addition",
+          "top": 9,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-20",
+          "op": "addition",
+          "top": 11,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-21",
+          "op": "addition",
+          "top": 2,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-22",
+          "op": "addition",
+          "top": 9,
+          "bottom": 11
+        },
+        {
+          "id": "add-9-23",
+          "op": "addition",
+          "top": 9,
+          "bottom": 3
+        },
+        {
+          "id": "add-9-24",
+          "op": "addition",
+          "top": 3,
+          "bottom": 9
+        },
+        {
+          "id": "add-9-25",
+          "op": "addition",
+          "top": 9,
+          "bottom": 10
+        }
+      ]
+    },
+    {
+      "title": "Add 10",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 10 complete!",
+      "problems": [
+        {
+          "id": "add-10-1",
+          "op": "addition",
+          "top": 10,
+          "bottom": 3
+        },
+        {
+          "id": "add-10-2",
+          "op": "addition",
+          "top": 2,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-3",
+          "op": "addition",
+          "top": 10,
+          "bottom": 6
+        },
+        {
+          "id": "add-10-4",
+          "op": "addition",
+          "top": 10,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-5",
+          "op": "addition",
+          "top": 10,
+          "bottom": 1
+        },
+        {
+          "id": "add-10-6",
+          "op": "addition",
+          "top": 10,
+          "bottom": 12
+        },
+        {
+          "id": "add-10-7",
+          "op": "addition",
+          "top": 7,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-8",
+          "op": "addition",
+          "top": 12,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-9",
+          "op": "addition",
+          "top": 10,
+          "bottom": 0
+        },
+        {
+          "id": "add-10-10",
+          "op": "addition",
+          "top": 3,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-11",
+          "op": "addition",
+          "top": 5,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-12",
+          "op": "addition",
+          "top": 4,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-13",
+          "op": "addition",
+          "top": 10,
+          "bottom": 8
+        },
+        {
+          "id": "add-10-14",
+          "op": "addition",
+          "top": 9,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-15",
+          "op": "addition",
+          "top": 10,
+          "bottom": 5
+        },
+        {
+          "id": "add-10-16",
+          "op": "addition",
+          "top": 11,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-17",
+          "op": "addition",
+          "top": 10,
+          "bottom": 11
+        },
+        {
+          "id": "add-10-18",
+          "op": "addition",
+          "top": 0,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-19",
+          "op": "addition",
+          "top": 1,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-20",
+          "op": "addition",
+          "top": 10,
+          "bottom": 2
+        },
+        {
+          "id": "add-10-21",
+          "op": "addition",
+          "top": 10,
+          "bottom": 4
+        },
+        {
+          "id": "add-10-22",
+          "op": "addition",
+          "top": 10,
+          "bottom": 9
+        },
+        {
+          "id": "add-10-23",
+          "op": "addition",
+          "top": 10,
+          "bottom": 7
+        },
+        {
+          "id": "add-10-24",
+          "op": "addition",
+          "top": 6,
+          "bottom": 10
+        },
+        {
+          "id": "add-10-25",
+          "op": "addition",
+          "top": 8,
+          "bottom": 10
+        }
+      ]
+    },
+    {
+      "title": "Add 11",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 11 complete!",
+      "problems": [
+        {
+          "id": "add-11-1",
+          "op": "addition",
+          "top": 11,
+          "bottom": 4
+        },
+        {
+          "id": "add-11-2",
+          "op": "addition",
+          "top": 11,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-3",
+          "op": "addition",
+          "top": 1,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-4",
+          "op": "addition",
+          "top": 2,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-5",
+          "op": "addition",
+          "top": 4,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-6",
+          "op": "addition",
+          "top": 9,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-7",
+          "op": "addition",
+          "top": 3,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-8",
+          "op": "addition",
+          "top": 7,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-9",
+          "op": "addition",
+          "top": 6,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-10",
+          "op": "addition",
+          "top": 12,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-11",
+          "op": "addition",
+          "top": 11,
+          "bottom": 9
+        },
+        {
+          "id": "add-11-12",
+          "op": "addition",
+          "top": 11,
+          "bottom": 0
+        },
+        {
+          "id": "add-11-13",
+          "op": "addition",
+          "top": 11,
+          "bottom": 1
+        },
+        {
+          "id": "add-11-14",
+          "op": "addition",
+          "top": 10,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-15",
+          "op": "addition",
+          "top": 11,
+          "bottom": 7
+        },
+        {
+          "id": "add-11-16",
+          "op": "addition",
+          "top": 11,
+          "bottom": 2
+        },
+        {
+          "id": "add-11-17",
+          "op": "addition",
+          "top": 11,
+          "bottom": 10
+        },
+        {
+          "id": "add-11-18",
+          "op": "addition",
+          "top": 11,
+          "bottom": 3
+        },
+        {
+          "id": "add-11-19",
+          "op": "addition",
+          "top": 11,
+          "bottom": 12
+        },
+        {
+          "id": "add-11-20",
+          "op": "addition",
+          "top": 8,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-21",
+          "op": "addition",
+          "top": 11,
+          "bottom": 5
+        },
+        {
+          "id": "add-11-22",
+          "op": "addition",
+          "top": 5,
+          "bottom": 11
+        },
+        {
+          "id": "add-11-23",
+          "op": "addition",
+          "top": 11,
+          "bottom": 6
+        },
+        {
+          "id": "add-11-24",
+          "op": "addition",
+          "top": 11,
+          "bottom": 8
+        },
+        {
+          "id": "add-11-25",
+          "op": "addition",
+          "top": 0,
+          "bottom": 11
+        }
+      ]
+    },
+    {
+      "title": "Add 12",
+      "timeLimitMinutes": 2,
+      "showScore": true,
+      "passMessage": "Add 12 complete!",
+      "problems": [
+        {
+          "id": "add-12-1",
+          "op": "addition",
+          "top": 7,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-2",
+          "op": "addition",
+          "top": 12,
+          "bottom": 3
+        },
+        {
+          "id": "add-12-3",
+          "op": "addition",
+          "top": 8,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-4",
+          "op": "addition",
+          "top": 4,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-5",
+          "op": "addition",
+          "top": 2,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-6",
+          "op": "addition",
+          "top": 12,
+          "bottom": 6
+        },
+        {
+          "id": "add-12-7",
+          "op": "addition",
+          "top": 0,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-8",
+          "op": "addition",
+          "top": 12,
+          "bottom": 4
+        },
+        {
+          "id": "add-12-9",
+          "op": "addition",
+          "top": 12,
+          "bottom": 0
+        },
+        {
+          "id": "add-12-10",
+          "op": "addition",
+          "top": 12,
+          "bottom": 5
+        },
+        {
+          "id": "add-12-11",
+          "op": "addition",
+          "top": 12,
+          "bottom": 2
+        },
+        {
+          "id": "add-12-12",
+          "op": "addition",
+          "top": 12,
+          "bottom": 1
+        },
+        {
+          "id": "add-12-13",
+          "op": "addition",
+          "top": 9,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-14",
+          "op": "addition",
+          "top": 11,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-15",
+          "op": "addition",
+          "top": 12,
+          "bottom": 11
+        },
+        {
+          "id": "add-12-16",
+          "op": "addition",
+          "top": 12,
+          "bottom": 8
+        },
+        {
+          "id": "add-12-17",
+          "op": "addition",
+          "top": 10,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-18",
+          "op": "addition",
+          "top": 6,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-19",
+          "op": "addition",
+          "top": 12,
+          "bottom": 7
+        },
+        {
+          "id": "add-12-20",
+          "op": "addition",
+          "top": 3,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-21",
+          "op": "addition",
+          "top": 12,
+          "bottom": 9
+        },
+        {
+          "id": "add-12-22",
+          "op": "addition",
+          "top": 12,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-23",
+          "op": "addition",
+          "top": 12,
+          "bottom": 10
+        },
+        {
+          "id": "add-12-24",
+          "op": "addition",
+          "top": 1,
+          "bottom": 12
+        },
+        {
+          "id": "add-12-25",
+          "op": "addition",
+          "top": 5,
+          "bottom": 12
+        }
+      ]
+    }
+  ]
+}

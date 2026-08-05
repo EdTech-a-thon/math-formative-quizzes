@@ -1,0 +1,16 @@
+[Unit]
+Description=Fact Friends website and database
+After=network.target
+
+[Service]
+Type=simple
+User=exedev
+WorkingDirectory=/home/exedev/code
+EnvironmentFile=-/home/exedev/code/.env.production
+ExecStart=/home/exedev/code/deploy/run-production.sh
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -1,7 +1,22 @@
 node_modules/
+.svelte-kit/
+build/
+dist/
+.vite/
+
+# PocketBase is downloaded for each machine. Its records and backups are private.
+pocketbase
+pb_data/
+pb_backups/
+
+# Machine-specific settings and logs never belong in the public repository.
+.env
+.env.*
+!.env.example
+*.log
+
+# Leftovers from the previous app framework.
 .next/
 .next-dev/
 .next-build/
 out/
-*.log
-.env*.local
