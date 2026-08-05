@@ -2,6 +2,10 @@
 
 :root {
   --content-width: 930px;
+  /* House colour, used by anything that has neither an operation nor a
+     teacher-chosen shade so a progression is never left uncoloured. */
+  --operation: #7456e8;
+  --operation-soft: #eee9ff;
   font-family: "Nunito Sans", sans-serif;
   color: #26233a;
   background: #f7f3ed;
@@ -711,6 +715,43 @@ button span {
 .overview-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; }
 .overview-actions .ghost-btn { display: inline-flex; align-items: center; gap: 5px; padding: 10px 12px; text-decoration: none; }
 .overview-actions .primary-action { display: inline-flex; align-items: center; gap: 6px; }
+/* The shared assignment picker (src/lib/AssignDialog.svelte). Same dialog for
+   picking students and for picking progressions. */
+.assign-dialog-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(38, 30, 56, .42); backdrop-filter: blur(2px); }
+.assign-dialog { display: flex; flex-direction: column; width: min(520px, 100%); max-height: min(640px, 88vh); padding: 20px; border-radius: 17px; background: #fffdfa; box-shadow: 0 24px 60px rgba(38, 30, 56, .28); }
+.assign-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.assign-dialog h2 { margin: 0 0 3px; font-family: Fraunces, Georgia, serif; font-size: 1.2rem; }
+.assign-dialog > header p { margin: 0; color: #81799a; font-size: .8rem; }
+.assign-dialog-close { display: grid; width: 32px; height: 32px; flex: 0 0 auto; margin: 0; padding: 0; place-items: center; border: 1px solid #e6dfed; border-radius: 9px; background: #fff; box-shadow: none; color: #756e80; }
+.assign-dialog-close:hover { transform: none; border-color: #c0b5d5; background: #f8f5fb; }
+.assign-dialog-search { display: flex; align-items: center; gap: 8px; margin-top: 15px; padding: 0 12px; border: 1px solid #e0dbe8; border-radius: 11px; background: #fff; color: #a29aae; }
+.assign-dialog-search:focus-within { border-color: #9c87e8; box-shadow: 0 0 0 3px #eee9ff; }
+.assign-dialog-search input { flex: 1; min-width: 0; margin: 0; padding: 10px 0; border: 0; background: transparent; color: #4c465c; font-size: .88rem; outline: none; }
+.assign-dialog-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 11px; color: #81799a; font-size: .76rem; font-weight: 800; }
+.assign-dialog-toolbar .ghost-btn { padding: 5px 10px; font-size: .74rem; }
+.assign-dialog-list { display: grid; gap: 6px; overflow-y: auto; margin-top: 9px; padding: 2px; }
+.assign-dialog-row { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 11px; border: 1px solid #e6dfed; border-radius: 11px; background: #fff; cursor: pointer; }
+.assign-dialog-row:hover { border-color: #c0b5d5; }
+.assign-dialog-row.on { border-color: var(--operation); background: var(--operation-soft); }
+.assign-dialog-row input { flex: 0 0 auto; width: 16px; height: 16px; accent-color: var(--operation); }
+.assign-dialog-row .student-avatar { width: 30px; height: 30px; border-radius: 8px; font-size: .9rem; }
+.assign-dialog-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 8px; background: var(--operation-soft); color: var(--operation); }
+.assign-dialog-name { min-width: 0; }
+.assign-dialog-name strong, .assign-dialog-name small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+.assign-dialog-name small { margin-top: 1px; color: #81799a; font-size: .7rem; font-weight: 700; }
+.assign-dialog-empty { margin: 14px 0; color: #81799a; font-size: .82rem; text-align: center; }
+.assign-dialog .message { margin: 12px 0 0; }
+.assign-dialog > footer { display: flex; align-items: center; justify-content: flex-end; gap: 9px; margin-top: 15px; }
+.assign-dialog > footer .primary-action { display: inline-flex; align-items: center; gap: 6px; width: auto; margin: 0; }
+/* The button that opens the picker, wherever it appears. */
+.assign-open { display: inline-flex; align-items: center; gap: 6px; width: auto; margin: 0; padding: 8px 13px; border: 1px solid #ded6ec; border-radius: 10px; background: #f7f4ff; box-shadow: none; color: #5439bb; font-size: .8rem; font-weight: 800; white-space: nowrap; }
+.assign-open:hover { transform: none; border-color: #7456e8; }
+.assign-open:disabled { opacity: .55; }
+
+/* Adding students to a path from the progression page itself. */
+.add-students-panel { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 22px; padding: 15px 18px; border: 1px solid #e9e4df; border-radius: 15px; background: #fffdfa; }
+.add-students-panel h2 { margin: 0 0 3px; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; }
+.add-students-panel p { margin: 0; color: #81799a; font-size: .8rem; }
 .progression-overview-heading { display: flex; align-items: end; justify-content: space-between; margin: 30px 0 14px; }
 .progression-overview-heading h2 { margin: 0 0 4px; font-family: Fraunces, Georgia, serif; font-size: 1.25rem; }
 .progression-overview-heading p { margin: 0; color: #81799a; font-size: .8rem; }
@@ -734,7 +775,10 @@ button span {
 .step-student-link:hover strong { color: #5439bb; text-decoration: underline; }
 .step-students .student-avatar { width: 30px; height: 30px; border-radius: 8px; font-size: .9rem; }
 .release-status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border-radius: 999px; font-size: .68rem; font-weight: 900; }
-.release-status.ready { background: #e8f5e9; color: #37723e; }
+/* "Ready" — the teacher has released this attempt and the student can sit it.
+   One green for that state everywhere it appears, a shade fresher than the
+   green a finished progression uses. */
+.release-status.ready { background: #e7f6ec; color: #2f7d4f; }
 .release-status.waiting { background: #f2efec; color: #746d77; }
 .step-students button { display: inline-flex; align-items: center; gap: 4px; width: auto; margin: 0; padding: 6px 9px; border: 1px solid #cfc3f3; border-radius: 8px; background: #f7f4ff; box-shadow: none; color: #5439bb; font-size: .7rem; font-weight: 900; }
 .step-students button:hover { border-color: #7456e8; transform: none; }
@@ -755,9 +799,11 @@ button span {
 .student-detail-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 13px; }
 .student-detail-section-heading h2 { margin: 0 0 4px; font-family: Fraunces, Georgia, serif; font-size: 1.25rem; }
 .student-detail-section-heading p { margin: 0; color: #81799a; font-size: .8rem; }
-.student-detail-section-heading > span { color: #81799a; font-size: .72rem; font-weight: 900; }
+.student-detail-section-heading > span, .student-detail-heading-actions span { color: #81799a; font-size: .72rem; font-weight: 900; }
+.student-detail-heading-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 11px; }
 .student-progression-grid { display: grid; gap: 9px; }
 .student-progression-card { display: flex; align-items: center; gap: 13px; padding: 15px; border: 1px solid #e8e2e0; border-radius: 13px; background: #fffdfa; color: inherit; text-decoration: none; }
+.student-progression-link { display: flex; flex: 1; min-width: 0; align-items: center; gap: 13px; color: inherit; text-decoration: none; }
 .student-progression-card:hover { border-color: var(--operation, #7456e8); box-shadow: 0 6px 16px rgba(44,35,62,.06); }
 .student-progression-icon { display: grid; width: 39px; height: 39px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: var(--operation-soft, #eee9ff); color: var(--operation, #6748d1); }
 .student-progression-main { min-width: 0; flex: 1; }
@@ -769,8 +815,12 @@ button span {
 .student-current-step em { justify-self: start; color: #81799a; font-size: .65rem; font-style: normal; font-weight: 800; }
 .student-release-state { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border-radius: 999px; font-size: .7rem; font-weight: 900; white-space: nowrap; }
 .student-release-state.waiting { background: #f0edeb; color: #706977; }
-.student-release-state.released { background: #eef0fc; color: #50459b; }
+.student-release-state.ready { background: #e7f6ec; color: #2f7d4f; }
 .student-release-state.completed { background: #e8f5e9; color: #37723e; }
+/* Releasing and assigning from the student's own page. */
+.student-release-button { display: inline-flex; align-items: center; gap: 4px; width: auto; flex: 0 0 auto; margin: 0; padding: 6px 9px; border: 1px solid #cfc3f3; border-radius: 8px; background: #f7f4ff; box-shadow: none; color: #5439bb; font-size: .7rem; font-weight: 900; white-space: nowrap; }
+.student-release-button:hover { transform: none; border-color: #7456e8; }
+.student-release-button:disabled { opacity: .55; }
 .student-attempts { margin-top: 34px; }
 .teacher-attempt-list { overflow: hidden; border: 1px solid #e8e2e0; border-radius: 14px; background: #fffdfa; }
 .teacher-attempt-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto 16px; align-items: center; gap: 13px; padding: 13px 16px; border-top: 1px solid #eee9e5; color: inherit; text-decoration: none; }
@@ -786,7 +836,7 @@ button span {
 .attempt-outcome { min-width: 126px; padding: 5px 8px; border-radius: 7px; background: #f3efeb; color: #81799a; font-size: .68rem; font-weight: 900; text-align: center; }
 .attempt-outcome.passed { background: #e8f5e9; color: #37723e; }
 .student-detail-empty { margin: 0; padding: 28px; border: 1px dashed #d8d1e4; border-radius: 13px; background: #fffdfa; color: #81799a; font-size: .82rem; text-align: center; }
-@media (max-width: 650px) { .student-detail-section-heading { align-items: flex-start; }.teacher-attempt-row { grid-template-columns: 31px minmax(0, 1fr) auto 16px; }.attempt-outcome { grid-column: 2 / -1; justify-self: start; }.student-progression-card { align-items: flex-start; flex-wrap: wrap; }.student-current-step { margin-left: 52px; }.student-release-state { margin-left: auto; } }
+@media (max-width: 650px) { .student-detail-section-heading { align-items: flex-start; }.teacher-attempt-row { grid-template-columns: 31px minmax(0, 1fr) auto 16px; }.attempt-outcome { grid-column: 2 / -1; justify-self: start; }.student-progression-card, .student-progression-link { align-items: flex-start; flex-wrap: wrap; }.student-current-step { margin-left: 52px; }.student-release-state { margin-left: auto; }.student-release-button { margin-left: 52px; } }
 .attempt-review-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 34px; padding: 23px; border: 1px solid #e8e2e0; border-radius: 16px; background: #fffdfa; }
 .attempt-review-header h1 { margin: 3px 0 5px; font-size: clamp(1.8rem, 4vw, 2.4rem); }
 .attempt-review-header p:not(.eyebrow) { margin: 0 0 4px; color: #706977; font-size: .82rem; }
@@ -839,8 +889,7 @@ button span {
 .roster-assign-row.row-selected { background: #f7f4ff; }
 .bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; padding: 11px 14px; border: 1px solid #ded6ec; border-radius: 12px; background: #f7f4ff; box-shadow: 0 8px 20px rgba(44, 35, 62, .06); }
 .bulk-count { color: #4d399b; font-size: .82rem; font-weight: 900; }
-.bulk-progression { min-width: 190px; padding: 8px 10px; border: 1px solid #ded6ec; border-radius: 8px; background: white; color: #26233a; font-family: "Nunito Sans", sans-serif; font-size: .84rem; }
-.bulk-assign { width: auto; margin: 0; padding: 8px 16px; font-size: .82rem; }
+.bulk-assign { display: inline-flex; align-items: center; gap: 6px; width: auto; margin: 0; padding: 8px 16px; font-size: .82rem; }
 .bulk-assign:disabled { opacity: .5; }
 .bulk-clear { width: auto; margin: 0; padding: 8px 12px; border: 1px solid #ded6ec; background: white; box-shadow: none; color: #6b6479; font-size: .82rem; }
 .bulk-clear:hover { transform: none; border-color: #7456e8; color: #4d399b; }
@@ -854,16 +903,10 @@ button span {
 .assign-remove:disabled { opacity: .5; }
 .attempt-release { display: inline-flex; align-items: center; gap: 3px; width: auto; margin: 0 0 0 2px; padding: 3px 7px; border: 1px solid currentColor; border-radius: 999px; background: #fff; box-shadow: none; color: var(--operation); font-size: .68rem; font-weight: 900; }
 .attempt-release:hover { background: rgba(255,255,255,.65); transform: none; }
-.attempt-ready { display: inline-flex; align-items: center; gap: 2px; color: var(--operation); font-size: .68rem; font-weight: 900; }
-.assign-menu { position: relative; }
+.attempt-ready { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 999px; background: #e7f6ec; color: #2f7d4f; font-size: .68rem; font-weight: 900; }
 .assign-add { display: inline-flex; align-items: center; gap: 5px; width: auto; margin: 0; padding: 6px 11px; border: 1px dashed #cfc6dd; border-radius: 999px; background: #fff; box-shadow: none; color: #6b6479; font-size: .78rem; font-weight: 800; }
 .assign-add:hover { transform: none; border-color: #7456e8; color: #4d399b; }
 .assign-add:disabled { opacity: .5; }
-.assign-dropdown { position: absolute; z-index: 8; top: calc(100% + 6px); left: 0; min-width: 200px; padding: 5px; border: 1px solid #e2dce9; border-radius: 12px; background: #fffdfa; box-shadow: 0 12px 26px rgba(44, 35, 62, .16); }
-.assign-dropdown button { display: flex; align-items: center; gap: 9px; width: 100%; margin: 0; padding: 8px 10px; border-radius: 8px; background: transparent; box-shadow: none; color: #4c465c; font-size: .82rem; font-weight: 700; text-align: left; }
-.assign-dropdown button:hover { transform: none; background: var(--operation-soft); color: var(--operation); }
-.assign-dropdown .assign-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--operation); }
-.assign-dropdown em { margin-left: auto; color: #a29aae; font-style: normal; font-size: .68rem; font-weight: 700; }
 .assign-empty { color: #a29aae; font-size: .8rem; }
 .student-row-simple { grid-template-columns: minmax(0, 1fr) 32px; }
 @media (max-width: 700px) {

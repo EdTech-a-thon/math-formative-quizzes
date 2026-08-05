@@ -47,8 +47,11 @@ routerAdd("POST", "/api/fact-friends/join", (e) => {
   return e.json(200, { studentId: student.id, studentName: student.getString("name"), className: classRoom.getString("name") });
 });
 
+// Look up a class by its code. An optional studentId says who is already signed
+// in on this device, so a shared class link can tell "this is my class, take me
+// to my work" apart from "someone new is joining on this device".
 routerAdd("POST", "/api/fact-friends/class-code", (e) => {
-  const data = new DynamicModel({ classCode: "" });
+  const data = new DynamicModel({ classCode: "", studentId: "" });
   e.bindBody(data);
 
   const classCode = data.classCode.trim();
@@ -56,15 +59,25 @@ routerAdd("POST", "/api/fact-friends/class-code", (e) => {
     throw new BadRequestError("Enter a 4 to 6 digit class code.");
   }
 
+  let classRoom;
   try {
-    const classRoom = e.app.findFirstRecordByData("classes", "classCode", classCode);
+    classRoom = e.app.findFirstRecordByData("classes", "classCode", classCode);
     if (classRoom.getBool("archived")) {
       throw new Error("Archived class");
     }
-    return e.json(200, { classId: classRoom.id, className: classRoom.getString("name") });
   } catch (_) {
     throw new BadRequestError("That class code was not found. Check with your teacher and try again.");
   }
+
+  let studentInClass = false;
+  const studentId = (data.studentId || "").trim();
+  if (studentId) {
+    try {
+      studentInClass = e.app.findRecordById("students", studentId).getString("class") === classRoom.id;
+    } catch (_) {}
+  }
+
+  return e.json(200, { classId: classRoom.id, className: classRoom.getString("name"), studentInClass: studentInClass });
 });
 
 // Everything a student's home screen shows: the quiz waiting for them on each

@@ -10,8 +10,9 @@
     position: number;
     totalSteps: number;
     allowIncompleteAnswers: boolean;
+    timerStorageKey: string;
   };
-  export let form: { finished?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; error?: string } | null = null;
+  export let form: { finished?: boolean; timedOut?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; error?: string } | null = null;
 
   // Exactly the questions the teacher arranged, in their order.
   $: problems = data.quiz.problems;
@@ -20,7 +21,9 @@
   let secondsLeft = data.quiz.timeLimitMinutes * 60;
   let handingIn = false;
   let sheet: HTMLFormElement;
+  let timeoutSubmit: HTMLButtonElement;
   let ticker = 0;
+  let deadline = 0;
 
   $: answered = problems.filter((_, index) => (answers[index] ?? "").trim() !== "").length;
   $: canHandIn = data.allowIncompleteAnswers || answered === problems.length;
@@ -29,18 +32,37 @@
   // Time is up: hand the quiz in exactly as it stands.
   onMount(() => {
     if (!secondsLeft) return;
+
+    const savedDeadline = Number(window.localStorage.getItem(data.timerStorageKey));
+    deadline = Number.isFinite(savedDeadline) && savedDeadline > 0
+      ? savedDeadline
+      : Date.now() + secondsLeft * 1000;
+    window.localStorage.setItem(data.timerStorageKey, String(deadline));
+
+    updateClock();
+    if (!secondsLeft) {
+      submitAtTimeout();
+      return;
+    }
     ticker = window.setInterval(() => {
-      secondsLeft -= 1;
+      updateClock();
       if (secondsLeft <= 0) {
         stopClock();
-        if (!handingIn) sheet.requestSubmit();
+        submitAtTimeout();
       }
     }, 1000);
   });
   onDestroy(stopClock);
+  function updateClock() {
+    secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  }
   function stopClock() {
     if (ticker) window.clearInterval(ticker);
     ticker = 0;
+  }
+  function submitAtTimeout() {
+    if (handingIn) return;
+    sheet.requestSubmit(timeoutSubmit);
   }
   $: if (form?.finished) stopClock();
 
@@ -51,7 +73,10 @@
     stopClock();
     return async ({ result }: { result: { type: string; data?: Record<string, unknown> } }) => {
       handingIn = false;
-      if (result.type === "success" || result.type === "failure") form = result.data as typeof form;
+      if (result.type === "success" || result.type === "failure") {
+        form = result.data as typeof form;
+        if (form?.finished) window.localStorage.removeItem(data.timerStorageKey);
+      }
       else await applyAction(result as Parameters<typeof applyAction>[0]);
     };
   }
@@ -62,6 +87,7 @@
     <section class="quiz-results" aria-labelledby="results-title">
       <div class="results-badge"><Icon name={form.passed ? "star" : "smile"} size={34} /></div>
       <h1 id="results-title">{form.passed ? form.passMessage : "Nice try!"}</h1>
+      {#if form.timedOut}<p class="results-note">Time’s up — your answers were handed in automatically.</p>{/if}
       {#if form.showScore}
         <div class="results-score"><strong>{form.correct}<small>/{form.total}</small></strong><span>correct</span></div>
       {:else}
@@ -72,7 +98,7 @@
       {:else if form.leveledUp}
         <p class="results-note">Next quiz: {form.nextQuizName}</p>
       {:else}
-        <p class="results-note">You are still on step {form.position} of {form.totalSteps}. Have another go when you are ready.</p>
+        <p class="results-note">You’ll need to retake this quiz before moving on. It will stay as your next step.</p>
       {/if}
       <a class="results-home" href="/home">Back to my quizzes <Icon name="arrow-right" size={16} /></a>
     </section>
@@ -84,6 +110,7 @@
       use:enhance={handIn}
     >
       <input type="hidden" name="secondsRemaining" value={Math.max(0, secondsLeft)} />
+      <button hidden type="submit" name="timedOut" value="true" bind:this={timeoutSubmit}>Submit timed-out quiz</button>
 
       <header class="quiz-head">
         <div>

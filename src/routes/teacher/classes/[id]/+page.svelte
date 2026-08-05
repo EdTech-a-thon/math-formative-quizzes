@@ -1,11 +1,14 @@
 <script lang="ts">
   import Icon from "$lib/Icon.svelte";
+  import AssignDialog from "$lib/AssignDialog.svelte";
   import { invalidateAll } from "$app/navigation";
+  import { shadeClass } from "$lib/shades";
+  import { assignmentSummary } from "$lib/assignments";
 
   type Operation = "multiplication" | "division" | "addition" | "subtraction";
   type Student = { id: string; name: string; loginName: string };
-  type Progression = { id: string; name: string; operation: Operation; stepCount: number };
-  type Enrollment = { id: string; student: string; progression: string; name: string; operation: Operation; position: number; totalSteps: number; status: string; released: boolean };
+  type Progression = { id: string; name: string; operation: Operation; shade: string; stepCount: number };
+  type Enrollment = { id: string; student: string; progression: string; name: string; operation: Operation; shade: string; position: number; totalSteps: number; status: string; released: boolean };
 
   export let data: {
     classRoom: { id: string; name: string; classCode: string };
@@ -16,13 +19,10 @@
 
   let copied = false;
   let showingClassCode = false;
-  let openAssign: string | null = null;
   let busy = false;
   let error = "";
 
   let selected = new Set<string>();
-  let bulkProgression = "";
-  let bulkBusy = false;
   let bulkMessage = "";
   $: allSelected = data.students.length > 0 && selected.size === data.students.length;
   $: someSelected = selected.size > 0 && !allSelected;
@@ -43,38 +43,41 @@
     return { update };
   }
 
-  async function bulkAssign() {
-    if (!bulkProgression || !selected.size) return;
-    bulkBusy = true;
-    bulkMessage = "";
-    error = "";
+  $: enrollmentsFor = (studentId: string) => data.enrollments.filter((item) => item.student === studentId);
+
+  // The shared picker, opened either for one row or for everyone ticked. It
+  // offers any progression at least one of them is not on yet.
+  let assignTo: string[] = [];
+  let assignedWholeSelection = false;
+  let dialogBusy = false;
+  let dialogError = "";
+  $: assignChoices = data.progressions
+    .filter((progression) => assignTo.some((studentId) => !enrollmentsFor(studentId).some((item) => item.progression === progression.id)))
+    .map((progression) => ({
+      id: progression.id,
+      name: progression.name,
+      detail: `${progression.stepCount} ${progression.stepCount === 1 ? "quiz" : "quizzes"}`,
+      shade: progression.shade,
+      operation: progression.operation,
+    }));
+  $: assignTitle = assignTo.length === 1
+    ? `Assign progressions to ${data.students.find((student) => student.id === assignTo[0])?.name ?? "this student"}`
+    : `Assign progressions to ${assignTo.length} students`;
+
+  async function confirmAssign(progressionIds: string[]) {
+    dialogBusy = true;
+    dialogError = "";
     try {
-      const response = await fetch("/api/enrollments/bulk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ progression: bulkProgression, students: [...selected] }) });
+      const response = await fetch("/api/enrollments/bulk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ students: assignTo, progressions: progressionIds }) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message);
       await invalidateAll();
-      selected = new Set();
-      const skipped = result.skipped ? `, ${result.skipped} already assigned` : "";
-      bulkMessage = `Assigned ${result.assigned} ${result.assigned === 1 ? "student" : "students"}${skipped}.`;
-      bulkProgression = "";
-    } catch (caught) { error = caught instanceof Error ? caught.message : "We could not assign these students."; } finally { bulkBusy = false; }
-  }
-
-  $: enrollmentsFor = (studentId: string) => data.enrollments.filter((item) => item.student === studentId);
-  $: availableFor = (studentId: string) => {
-    const taken = new Set(enrollmentsFor(studentId).map((item) => item.progression));
-    return data.progressions.filter((progression) => !taken.has(progression.id));
-  };
-
-  async function assign(studentId: string, progressionId: string) {
-    openAssign = null;
-    busy = true;
-    error = "";
-    try {
-      const response = await fetch("/api/enrollments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ student: studentId, progression: progressionId }) });
-      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message);
-      await invalidateAll();
-    } catch (caught) { error = caught instanceof Error ? caught.message : "We could not assign this student."; } finally { busy = false; }
+      assignTo = [];
+      // Ticked students are only cleared when it was their own Assign button;
+      // a single row's button leaves the selection alone.
+      if (assignedWholeSelection) selected = new Set();
+      bulkMessage = assignmentSummary(result.assigned, result.skipped);
+    } catch (caught) { dialogError = caught instanceof Error ? caught.message : "We could not finish these assignments."; } finally { dialogBusy = false; }
   }
   async function unassign(enrollmentId: string) {
     busy = true;
@@ -101,14 +104,7 @@
     window.setTimeout(() => copied = false, 1800);
   }
   function closeWithEscape(event: KeyboardEvent) {
-    if (event.key === "Escape") { showingClassCode = false; openAssign = null; }
-  }
-  function closeMenuOutside(node: HTMLElement, studentId: string) {
-    function handleClick(event: MouseEvent) {
-      if (openAssign === studentId && !node.contains(event.target as Node)) openAssign = null;
-    }
-    document.addEventListener("click", handleClick);
-    return { destroy: () => document.removeEventListener("click", handleClick) };
+    if (event.key === "Escape") showingClassCode = false;
   }
 </script>
 
@@ -123,12 +119,8 @@
     {#if selected.size}
       <div class="bulk-bar" role="region" aria-label="Bulk actions">
         <span class="bulk-count">{selected.size} selected</span>
-        <select class="bulk-progression" bind:value={bulkProgression} disabled={bulkBusy} aria-label="Progression to assign">
-          <option value="" disabled>Assign a progression…</option>
-          {#each data.progressions as progression}<option value={progression.id}>{progression.name} · {progression.stepCount} steps</option>{/each}
-        </select>
-        <button type="button" class="bulk-assign" disabled={bulkBusy || !bulkProgression} on:click={bulkAssign}>{bulkBusy ? "Assigning…" : "Assign"}</button>
-        <button type="button" class="bulk-clear" disabled={bulkBusy} on:click={() => (selected = new Set())}>Clear</button>
+        <button type="button" class="bulk-assign" disabled={!data.progressions.length} on:click={() => { assignedWholeSelection = true; assignTo = [...selected]; }}><Icon name="plus" size={15} /> Assign</button>
+        <button type="button" class="bulk-clear" on:click={() => (selected = new Set())}>Clear</button>
       </div>
     {/if}
     {#if bulkMessage}<p class="message success">{bulkMessage}</p>{/if}
@@ -140,20 +132,11 @@
           <a class="roster-student-name student-detail-link" href={`/teacher/classes/${data.classRoom.id}/students/${student.id}`}><span class="student-avatar">{student.name[0]}</span><div><strong>{student.name}</strong><small>{student.loginName}</small></div></a>
           <div class="assign-cell">
             {#each enrollmentsFor(student.id) as enrollment}
-              <span class={`assign-chip op-${enrollment.operation}`}><span class="assign-dot"></span><b>{enrollment.name}</b><small>step {enrollment.position}/{enrollment.totalSteps}</small>{#if enrollment.status === "active"}{#if enrollment.released}<span class="attempt-ready"><Icon name="check" size={11} /> Ready</span>{:else}<button type="button" class="attempt-release" disabled={busy} on:click={() => release(enrollment.id)}><Icon name="unlock" size={12} /> Release</button>{/if}{/if}<button type="button" class="assign-remove" aria-label={`Remove ${enrollment.name}`} disabled={busy} on:click={() => unassign(enrollment.id)}><Icon name="x" size={13} /></button></span>
+              <span class={`assign-chip ${shadeClass(enrollment.shade, enrollment.operation)}`}><span class="assign-dot"></span><b>{enrollment.name}</b><small>step {enrollment.position}/{enrollment.totalSteps}</small>{#if enrollment.status === "active"}{#if enrollment.released}<span class="attempt-ready"><Icon name="check" size={11} /> Ready</span>{:else}<button type="button" class="attempt-release" disabled={busy} on:click={() => release(enrollment.id)}><Icon name="unlock" size={12} /> Release</button>{/if}{/if}<button type="button" class="assign-remove" aria-label={`Remove ${enrollment.name}`} disabled={busy} on:click={() => unassign(enrollment.id)}><Icon name="x" size={13} /></button></span>
             {/each}
-            {#if availableFor(student.id).length}
-              <div class="assign-menu" use:closeMenuOutside={student.id}>
-                <button type="button" class="assign-add" disabled={busy} on:click|stopPropagation={() => openAssign = openAssign === student.id ? null : student.id}><Icon name="plus" size={14} /> Assign</button>
-                {#if openAssign === student.id}
-                  <div class="assign-dropdown">
-                    {#each availableFor(student.id) as progression}
-                      <button type="button" class={`op-${progression.operation}`} on:click|stopPropagation={() => assign(student.id, progression.id)}><span class="assign-dot"></span>{progression.name}<em>{progression.stepCount} steps</em></button>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {:else if !enrollmentsFor(student.id).length}
+            {#if data.progressions.length}
+              <button type="button" class="assign-add" disabled={busy} on:click={() => { assignedWholeSelection = false; assignTo = [student.id]; }}><Icon name="plus" size={14} /> Assign</button>
+            {:else}
               <span class="assign-empty">No progressions to assign yet</span>
             {/if}
           </div>
@@ -164,6 +147,19 @@
     <section class="empty-roster"><span><Icon name="users" size={22} /></span><h2>No students yet</h2><p>Learners who join this class will appear here.</p></section>
   {/if}
 </section>
+
+{#if assignTo.length}
+  <AssignDialog
+    title={assignTitle}
+    subtitle="Pick as many progressions as you like. Anyone already on one keeps their progress."
+    kind="progression"
+    items={assignChoices}
+    busy={dialogBusy}
+    error={dialogError}
+    onClose={() => { assignTo = []; dialogError = ""; }}
+    onConfirm={confirmAssign}
+  />
+{/if}
 
 {#if showingClassCode}
   <div class="code-modal" role="dialog" aria-modal="true" aria-label={`${data.classRoom.name} class code`}>

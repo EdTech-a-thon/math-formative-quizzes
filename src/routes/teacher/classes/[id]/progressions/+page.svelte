@@ -62,7 +62,7 @@
       await invalidateAll();
       message = result.released
         ? `${result.released} ${result.released === 1 ? "student is" : "students are"} ready for their next attempt in ${progression.name}.`
-        : `Everyone in ${progression.name} is already released or finished.`;
+        : `Everyone in ${progression.name} is ready or finished already.`;
     } catch (caught) {
       error = caught instanceof Error ? caught.message : "We could not release these attempts.";
     } finally {
@@ -89,7 +89,7 @@
           <a class="progression-card-edit" href={`${base}/${progression.id}/edit`} aria-label={`Edit ${progression.name}`} title={`Edit ${progression.name}`}><Icon name="pencil" size={15} /></a>
           <button type="button" disabled={!progression.waitingCount || releasing === progression.id} on:click={() => releaseProgression(progression)}>
             <Icon name={progression.waitingCount ? "unlock" : "check"} size={14} />
-            {releasing === progression.id ? "Releasing…" : progression.waitingCount ? `Release ${progression.waitingCount}` : "All released"}
+            {releasing === progression.id ? "Releasing…" : progression.waitingCount ? `Release ${progression.waitingCount}` : "All ready"}
           </button>
         </div>
       </div>

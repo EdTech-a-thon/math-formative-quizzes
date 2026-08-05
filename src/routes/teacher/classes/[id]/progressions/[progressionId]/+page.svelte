@@ -3,12 +3,15 @@
   import { page } from "$app/stores";
   import Icon from "$lib/Icon.svelte";
   import IconGlyph from "$lib/IconGlyph.svelte";
+  import AssignDialog from "$lib/AssignDialog.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
+  import { assignmentSummary } from "$lib/assignments";
 
   type Step = { id: string; position: number; title: string; questionCount: number };
   type Enrollment = { id: string; studentId: string; studentName: string; currentStep: string; position: number; status: string; released: boolean };
   type Progression = { id: string; name: string; description: string; passPercentage: number; icon: string | null; shade: ShadeId | null };
-  export let data: { progression: Progression; steps: Step[]; enrollments: Enrollment[] };
+  type Student = { id: string; name: string; loginName: string };
+  export let data: { progression: Progression; steps: Step[]; enrollments: Enrollment[]; students: Student[] };
 
   $: base = `/teacher/classes/${$page.params.id}/progressions`;
   $: activeEnrollments = data.enrollments.filter((enrollment) => enrollment.status === "active");
@@ -19,6 +22,37 @@
   let releasing = "";
   let error = "";
   let message = "";
+
+  // The same picker the roster uses, pointed at students instead of paths.
+  let picking = false;
+  let dialogBusy = false;
+  let dialogError = "";
+  $: enrolledIds = new Set(data.enrollments.map((enrollment) => enrollment.studentId));
+  $: unassigned = data.students
+    .filter((student) => !enrolledIds.has(student.id))
+    .map((student) => ({ id: student.id, name: student.name, detail: student.loginName, shade: data.progression.shade ?? "" }));
+
+  async function assignStudents(studentIds: string[]) {
+    dialogBusy = true;
+    dialogError = "";
+    message = "";
+    try {
+      const response = await fetch("/api/enrollments/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progressions: [data.progression.id], students: studentIds }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message);
+      await invalidateAll();
+      picking = false;
+      message = assignmentSummary(result.assigned, result.skipped);
+    } catch (caught) {
+      dialogError = caught instanceof Error ? caught.message : "We could not add these students.";
+    } finally {
+      dialogBusy = false;
+    }
+  }
 
   async function releaseOne(enrollment: Enrollment) {
     releasing = enrollment.id;
@@ -78,13 +112,23 @@
       <a class="ghost-btn" href={`/api/progressions/${data.progression.id}/pdf`} title="Export this path and all its quizzes as one PDF"><Icon name="upload" size={14} /> Export</a>
       <button class="primary-action" type="button" disabled={!waitingCount || Boolean(releasing)} on:click={releaseAll}>
         <Icon name={waitingCount ? "unlock" : "check"} size={15} />
-        {releasing === "all" ? "Releasing…" : waitingCount ? `Release ${waitingCount} waiting` : "Everyone released"}
+        {releasing === "all" ? "Releasing…" : waitingCount ? `Release ${waitingCount} waiting` : "Everyone ready"}
       </button>
     </div>
   </header>
 
   {#if error}<p class="message error">{error}</p>{/if}
   {#if message}<p class="message success">{message}</p>{/if}
+
+  <section class="add-students-panel">
+    <div>
+      <h2>Students on this path</h2>
+      <p>{data.enrollments.length} of {data.students.length} in this class{unassigned.length ? ` · ${unassigned.length} not added yet` : " · everyone is added"}</p>
+    </div>
+    {#if data.students.length}
+      <button type="button" class="assign-open" on:click={() => (picking = true)}><Icon name="plus" size={15} /> Assign</button>
+    {/if}
+  </section>
 
   <div class="progression-overview-heading"><div><h2>Quiz order and student progress</h2><p>Students appear beside the quiz they are currently working toward.</p></div></div>
 
@@ -101,7 +145,7 @@
                 <article>
                   <a class="step-student-link" href={`/teacher/classes/${$page.params.id}/students/${enrollment.studentId}`}><span class="student-avatar">{enrollment.studentName[0]}</span><strong>{enrollment.studentName}</strong></a>
                   {#if enrollment.released}
-                    <span class="release-status ready"><Icon name="check" size={12} /> Released</span>
+                    <span class="release-status ready"><Icon name="check" size={12} /> Ready</span>
                   {:else}
                     <span class="release-status waiting"><Icon name="lock" size={12} /> Waiting</span>
                     <button type="button" disabled={Boolean(releasing)} on:click={() => releaseOne(enrollment)}><Icon name="unlock" size={12} /> {releasing === enrollment.id ? "Releasing…" : "Release"}</button>
@@ -121,3 +165,16 @@
     <section class="progression-completed" id="completed"><h2><Icon name="check" size={17} /> Completed</h2><div class="completed-student-links">{#each completed as student}<a href={`/teacher/classes/${$page.params.id}/students/${student.studentId}`}>{student.studentName}</a>{/each}</div></section>
   {/if}
 </section>
+
+{#if picking}
+  <AssignDialog
+    title={`Assign students to ${data.progression.name}`}
+    subtitle="Everyone you pick starts at the first quiz in this path."
+    kind="student"
+    items={unassigned}
+    busy={dialogBusy}
+    error={dialogError}
+    onClose={() => { picking = false; dialogError = ""; }}
+    onConfirm={assignStudents}
+  />
+{/if}

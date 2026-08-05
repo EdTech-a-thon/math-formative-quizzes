@@ -4,11 +4,12 @@ const pocketBaseUrl = "http://127.0.0.1:8090";
 export async function load({ cookies, params }) {
   const headers = { Authorization: `Bearer ${cookies.get("teacher_session")}` };
   const studentFilter = encodeURIComponent(`student="${params.studentId}"`);
-  const [studentResponse, enrollmentsResponse, stepsResponse, attemptsResponse] = await Promise.all([
+  const [studentResponse, enrollmentsResponse, stepsResponse, attemptsResponse, progressionsResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/students/records/${params.studentId}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=500&expand=progression,currentStep,currentStep.quiz&filter=${studentFilter}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=2000`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/quiz_attempts/records?perPage=500&sort=-completedAt&expand=quiz,progressionStep&filter=${studentFilter}`, { headers }),
+    globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=200&sort=name&filter=${encodeURIComponent(`class="${params.id}"`)}`, { headers }),
   ]);
 
   if (studentResponse.status === 404) error(404, "Student not found.");
@@ -20,11 +21,21 @@ export async function load({ cookies, params }) {
   const enrollmentItems = (await enrollmentsResponse.json()).items;
   const stepItems = (await stepsResponse.json()).items;
   const attemptItems = (await attemptsResponse.json()).items;
+  const progressionItems = progressionsResponse.ok ? (await progressionsResponse.json()).items : [];
   const stepCount: Record<string, number> = {};
   for (const step of stepItems as { progression: string }[]) stepCount[step.progression] = (stepCount[step.progression] ?? 0) + 1;
 
   return {
     student: { id: student.id, name: student.name, loginName: student.loginName },
+    // Every path in this class, so the page can offer the ones this student is
+    // not on yet.
+    progressions: (progressionItems as { id: string; name: string; operation?: string; shade?: string }[]).map((progression) => ({
+      id: progression.id,
+      name: progression.name,
+      operation: progression.operation ?? "",
+      shade: progression.shade ?? "",
+      stepCount: stepCount[progression.id] ?? 0,
+    })),
     enrollments: enrollmentItems.map((enrollment: {
       id: string;
       progression: string;
