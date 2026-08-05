@@ -60,6 +60,7 @@ export const actions = {
 
     const data = await request.formData();
     const secondsRemaining = Math.max(0, Number(data.get("secondsRemaining") ?? 0));
+    const timedOut = data.get("timedOut") === "true";
 
     // Read the questions back from the teacher's quiz rather than trusting the
     // questions or the marking to the browser.
@@ -92,6 +93,7 @@ export const actions = {
     // passed can no longer open the step they just finished.
     return {
       finished: true,
+      timedOut,
       ...(recorded.body as { correct: number; total: number; percentage: number; passed: boolean; leveledUp: boolean; finishedProgression: boolean; nextQuizName: string }),
       showScore: step.quiz.showScore,
       passMessage: step.quiz.passMessage,
