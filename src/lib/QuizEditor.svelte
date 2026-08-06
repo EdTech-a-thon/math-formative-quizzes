@@ -453,9 +453,16 @@
       </button>
 
       <div class="bar-popover-wrap">
-        <button type="button" class="bar-toggle" aria-expanded={messageOpen} aria-haspopup="dialog" on:click={() => (messageOpen = !messageOpen)}>
-          <Icon name="smile" size={14} /> Finished message
-        </button>
+        <button
+          type="button"
+          class="bar-icon-button"
+          class:on={messageOpen}
+          title="Finished message: the cheer students see when they finish"
+          aria-label="Finished message"
+          aria-expanded={messageOpen}
+          aria-haspopup="dialog"
+          on:click={() => (messageOpen = !messageOpen)}
+        ><Icon name="smile" size={15} /></button>
         {#if messageOpen}
           <div class="bar-popover" role="dialog" aria-label="Finished message" use:dismissOnOutsideClick={() => (messageOpen = false)}>
             <p class="doc-note">The cheer students see when they finish this quiz.</p>
@@ -486,7 +493,6 @@
           </div>
         {/if}
       </div>
-      <a class="editor-cancel" href={`/teacher/classes/${classId}/quizzes`}>Cancel</a>
       <button class="editor-save" type="button" disabled={saving} on:click={save}>{saving ? "Saving…" : editing ? "Save changes" : "Save quiz"}</button>
     </div>
   </header>

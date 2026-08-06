@@ -1271,13 +1271,18 @@ button span {
 /* ---- Quiz editor: the worksheet itself is the document you edit ---- */
 /* The bar carries what used to sit in the document: the title, its icon, and
    the quiz's settings. Four columns so the title can take the slack. */
-/* Groups of controls wrap as whole rows when the window is narrow, rather than
-   squeezing the buttons inside them. */
-.editor-bar-quiz { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 14px; }
+/* One row, always: the controls are trimmed down enough to fit rather than
+   being allowed to spill onto a second line. */
+.editor-bar-quiz { display: flex; align-items: center; flex-wrap: nowrap; gap: 10px; padding-inline: clamp(14px, 2vw, 24px); }
+.editor-bar-quiz .bar-toggle { padding: 7px 10px; gap: 6px; font-size: .78rem; }
+.editor-bar-quiz .editor-ghost { padding: 8px 11px; font-size: .78rem; }
+.editor-bar-quiz .editor-save { padding: 9px 15px; font-size: .82rem; }
+.editor-bar-quiz .editor-bar-actions { gap: 9px; }
 .bar-history { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .bar-icon-button { display: grid; place-items: center; width: 32px; height: 32px; margin: 0; padding: 0; border: 1px solid #e0dbe8; border-radius: 9px; background: #fff; box-shadow: none; color: #6b6479; }
 .bar-icon-button:hover:not(:disabled) { transform: none; border-color: var(--operation, #6748d1); color: var(--operation, #6748d1); }
 .bar-icon-button:disabled { cursor: default; opacity: .38; }
+.bar-icon-button.on { border-color: var(--operation, #6748d1); background: var(--operation-soft, #eee9ff); color: var(--operation, #6748d1); }
 .bar-settings { margin-left: auto; }
 /* The fact-family panel on the left holds its place while the quiz beside it
    scrolls, so inserting a family never means scrolling back up to the controls. */
