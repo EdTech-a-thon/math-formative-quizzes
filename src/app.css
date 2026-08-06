@@ -26,6 +26,9 @@
 body {
   min-width: 320px;
   min-height: 100vh;
+  /* On a phone or tablet, the browser's own bars are part of "100vh", which
+     left every page with a little dead space to scroll. */
+  min-height: 100dvh;
   margin: 0;
 }
 button,
@@ -667,21 +670,22 @@ button span {
   overflow: hidden;
 }
 
-.class-workspace { display: grid; min-height: 100vh; grid-template-columns: 248px minmax(0, 1fr); background: #f7f3ed; }
-.class-sidebar { display: flex; position: sticky; top: 0; height: 100vh; flex-direction: column; padding: 24px 14px; border-right: 1px solid #e5dfeb; background: #fffdfa; }
-.workspace-brand { display: flex; align-items: center; gap: 8px; padding: 0 10px; color: #26233a; font-size: 1.02rem; font-weight: 900; letter-spacing: -.04em; text-decoration: none; }
-.back-to-classes { margin: 30px 10px 18px; color: #77728c; font-size: .78rem; font-weight: 800; text-decoration: none; }
+.class-workspace { display: grid; min-height: 100vh; grid-template-columns: 296px minmax(0, 1fr); background: #f7f3ed; }
+.class-sidebar { display: flex; position: sticky; top: 0; height: 100vh; flex-direction: column; padding: 24px 16px; border-right: 1px solid #e5dfeb; background: #fffdfa; }
+.workspace-brand { display: flex; align-items: center; gap: 8px; padding: 0 10px; color: #26233a; font-size: 1.1rem; font-weight: 900; letter-spacing: -.04em; text-decoration: none; }
+.back-to-classes { margin: 30px 10px 18px; color: #77728c; font-size: .82rem; font-weight: 800; text-decoration: none; }
 .back-to-classes:hover { color: #6748d1; }
-.class-switcher { display: flex; align-items: center; gap: 10px; margin: 0 0 23px; padding: 11px; border: 1px solid #e8e2ef; border-radius: 10px; background: #faf8fd; }
-.class-switcher > span { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 8px; background: #eee9ff; color: #6748d1; font-family: Fraunces, Georgia, serif; font-weight: 700; }
+.class-switcher { display: flex; align-items: center; gap: 10px; margin: 0 0 23px; padding: 12px; border: 1px solid #e8e2ef; border-radius: 10px; background: #faf8fd; }
+.class-switcher > span { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 8px; background: #eee9ff; color: #6748d1; font-family: Fraunces, Georgia, serif; font-weight: 700; }
 .class-switcher strong, .class-switcher small { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.class-switcher strong { font-size: .78rem; }.class-switcher small { margin-top: 2px; color: #81799a; font-size: .66rem; }
-.class-sidebar nav { display: grid; gap: 3px; }.class-sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; color: #625d72; font-size: .84rem; font-weight: 800; text-decoration: none; }.class-sidebar nav a span { width: 18px; color: #81799a; text-align: center; }.class-sidebar nav a:hover { background: #f6f3fb; color: #4d399b; }.class-sidebar nav a.active { background: #eee9ff; color: #5439bb; }.class-sidebar nav a.active span { color: #6748d1; }
+.class-switcher strong { font-size: .85rem; }.class-switcher small { margin-top: 2px; color: #81799a; font-size: .73rem; }
+.class-sidebar nav { display: grid; gap: 3px; }.class-sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 11px 10px; border-radius: 8px; color: #625d72; font-size: .91rem; font-weight: 800; text-decoration: none; }.class-sidebar nav a span { width: 18px; color: #81799a; text-align: center; }.class-sidebar nav a:hover { background: #f6f3fb; color: #4d399b; }.class-sidebar nav a.active { background: #eee9ff; color: #5439bb; }.class-sidebar nav a.active span { color: #6748d1; }
 .workspace-content { display: block; min-width: 0; padding: 58px clamp(28px, 6vw, 80px); overflow: visible; background: #f7f3ed; }.workspace-content::before, .workspace-content::after { display: none; }
 .class-workspace .class-roster { width: min(930px, 100%); }.class-workspace .class-roster-header { margin-bottom: 28px; }.class-workspace .class-roster-actions { flex-shrink: 0; }
 .workspace-page { width: min(930px, 100%); }.workspace-heading-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; }.workspace-heading-actions .ghost-btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 13px; }.library-card .ghost-btn { display: inline-flex; align-items: center; gap: 6px; }.workspace-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 30px; }.workspace-heading h1 { margin: 4px 0 7px; font-size: clamp(2rem, 4vw, 2.7rem); }.workspace-heading p:not(.eyebrow) { max-width: 570px; margin: 0; color: #77728c; line-height: 1.55; }.primary-action { width: auto; flex: 0 0 auto; margin: 0; padding: 11px 14px; border: 0; border-radius: 10px; background: #7456e8; box-shadow: 0 4px 0 #5439bb; color: white; font-size: .84rem; font-weight: 900; text-decoration: none; }.primary-action:hover { background: #6748d1; }.primary-action:disabled { cursor: wait; opacity: .65; }
-.import-page-target { position: relative; width: min(930px, 100%); min-height: 260px; }
-.import-page-overlay { position: absolute; z-index: 20; inset: -18px; display: grid; place-content: center; gap: 5px; border: 3px dashed #7456e8; border-radius: 20px; background: rgba(244, 240, 255, .94); color: #4d399b; text-align: center; pointer-events: none; }
+/* The whole window is the drop target, so the frame sits just inside the viewport
+   and its shadow tints the gap left around it. */
+.import-page-overlay { position: fixed; z-index: 20; inset: 14px; display: grid; place-content: center; gap: 5px; border: 3px dashed #7456e8; border-radius: 20px; background: rgba(244, 240, 255, .94); box-shadow: 0 0 0 14px rgba(244, 240, 255, .94); color: #4d399b; text-align: center; pointer-events: none; }
 .import-page-overlay strong { font-family: Fraunces, Georgia, serif; font-size: 1.35rem; }
 .import-page-overlay span { color: #7769a8; font-size: .82rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .quiz-builder, .progression-editor { margin-bottom: 24px; padding: 25px; border: 1px solid #e4ddec; border-radius: 16px; background: #fffdfa; }.builder-heading { display: flex; align-items: start; justify-content: space-between; gap: 20px; margin-bottom: 21px; }.builder-heading h2 { margin: 4px 0 0; font-family: Fraunces, Georgia, serif; font-size: 1.4rem; }.builder-heading > span { border-radius: 7px; padding: 6px 8px; background: #f1edff; color: #6748d1; font-size: .75rem; font-weight: 900; }.builder-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }.builder-grid label, .progression-editor > label { display: grid; gap: 6px; margin: 0; color: #625d72; font-size: .76rem; font-weight: 900; }.builder-grid input, .builder-grid select, .progression-editor input, .progression-editor textarea { width: 100%; border: 1px solid #ded6ec; border-radius: 8px; padding: 10px; background: white; color: #26233a; font-family: "Nunito Sans", sans-serif; font-size: .9rem; letter-spacing: 0; }.progression-editor textarea { min-height: 72px; resize: vertical; }.focus-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }.focus-options button, .step-picker button { margin: 0; border: 1px solid #e4ddec; background: white; box-shadow: none; color: #26233a; text-align: left; }.focus-options button { display: grid; gap: 3px; padding: 13px; }.focus-options button.chosen, .step-picker button.chosen { border-color: #7456e8; background: #f6f3ff; }.focus-options small { color: #81799a; }.group-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }.group-picker > button { min-height: 58px; margin: 0; border: 1px solid #e4ddec; background: white; box-shadow: none; color: #625d72; }.group-picker > button.chosen { border-color: #7456e8; background: #f6f3ff; color: #4d399b; }.group-picker strong { display: block; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; }.group-picker label { display: grid; gap: 2px; margin-top: 4px; color: #81799a; font-size: .6rem; }.group-picker input { width: 100%; padding: 3px; border: 1px solid #cfc3f3; border-radius: 4px; font-size: .72rem; text-align: center; }.personalized-options { display: flex; align-items: end; flex-wrap: wrap; gap: 14px; }.personalized-options label { display: grid; gap: 6px; color: #625d72; font-size: .76rem; font-weight: 900; }.personalized-options input[type="number"] { width: 125px; padding: 9px; border: 1px solid #ded6ec; border-radius: 8px; }.checkbox-row { display: flex !important; align-items: center; gap: 7px !important; padding-top: 20px; }.checkbox-row input { width: auto !important; }.quiz-builder .primary-action, .progression-editor .primary-action { margin-top: 18px; }
@@ -767,6 +771,9 @@ button span {
 .step-detail-content > header h3 { margin: 0 0 2px; font-family: Fraunces, Georgia, serif; font-size: 1.04rem; }
 .step-detail-content > header p { margin: 0; color: #8a8292; font-size: .7rem; }
 .step-detail-content > header > span { color: #81799a; font-size: .72rem; font-weight: 900; }
+/* The quiz's name opens the quiz itself, so a path is a way into its quizzes. */
+.step-quiz-link { min-width: 0; color: inherit; text-decoration: none; }
+.step-quiz-link:hover h3 { color: #5439bb; text-decoration: underline; }
 .step-students { display: grid; }
 .step-students article { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 9px 14px; border-top: 1px solid #f0ece8; }
 .step-students article:first-child { border-top: 0; }
@@ -880,7 +887,7 @@ button span {
 .class-switcher { align-items: center; }
 .class-switcher > div:not(.sidebar-code-actions) { min-width: 0; flex: 1; }
 .sidebar-code-actions { display: flex; gap: 4px; }
-.sidebar-code-actions button { display: grid; width: 27px; height: 27px; margin: 0; padding: 0; place-items: center; border: 1px solid #ded6ec; border-radius: 7px; background: #fffdfa; box-shadow: none; color: #6748d1; font-size: .9rem; }
+.sidebar-code-actions button { display: grid; width: 29px; height: 29px; margin: 0; padding: 0; place-items: center; border: 1px solid #ded6ec; border-radius: 7px; background: #fffdfa; box-shadow: none; color: #6748d1; font-size: .9rem; }
 .sidebar-code-actions button:hover { border-color: #7456e8; background: #f7f4ff; transform: none; }
 
 /* Center Lucide icons inside icon-only buttons */
@@ -931,10 +938,13 @@ button span {
 .editor-screen { --operation: #7456e8; --operation-soft: #eee9ff; position: relative; z-index: 1; display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 100vh; background: #f4f0ea; }
 .editor-screen.editor-screen-plain { --operation: #7456e8; --operation-soft: #eee9ff; }
 .editor-bar { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding: 12px clamp(16px, 3vw, 34px); border-bottom: 1px solid #e7e1ea; background: rgba(255, 253, 250, .88); backdrop-filter: blur(9px); }
-.editor-back { justify-self: start; color: #6748d1; font-size: .86rem; font-weight: 800; text-decoration: none; }
+/* Every label in the bar stays on one line — a button that wraps to two lines
+   grows tall and pushes the bar out of shape. */
+.editor-back, .editor-cancel, .editor-save, .editor-ghost, .bar-toggle, .ghost-btn, .primary-action { white-space: nowrap; }
+.editor-back { justify-self: start; flex: 0 0 auto; color: #6748d1; font-size: .86rem; font-weight: 800; text-decoration: none; }
 .editor-back:hover { text-decoration: underline; }
 .editor-crumb { justify-self: center; color: #9a92a6; font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.editor-bar-actions { justify-self: end; display: flex; align-items: center; gap: 15px; }
+.editor-bar-actions { justify-self: end; display: flex; align-items: center; flex: 0 0 auto; gap: 15px; }
 .editor-cancel { color: #8a8399; font-size: .85rem; font-weight: 800; text-decoration: none; }
 .editor-cancel:hover { color: #26233a; }
 .editor-save { width: auto; margin: 0; padding: 10px 18px; border: 0; border-radius: 11px; background: #7456e8; box-shadow: 0 4px 0 #5439bb; color: #fff; font-size: .85rem; font-weight: 900; }
@@ -1167,7 +1177,9 @@ button span {
 
 /* The student home screen: a greeting, the practice waiting for them, and the
    quizzes they have already finished. */
-.student-page { display: block; overflow: visible; padding: 110px 24px 70px; }
+/* Clipped so the big decorative "+" in the corner cannot add a stretch of empty
+   page to scroll past the bottom. */
+.student-page { display: block; overflow: clip; min-height: 100dvh; padding: 110px 24px 70px; }
 .student-home { position: relative; z-index: 1; width: min(var(--content-width), 100%); margin: 0 auto; }
 .student-sign-out { position: absolute; z-index: 2; top: 30px; right: clamp(26px, 6vw, 76px); }
 .student-sign-out button { width: auto; margin: 0; padding: 9px 13px; border: 1px solid #ded6ec; border-radius: 10px; background: #fffdfa; box-shadow: none; color: #6748d1; font-size: .82rem; }
@@ -1207,12 +1219,15 @@ button span {
 
 /* The quiz a student sits: the whole worksheet on one page, a clock, and the
    finished screen. */
-.quiz-page { display: block; overflow: visible; padding: 40px 24px 120px; }
+/* "clip" rather than "hidden": the page's corner decorations stay inside the
+   screen, without the page becoming a scroller of its own — which is what lets
+   the clock stick to the top. */
+.quiz-page { display: block; overflow: clip; min-height: 100dvh; padding: 40px 24px 120px; }
 .quiz-sheet { width: min(760px, 100%); margin: 0 auto; text-align: left; }
-.quiz-head { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 26px; }
+.quiz-head { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 4px; }
 .quiz-head h1 { margin: 6px 0 0; font-size: clamp(1.8rem, 5vw, 2.4rem); }
 .quiz-head .eyebrow { color: var(--operation, #81799a); }
-.quiz-head-side { display: grid; justify-items: end; gap: 7px; }
+.quiz-status-bar { position: sticky; z-index: 4; top: 0; display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin: 0 -12px 20px; padding: 12px; background: #f7f3ed; }
 .quiz-clock { display: inline-flex; align-items: center; gap: 7px; border-radius: 11px; padding: 9px 13px; background: var(--operation-soft, #eee9ff); color: var(--operation, #6748d1); font-family: "DM Mono", monospace; font-size: 1.05rem; font-weight: 500; }
 .quiz-clock.low { background: #fdeceb; color: #c0392b; }.quiz-progress { color: #81799a; font-size: .8rem; font-weight: 800; }
 .quiz-grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
@@ -1222,6 +1237,17 @@ button span {
 .quiz-stack i { width: 100%; height: 2px; margin-top: 5px; background: #26233a; }
 .quiz-answer { grid-column: 2; width: 100%; margin-top: 8px; padding: 9px; border: 1px solid #dcd6e1; border-radius: 9px; font-family: "DM Mono", monospace; font-size: 1.2rem; letter-spacing: 0; text-align: right; }
 .quiz-answer:focus { border-color: var(--operation, #7456e8); box-shadow: 0 0 0 3px var(--operation-soft, #e8e2ff); outline: 0; }
+/* One question at a time. Every question stays in the page so the whole set is
+   still handed in; the ones not being asked are simply not shown. */
+.quiz-grid.one-at-a-time { grid-template-columns: 1fr; justify-items: center; }
+.quiz-grid.one-at-a-time .quiz-problem:not(.showing) { display: none; }
+.quiz-grid.one-at-a-time .quiz-problem { width: min(420px, 100%); gap: 16px; padding: 34px 30px; }
+.quiz-grid.one-at-a-time .quiz-num { width: 28px; height: 28px; border-radius: 9px; font-size: .82rem; }
+.quiz-grid.one-at-a-time .quiz-stack { font-size: 2.6rem; }
+.quiz-grid.one-at-a-time .quiz-answer { margin-top: 14px; padding: 14px; font-size: 1.8rem; }
+.quiz-back { display: inline-flex; align-items: center; gap: 7px; width: auto; margin: 0; padding: 13px 20px; border: 1px solid #e0dbe8; border-radius: 12px; background: #fff; box-shadow: none; color: #6b6479; font-size: .95rem; }
+.quiz-back:hover:not(:disabled) { transform: none; border-color: var(--operation, #6748d1); color: var(--operation, #6748d1); }
+.quiz-back:disabled { cursor: not-allowed; opacity: .4; }
 .quiz-foot { position: fixed; z-index: 3; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px 24px; border-top: 1px solid #e9e4df; background: rgba(255, 253, 250, .95); }
 .quiz-foot-note { color: #81799a; font-size: .84rem; font-weight: 800; }
 .hand-in { display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: auto; margin: 0; padding: 13px 26px; border-radius: 12px; font-size: .95rem; }
@@ -1245,7 +1271,9 @@ button span {
 /* ---- Quiz editor: the worksheet itself is the document you edit ---- */
 /* The bar carries what used to sit in the document: the title, its icon, and
    the quiz's settings. Four columns so the title can take the slack. */
-.editor-bar-quiz { display: flex; align-items: center; gap: 12px 14px; }
+/* Groups of controls wrap as whole rows when the window is narrow, rather than
+   squeezing the buttons inside them. */
+.editor-bar-quiz { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 14px; }
 .bar-history { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .bar-icon-button { display: grid; place-items: center; width: 32px; height: 32px; margin: 0; padding: 0; border: 1px solid #e0dbe8; border-radius: 9px; background: #fff; box-shadow: none; color: #6b6479; }
 .bar-icon-button:hover:not(:disabled) { transform: none; border-color: var(--operation, #6748d1); color: var(--operation, #6748d1); }
@@ -1440,6 +1468,7 @@ button span {
 .import-check span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .import-check em { margin-left: auto; flex: 0 0 auto; color: #a29aae; font-family: "DM Mono", monospace; font-size: .74rem; font-style: normal; }
 .import-path-check { margin-top: 8px; color: #4d399b; font-weight: 700; }
+.import-choose { margin: 9px 0 2px; padding: 0 4px; color: #4d399b; font-size: .78rem; font-weight: 800; }
 .import-quizzes { margin-top: 4px; padding-left: 10px; border-left: 2px solid #f1edf7; }
 .import-count { margin: 0; padding: 6px 4px; color: #77728c; font-size: .85rem; }
 

@@ -7,7 +7,7 @@
   import { shadeClass, type ShadeId } from "$lib/shades";
   import { assignmentSummary } from "$lib/assignments";
 
-  type Step = { id: string; position: number; title: string; questionCount: number };
+  type Step = { id: string; quizId: string; position: number; title: string; questionCount: number };
   type Enrollment = { id: string; studentId: string; studentName: string; currentStep: string; position: number; status: string; released: boolean };
   type Progression = { id: string; name: string; description: string; passPercentage: number; icon: string | null; shade: ShadeId | null };
   type Student = { id: string; name: string; loginName: string };
@@ -138,7 +138,13 @@
       <section class="progression-step-detail" id={`step-${step.id}`}>
         <div class="step-order"><span>{step.position}</span>{#if step.position < data.steps.length}<i></i>{/if}</div>
         <div class="step-detail-content">
-          <header><div><h3>{step.title}</h3><p>{step.questionCount} questions</p></div><span>{students.length} {students.length === 1 ? "student" : "students"}</span></header>
+          <header>
+            <a class="step-quiz-link" href={`/teacher/classes/${$page.params.id}/quizzes/${step.quizId}`} title="Open this quiz">
+              <h3>{step.title}</h3>
+              <p>{step.questionCount} questions</p>
+            </a>
+            <span>{students.length} {students.length === 1 ? "student" : "students"}</span>
+          </header>
           {#if students.length}
             <div class="step-students">
               {#each students as enrollment}
