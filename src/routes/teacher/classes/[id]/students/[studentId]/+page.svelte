@@ -10,11 +10,40 @@
   type Enrollment = { id: string; progressionId: string; currentStep: string; progressionName: string; icon: string | null; shade: ShadeId | null; operation: string; position: number; totalSteps: number; currentQuiz: string; status: string; released: boolean };
   type Attempt = { id: string; title: string; position: number | null; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string };
   type Progression = { id: string; name: string; operation: string; shade: string; stepCount: number };
-  export let data: { student: { id: string; name: string; loginName: string }; enrollments: Enrollment[]; attempts: Attempt[]; progressions: Progression[] };
+  export let data: { student: { id: string; name: string; loginName: string; extraTimeMinutes: number }; enrollments: Enrollment[]; attempts: Attempt[]; progressions: Progression[] };
 
   let busy = "";
   let error = "";
   let message = "";
+
+  // Accommodations follow the student, so they apply to every quiz this student
+  // sits. Extra time is added on top of whatever time limit the quiz carries.
+  let extraTimeMinutes = data.student.extraTimeMinutes;
+  let savingExtraTime = false;
+  $: data.student, (extraTimeMinutes = data.student.extraTimeMinutes);
+
+  async function setExtraTime(minutes: number) {
+    const next = Math.min(60, Math.max(0, minutes));
+    if (next === extraTimeMinutes) return;
+    extraTimeMinutes = next;
+    savingExtraTime = true;
+    error = "";
+    message = "";
+    try {
+      const response = await fetch(`/api/students/${data.student.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ extraTimeMinutes: next }),
+      });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message);
+      await invalidateAll();
+    } catch (caught) {
+      extraTimeMinutes = data.student.extraTimeMinutes;
+      error = caught instanceof Error ? caught.message : "We could not save this accommodation.";
+    } finally {
+      savingExtraTime = false;
+    }
+  }
 
   // The same picker as everywhere else, offering the paths this student is not
   // on yet.
@@ -91,6 +120,26 @@
 
   {#if error}<p class="message error">{error}</p>{/if}
   {#if message}<p class="message success">{message}</p>{/if}
+
+  <section class="student-accommodations" aria-labelledby="accommodations-title">
+    <div class="student-detail-section-heading">
+      <div><h2 id="accommodations-title">Accommodations</h2><p>Adjustments that follow {data.student.name} into every quiz.</p></div>
+    </div>
+    <div class="accommodation-row">
+      <div class="accommodation-label">
+        <span class="accommodation-icon"><Icon name="clock" size={18} /></span>
+        <div>
+          <strong>Extra time</strong>
+          <small>{extraTimeMinutes ? `Added to the time limit on every quiz.` : "No extra time. Standard time limits apply."}</small>
+        </div>
+      </div>
+      <div class="stepper" title="Extra minutes">
+        <button type="button" disabled={savingExtraTime || extraTimeMinutes === 0} aria-label="Less extra time" on:click={() => setExtraTime(extraTimeMinutes - 1)}><Icon name="minus" size={15} /></button>
+        <b>+{extraTimeMinutes}<small>min</small></b>
+        <button type="button" disabled={savingExtraTime || extraTimeMinutes === 60} aria-label="More extra time" on:click={() => setExtraTime(extraTimeMinutes + 1)}><Icon name="plus" size={15} /></button>
+      </div>
+    </div>
+  </section>
 
   <section aria-labelledby="current-progress-title">
     <div class="student-detail-section-heading">

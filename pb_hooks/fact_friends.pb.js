@@ -194,6 +194,7 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
   return e.json(200, {
     studentName: student.getString("name"),
     className: className,
+    extraTimeMinutes: require(`${__hooks}/accommodations.js`)(student).extraTimeMinutes,
     forYou: forYou,
     history: history,
   });
@@ -223,9 +224,12 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
     allowIncompleteAnswers = e.app.findRecordById("teachers", classRoom.getString("teacher")).getBool("allowIncompleteAnswers");
   } catch (_) {}
 
+  const accommodations = require(`${__hooks}/accommodations.js`)(found.student);
+
   return e.json(200, {
     studentName: found.student.getString("name"),
     progressionName: found.progression.getString("name"),
+    extraTimeMinutes: accommodations.extraTimeMinutes,
     position: found.position,
     totalSteps: found.steps.length,
     passPercentage: found.progression.getInt("passPercentage"),

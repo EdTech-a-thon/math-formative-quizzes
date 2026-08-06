@@ -10,6 +10,7 @@
     position: number;
     totalSteps: number;
     allowIncompleteAnswers: boolean;
+    extraTimeMinutes: number;
     timerStorageKey: string;
   };
   export let form: { finished?: boolean; timedOut?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; error?: string } | null = null;
@@ -18,7 +19,9 @@
   $: problems = data.quiz.problems;
 
   let answers: string[] = [];
-  let secondsLeft = data.quiz.timeLimitMinutes * 60;
+  // A quiz with no time limit stays untimed, even for a student with extra time.
+  const minutesAllowed = data.quiz.timeLimitMinutes ? data.quiz.timeLimitMinutes + data.extraTimeMinutes : 0;
+  let secondsLeft = minutesAllowed * 60;
   let handingIn = false;
   let sheet: HTMLFormElement;
   let timeoutSubmit: HTMLButtonElement;
@@ -118,7 +121,10 @@
           <h1>{data.quiz.title}</h1>
         </div>
         <div class="quiz-head-side">
-          {#if data.quiz.timeLimitMinutes}
+          {#if minutesAllowed}
+            {#if data.extraTimeMinutes}
+              <span class="quiz-extra-time" title="Your teacher gave you extra time">+{data.extraTimeMinutes} min</span>
+            {/if}
             <span class="quiz-clock" class:low={secondsLeft <= 15}><Icon name="clock" size={16} /> {clock}</span>
           {/if}
           <span class="quiz-progress">{answered} of {problems.length} answered</span>

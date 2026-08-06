@@ -10,6 +10,8 @@ type QuizStep = {
   totalSteps: number;
   passPercentage: number;
   allowIncompleteAnswers: boolean;
+  // Extra minutes this student's teacher gave them, on top of the quiz's limit.
+  extraTimeMinutes: number;
 };
 
 async function pocketBasePost(path: string, payload: unknown) {
@@ -31,6 +33,7 @@ const finishedSheet = {
   totalSteps: 0,
   passPercentage: 0,
   allowIncompleteAnswers: true,
+  extraTimeMinutes: 0,
 };
 
 export async function load({ cookies, params, request }) {

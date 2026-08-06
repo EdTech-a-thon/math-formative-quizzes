@@ -6,7 +6,13 @@
   type Assigned = { stepId: string; progressionName: string; position: number; totalSteps: number; title: string; icon: string; shade: string; questionCount: number; timeLimitMinutes: number; released: boolean };
   type Finished = { id: string; title: string; icon: string; shade: string; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string };
 
-  export let data: { studentName: string; className: string; forYou: Assigned[]; history: Finished[] };
+  export let data: { studentName: string; className: string; extraTimeMinutes: number; forYou: Assigned[]; history: Finished[] };
+
+  // Extra time their teacher gave them is already part of the time they will see
+  // on the clock, so the card shows the same number.
+  function minutesFor(assigned: Assigned) {
+    return assigned.timeLimitMinutes ? assigned.timeLimitMinutes + (data.extraTimeMinutes ?? 0) : 0;
+  }
 
   // PocketBase hands dates over as "2026-08-04 14:30:00.000Z".
   function whenFinished(completedAt: string) {
@@ -36,7 +42,7 @@
               <span class="assigned-symbol"><IconGlyph name={assigned.icon || null} fallback="clipboard-list" size={22} /></span>
               <h3>{assigned.title}</h3>
               <p class="assigned-path">{assigned.progressionName} · step {assigned.position} of {assigned.totalSteps}</p>
-              <p class="assigned-meta">{assigned.questionCount} questions{assigned.timeLimitMinutes ? ` · ${assigned.timeLimitMinutes} min` : ""}</p>
+              <p class="assigned-meta">{assigned.questionCount} questions{minutesFor(assigned) ? ` · ${minutesFor(assigned)} min` : ""}</p>
               {#if assigned.released}
                 <a class="start-quiz" href="/quiz/{assigned.stepId}">Start quiz <Icon name="arrow-right" size={16} /></a>
               {:else}
