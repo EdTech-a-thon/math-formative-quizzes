@@ -1224,10 +1224,9 @@ button span {
    the clock stick to the top. */
 .quiz-page { display: block; overflow: clip; min-height: 100dvh; padding: 40px 24px 120px; }
 .quiz-sheet { width: min(760px, 100%); margin: 0 auto; text-align: left; }
-.quiz-head { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 4px; }
+.quiz-head { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 26px; }
 .quiz-head h1 { margin: 6px 0 0; font-size: clamp(1.8rem, 5vw, 2.4rem); }
 .quiz-head .eyebrow { color: var(--operation, #81799a); }
-.quiz-status-bar { position: sticky; z-index: 4; top: 0; display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin: 0 -12px 20px; padding: 12px; background: #f7f3ed; }
 .quiz-clock { display: inline-flex; align-items: center; gap: 7px; border-radius: 11px; padding: 9px 13px; background: var(--operation-soft, #eee9ff); color: var(--operation, #6748d1); font-family: "DM Mono", monospace; font-size: 1.05rem; font-weight: 500; }
 .quiz-clock.low { background: #fdeceb; color: #c0392b; }.quiz-progress { color: #81799a; font-size: .8rem; font-weight: 800; }
 .quiz-grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
@@ -1248,7 +1247,12 @@ button span {
 .quiz-back { display: inline-flex; align-items: center; gap: 7px; width: auto; margin: 0; padding: 13px 20px; border: 1px solid #e0dbe8; border-radius: 12px; background: #fff; box-shadow: none; color: #6b6479; font-size: .95rem; }
 .quiz-back:hover:not(:disabled) { transform: none; border-color: var(--operation, #6748d1); color: var(--operation, #6748d1); }
 .quiz-back:disabled { cursor: not-allowed; opacity: .4; }
-.quiz-foot { position: fixed; z-index: 3; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px 24px; border-top: 1px solid #e9e4df; background: rgba(255, 253, 250, .95); }
+/* The clock and the count live down here, lined up with the questions above
+   them, so they stay on screen without sitting on top of the quiz. */
+.quiz-foot { position: fixed; z-index: 3; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; padding: 12px 24px; border-top: 1px solid #e9e4df; background: rgba(255, 253, 250, .95); }
+.quiz-foot-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; width: min(760px, 100%); gap: 10px 16px; }
+.quiz-foot-status { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.quiz-foot-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .quiz-foot-note { color: #81799a; font-size: .84rem; font-weight: 800; }
 .hand-in { display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: auto; margin: 0; padding: 13px 26px; border-radius: 12px; font-size: .95rem; }
 .hand-in:disabled { cursor: not-allowed; opacity: .5; transform: none; }
@@ -1263,9 +1267,13 @@ button span {
 .results-home { display: inline-flex; align-items: center; gap: 9px; margin-top: 20px; color: #6748d1; font-weight: 900; text-decoration: none; }
 .results-home:hover { text-decoration: underline; }
 @media (max-width: 560px) {
-  .quiz-page { padding: 28px 16px 110px; }
+  /* Room for the bottom bar, which stacks the clock above the button here. */
+  .quiz-page { padding: 28px 16px 150px; }
   .quiz-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
   .quiz-results { padding: 32px 24px; }
+  .quiz-foot { padding: 10px 16px; }
+  .quiz-foot-status { gap: 9px; }
+  .quiz-clock { padding: 7px 11px; font-size: .98rem; }
 }
 
 /* ---- Quiz editor: the worksheet itself is the document you edit ---- */

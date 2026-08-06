@@ -141,15 +141,6 @@
         </div>
       </header>
 
-      <!-- The clock rides along at the top of the screen, so a student can always
-           see how long is left without scrolling back up. -->
-      <div class="quiz-status-bar">
-        {#if minutesAllowed}
-          <span class="quiz-clock" class:low={secondsLeft <= 15}><Icon name="clock" size={16} /> {clock}</span>
-        {/if}
-        <span class="quiz-progress">{answered} of {problems.length} answered</span>
-      </div>
-
       <div class="quiz-grid" class:one-at-a-time={oneAtATime}>
         {#each problems as problem, index}
           <div class="quiz-problem" class:showing={!oneAtATime || index === current}>
@@ -171,17 +162,31 @@
 
       {#if form?.error}<p class="message error" role="alert">{form.error}</p>{/if}
 
+      <!-- The bar the student always has in front of them: how long is left and
+           how far along they are, beside the button that hands the quiz in. -->
       <footer class="quiz-foot">
-        {#if oneAtATime}
-          <button class="quiz-back" type="button" disabled={current === 0} on:click={() => goTo(current - 1)}><Icon name="arrow-left" size={16} /> Back</button>
-          <span class="quiz-foot-note">Question {current + 1} of {problems.length}</span>
-        {/if}
-        {#if oneAtATime && !lastQuestion}
-          <button class="hand-in" type="button" on:click={() => goTo(current + 1)}>Next <Icon name="arrow-right" size={16} /></button>
-        {:else}
-          {#if !canHandIn}<span class="quiz-foot-note">Answer every question to hand this in.</span>{/if}
-          <button class="hand-in" type="submit" disabled={handingIn || !canHandIn}>{handingIn ? "Handing in..." : "Hand in"} <Icon name="arrow-right" size={16} /></button>
-        {/if}
+        <div class="quiz-foot-inner">
+          <div class="quiz-foot-status">
+            {#if minutesAllowed}
+              <span class="quiz-clock" class:low={secondsLeft <= 15}><Icon name="clock" size={16} /> {clock}</span>
+            {/if}
+            <span class="quiz-progress">
+              {oneAtATime ? `Question ${current + 1} of ${problems.length}` : `${answered} of ${problems.length} answered`}
+            </span>
+          </div>
+
+          <div class="quiz-foot-actions">
+            {#if oneAtATime}
+              <button class="quiz-back" type="button" disabled={current === 0} on:click={() => goTo(current - 1)}><Icon name="arrow-left" size={16} /> Back</button>
+            {/if}
+            {#if oneAtATime && !lastQuestion}
+              <button class="hand-in" type="button" on:click={() => goTo(current + 1)}>Next <Icon name="arrow-right" size={16} /></button>
+            {:else}
+              {#if !canHandIn}<span class="quiz-foot-note">Answer every question to hand this in.</span>{/if}
+              <button class="hand-in" type="submit" disabled={handingIn || !canHandIn}>{handingIn ? "Handing in..." : "Hand in"} <Icon name="arrow-right" size={16} /></button>
+            {/if}
+          </div>
+        </div>
       </footer>
     </form>
   {/if}
