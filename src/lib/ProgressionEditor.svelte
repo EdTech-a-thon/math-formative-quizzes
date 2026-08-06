@@ -25,6 +25,7 @@
   let shade: ShadeId | null = progression?.shade || null;
   let error = "";
   let saving = false;
+  let quizSearch = "";
 
   // Everything a save would write, so leaving with edits in hand can be caught.
   const snapshot = (values: unknown[]) => JSON.stringify(values);
@@ -48,6 +49,9 @@
   $: listedQuizzes = quizzes
     .slice()
     .sort((a, b) => a.data.title.localeCompare(b.data.title, undefined, { sensitivity: "base" }));
+  $: filteredQuizzes = listedQuizzes.filter((quiz) =>
+    quiz.data.title.toLocaleLowerCase().includes(quizSearch.trim().toLocaleLowerCase()),
+  );
 
   // Ticking a quiz adds it to the end of the path; the order is set by dragging on the right.
   function toggle(id: string) {
@@ -106,15 +110,24 @@
         <section class="doc-block">
           <h2 class="doc-heading">Which quizzes are in this path?<span class="doc-hint">listed A–Z · tick the ones to include — drag them into order on the right</span></h2>
           {#if quizzes.length}
-            <div class="step-picker">
-              {#each listedQuizzes as quiz (quiz.id)}
-                {@const chosen = quizIds.includes(quiz.id)}
-                <button type="button" class:chosen aria-pressed={chosen} on:click={() => toggle(quiz.id)}>
-                  <span class="step-check">{#if chosen}<Icon name="check" size={14} />{/if}</span>
-                  <div><strong>{quiz.data.title}</strong><small>{(quiz.data.problems ?? []).length} questions</small></div>
-                </button>
-              {/each}
-            </div>
+            <label class="quiz-search">
+              <span class="sr-only">Search quizzes</span>
+              <Icon name="search" size={16} />
+              <input type="search" bind:value={quizSearch} placeholder="Search quizzes…" />
+            </label>
+            {#if filteredQuizzes.length}
+              <div class="step-picker">
+                {#each filteredQuizzes as quiz (quiz.id)}
+                  {@const chosen = quizIds.includes(quiz.id)}
+                  <button type="button" class:chosen aria-pressed={chosen} on:click={() => toggle(quiz.id)}>
+                    <span class="step-check">{#if chosen}<Icon name="check" size={14} />{/if}</span>
+                    <div><strong>{quiz.data.title}</strong><small>{(quiz.data.problems ?? []).length} questions</small></div>
+                  </button>
+                {/each}
+              </div>
+            {:else}
+              <p class="quiz-search-empty">No quizzes match “{quizSearch.trim()}”.</p>
+            {/if}
           {:else}
             <p class="editor-note">Create at least one quiz in the Quiz library before building a progression.</p>
           {/if}
@@ -129,3 +142,38 @@
     </div>
   </div>
 </div>
+
+<style>
+  .quiz-search {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 10px;
+    border: 1px solid #e4ddec;
+    border-radius: 10px;
+    padding: 0 12px;
+    background: #fff;
+    color: #91899d;
+  }
+
+  .quiz-search:focus-within {
+    border-color: var(--operation);
+    box-shadow: 0 0 0 3px var(--operation-soft);
+  }
+
+  .quiz-search input {
+    width: 100%;
+    border: 0;
+    padding: 10px 0;
+    background: transparent;
+    color: #26233a;
+    font: inherit;
+    outline: 0;
+  }
+
+  .quiz-search-empty {
+    margin: 14px 0 0;
+    color: #81799a;
+    font-size: .85rem;
+  }
+</style>
