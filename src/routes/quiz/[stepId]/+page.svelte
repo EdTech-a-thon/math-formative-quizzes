@@ -122,9 +122,6 @@
         </div>
         <div class="quiz-head-side">
           {#if minutesAllowed}
-            {#if data.extraTimeMinutes}
-              <span class="quiz-extra-time" title="Your teacher gave you extra time">+{data.extraTimeMinutes} min</span>
-            {/if}
             <span class="quiz-clock" class:low={secondsLeft <= 15}><Icon name="clock" size={16} /> {clock}</span>
           {/if}
           <span class="quiz-progress">{answered} of {problems.length} answered</span>
