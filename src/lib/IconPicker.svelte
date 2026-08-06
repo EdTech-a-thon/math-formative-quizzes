@@ -70,3 +70,10 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .icon-picker-search:focus-within {
+    border-color: var(--operation, #7456e8);
+    box-shadow: 0 0 0 3px var(--operation-soft, #eee9ff);
+  }
+</style>

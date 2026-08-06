@@ -166,9 +166,16 @@
     border: 0;
     padding: 10px 0;
     background: transparent;
+    box-shadow: none;
     color: #26233a;
     font: inherit;
     outline: 0;
+    text-align: left;
+  }
+
+  .quiz-search input:focus {
+    border: 0;
+    box-shadow: none;
   }
 
   .quiz-search-empty {
