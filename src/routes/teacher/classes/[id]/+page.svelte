@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "$lib/Icon.svelte";
+  import IconGlyph from "$lib/IconGlyph.svelte";
   import AssignDialog from "$lib/AssignDialog.svelte";
   import { invalidateAll } from "$app/navigation";
   import { shadeClass } from "$lib/shades";
@@ -8,7 +9,7 @@
   type Operation = "multiplication" | "division" | "addition" | "subtraction";
   type Student = { id: string; name: string; loginName: string; accommodations?: { extraTimeMinutes?: number } };
   type Progression = { id: string; name: string; operation: Operation; shade: string; stepCount: number };
-  type Enrollment = { id: string; student: string; progression: string; name: string; operation: Operation; shade: string; position: number; totalSteps: number; status: string; released: boolean };
+  type Enrollment = { id: string; student: string; progression: string; name: string; operation: Operation; shade: string; icon: string; position: number; totalSteps: number; status: string; released: boolean };
 
   export let data: {
     classRoom: { id: string; name: string; classCode: string };
@@ -135,7 +136,7 @@
           <a class="roster-student-name student-detail-link" href={`/teacher/classes/${data.classRoom.id}/students/${student.id}`}><span class="student-avatar">{student.name[0]}</span><div><strong>{student.name}</strong><small>{student.loginName}</small></div>{#if extraTimeFor(student)}<span class="accommodation-pill" title={`${extraTimeFor(student)} extra ${extraTimeFor(student) === 1 ? "minute" : "minutes"} on every quiz`}><Icon name="plus" size={11} /><Icon name="clock" size={14} /></span>{/if}</a>
           <div class="assign-cell">
             {#each enrollmentsFor(student.id) as enrollment}
-              <span class={`assign-chip ${shadeClass(enrollment.shade, enrollment.operation)}`}><span class="assign-dot"></span><b>{enrollment.name}</b><small>step {enrollment.position}/{enrollment.totalSteps}</small>{#if enrollment.status === "active"}{#if enrollment.released}<span class="attempt-ready"><Icon name="check" size={11} /> Ready</span>{:else}<button type="button" class="attempt-release" disabled={busy} on:click={() => release(enrollment.id)}><Icon name="unlock" size={12} /> Release</button>{/if}{/if}<button type="button" class="assign-remove" aria-label={`Remove ${enrollment.name}`} disabled={busy} on:click={() => unassign(enrollment.id)}><Icon name="x" size={13} /></button></span>
+              <span class={`assign-chip ${shadeClass(enrollment.shade, enrollment.operation)}`}><a class="assign-chip-link" href={`/teacher/classes/${data.classRoom.id}/progressions/${enrollment.progression}`}><IconGlyph name={enrollment.icon || null} fallback="route" size={15} /><b>{enrollment.name}</b><small>step {enrollment.position}/{enrollment.totalSteps}</small></a>{#if enrollment.status === "active"}{#if enrollment.released}<span class="attempt-ready"><Icon name="check" size={11} /> Ready</span>{:else}<button type="button" class="attempt-release" disabled={busy} on:click={() => release(enrollment.id)}><Icon name="unlock" size={12} /> Release</button>{/if}{/if}<button type="button" class="assign-remove" aria-label={`Remove ${enrollment.name}`} disabled={busy} on:click={() => unassign(enrollment.id)}><Icon name="x" size={13} /></button></span>
             {/each}
             {#if data.progressions.length}
               <button type="button" class="assign-add" disabled={busy} on:click={() => { assignedWholeSelection = false; assignTo = [student.id]; }}><Icon name="plus" size={14} /> Assign</button>

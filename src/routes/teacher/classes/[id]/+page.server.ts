@@ -45,7 +45,7 @@ export async function load({ locals, cookies, params }) {
     progression: string;
     status: string;
     released?: boolean;
-    expand?: { progression?: { name: string; operation: Operation; shade?: string }; currentStep?: { position: number } };
+    expand?: { progression?: { name: string; operation: Operation; shade?: string; icon?: string }; currentStep?: { position: number } };
   };
   const enrollments = (enrollmentItems as EnrollmentRecord[]).map((enrollment) => ({
     id: enrollment.id,
@@ -54,6 +54,7 @@ export async function load({ locals, cookies, params }) {
     name: enrollment.expand?.progression?.name ?? "Path",
     operation: enrollment.expand?.progression?.operation,
     shade: enrollment.expand?.progression?.shade || "",
+    icon: enrollment.expand?.progression?.icon || "",
     position: enrollment.expand?.currentStep?.position ?? 1,
     totalSteps: stepCount[enrollment.progression] ?? 0,
     status: enrollment.status,
