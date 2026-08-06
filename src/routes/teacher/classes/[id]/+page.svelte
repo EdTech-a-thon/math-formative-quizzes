@@ -128,18 +128,11 @@
     {/if}
     {#if bulkMessage}<p class="message success">{bulkMessage}</p>{/if}
     <section class="roster-table" aria-label={`${data.classRoom.name} students`}>
-      <div class="roster-table-heading roster-assign-heading"><span class="select-cell"><input type="checkbox" aria-label="Select all students" checked={allSelected} use:setIndeterminate on:change={toggleSelectAll} /></span><span>Student</span><span>Accommodations</span><span>Assigned progressions</span></div>
+      <div class="roster-table-heading roster-assign-heading"><span class="select-cell"><input type="checkbox" aria-label="Select all students" checked={allSelected} use:setIndeterminate on:change={toggleSelectAll} /></span><span>Student</span><span>Assigned progressions</span></div>
       {#each data.students as student}
         <article class="roster-student roster-assign-row" class:row-selected={selected.has(student.id)}>
           <span class="select-cell"><input type="checkbox" aria-label={`Select ${student.name}`} checked={selected.has(student.id)} on:change={() => toggleStudent(student.id)} /></span>
-          <a class="roster-student-name student-detail-link" href={`/teacher/classes/${data.classRoom.id}/students/${student.id}`}><span class="student-avatar">{student.name[0]}</span><div><strong>{student.name}</strong><small>{student.loginName}</small></div></a>
-          <div class="accommodation-cell">
-            {#if extraTimeFor(student)}
-              <span class="accommodation-chip" title={`${extraTimeFor(student)} extra ${extraTimeFor(student) === 1 ? "minute" : "minutes"} on every quiz`}><Icon name="clock" size={13} /> +{extraTimeFor(student)} min</span>
-            {:else}
-              <span class="accommodation-none">—</span>
-            {/if}
-          </div>
+          <a class="roster-student-name student-detail-link" href={`/teacher/classes/${data.classRoom.id}/students/${student.id}`}><span class="accommodation-flag">{#if extraTimeFor(student)}<span title={`${extraTimeFor(student)} extra ${extraTimeFor(student) === 1 ? "minute" : "minutes"} on every quiz`}><Icon name="clock" size={15} /></span>{/if}</span><span class="student-avatar">{student.name[0]}</span><div><strong>{student.name}</strong><small>{student.loginName}</small></div></a>
           <div class="assign-cell">
             {#each enrollmentsFor(student.id) as enrollment}
               <span class={`assign-chip ${shadeClass(enrollment.shade, enrollment.operation)}`}><span class="assign-dot"></span><b>{enrollment.name}</b><small>step {enrollment.position}/{enrollment.totalSteps}</small>{#if enrollment.status === "active"}{#if enrollment.released}<span class="attempt-ready"><Icon name="check" size={11} /> Ready</span>{:else}<button type="button" class="attempt-release" disabled={busy} on:click={() => release(enrollment.id)}><Icon name="unlock" size={12} /> Release</button>{/if}{/if}<button type="button" class="assign-remove" aria-label={`Remove ${enrollment.name}`} disabled={busy} on:click={() => unassign(enrollment.id)}><Icon name="x" size={13} /></button></span>

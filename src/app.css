@@ -889,10 +889,9 @@ button span {
 /* ---- Roster: progression assignments ---- */
 .student-detail-link { color: inherit; text-decoration: none; }
 .student-detail-link:hover strong { color: #5439bb; text-decoration: underline; }
-.roster-assign-heading, .roster-assign-row { grid-template-columns: 26px minmax(180px, 1fr) minmax(88px, auto) minmax(0, 2.3fr); }
-.accommodation-cell { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.accommodation-chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 8px; padding: 5px 8px; background: #e8f5e9; color: #37723e; font-size: .72rem; font-weight: 900; }
-.accommodation-none { color: #b5aec4; font-size: .78rem; }
+.roster-assign-heading, .roster-assign-row { grid-template-columns: 26px minmax(180px, 1fr) minmax(0, 2.3fr); }
+/* Always takes up its slot, so names stay lined up down the roster. */
+.accommodation-flag { display: grid; width: 15px; flex: 0 0 auto; place-items: center; color: #37723e; }
 .select-cell { display: flex; align-items: center; justify-content: center; }
 .select-cell input { width: 17px; height: 17px; margin: 0; accent-color: #6748d1; cursor: pointer; }
 .roster-assign-row.row-selected { background: #f7f4ff; }
@@ -919,7 +918,7 @@ button span {
 .assign-empty { color: #a29aae; font-size: .8rem; }
 .student-row-simple { grid-template-columns: minmax(0, 1fr) 32px; }
 @media (max-width: 700px) {
-  .roster-assign-heading, .roster-assign-row { min-width: 0; grid-template-columns: 26px 1fr auto; gap: 10px; }
+  .roster-assign-heading, .roster-assign-row { min-width: 0; grid-template-columns: 26px 1fr; gap: 10px; }
   .roster-assign-row .assign-cell { grid-column: 1 / -1; }
   .roster-assign-heading span:last-child { display: none; }
 }
@@ -1043,7 +1042,6 @@ button span {
 .icon-picker-trigger[aria-expanded="true"] { border-color: var(--operation, #6748d1); }
 .icon-picker-trigger.compact { width: 38px; height: 38px; border-color: transparent; border-radius: 10px; }
 .icon-picker-trigger.compact:hover { border-color: var(--operation, #6748d1); }
-.icon-picker-backdrop { position: fixed; inset: 0; z-index: 30; }
 .icon-picker-panel { position: absolute; z-index: 31; top: calc(100% + 8px); left: 0; width: min(342px, 78vw); padding: 11px; border: 1px solid #e6dfed; border-radius: 15px; background: #fff; box-shadow: 0 18px 44px rgba(44, 35, 62, .17); }
 .icon-picker-shades { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .icon-picker-search { display: flex; align-items: center; gap: 7px; margin-bottom: 9px; padding: 0 9px; border: 1px solid #e6dfed; border-radius: 10px; background: #fbf9fd; color: #b3abbf; }
