@@ -9,6 +9,11 @@
   export let onClose: () => void;
   export let initialFiles: File[] = [];
   export let initialText = "";
+  // Adding questions to a quiz already open in the editor, rather than filing new
+  // quizzes away in the library: one quiz comes in, and it is handed straight back
+  // through onImport instead of being created here.
+  export let singleQuiz = false;
+  export let onImport: (quiz: QuizRecord, source: string) => void = () => {};
 
   type QuizRecord = { title: string; problems: Problem[]; [key: string]: unknown };
   type ProgressionRecord = { name: string; quizzes: QuizRecord[]; passPercentage: number; [key: string]: unknown };
@@ -41,9 +46,11 @@
     ? "Nothing added yet"
     : !chosenQuizzes.length
       ? "Nothing selected"
-      : `${[describe(chosenQuizzes.length, "quiz", "quizzes"), chosenPaths.length ? describe(chosenPaths.length, "progression", "progressions") : ""]
-          .filter(Boolean)
-          .join(" and ")} selected`;
+      : singleQuiz
+        ? `${describe(chosenQuizzes[0].count, "question", "questions")} ready to add`
+        : `${[describe(chosenQuizzes.length, "quiz", "quizzes"), chosenPaths.length ? describe(chosenPaths.length, "progression", "progressions") : ""]
+            .filter(Boolean)
+            .join(" and ")} selected`;
 
   function describe(count: number, one: string, many: string) {
     return `${count} ${count === 1 ? one : many}`;
@@ -53,39 +60,39 @@
     nextId += 1;
     if (parsed.kind === "progression" && parsed.progression) {
       const progression = parsed.progression;
-      staged = [
-        ...staged,
-        {
-          id: nextId,
-          source,
-          kind: "progression",
-          name: progression.name,
-          keepProgression: true,
-          progression,
-          quizzes: progression.quizzes.map((quiz, index) => ({
-            id: index,
-            title: quiz.title,
-            count: quiz.problems.length,
-            keep: true,
-            record: quiz,
-          })),
-        },
-      ];
+      const path: Staged = {
+        id: nextId,
+        source,
+        kind: "progression",
+        name: progression.name,
+        keepProgression: true,
+        progression,
+        quizzes: progression.quizzes.map((quiz, index) => ({
+          id: index,
+          title: quiz.title,
+          count: quiz.problems.length,
+          // A progression is welcome even when only one quiz can come out of it:
+          // its quizzes become a choice of one, starting on the first step.
+          keep: singleQuiz ? index === 0 : true,
+          record: quiz,
+        })),
+      };
+      staged = singleQuiz ? [path] : [...staged, path];
       return;
     }
     if (!parsed.quiz) return;
-    staged = [
-      ...staged,
-      {
-        id: nextId,
-        source,
-        kind: "quiz",
-        name: parsed.quiz.title,
-        keepProgression: false,
-        progression: null,
-        quizzes: [{ id: 0, title: parsed.quiz.title, count: parsed.quiz.problems.length, keep: true, record: parsed.quiz }],
-      },
-    ];
+    const item: Staged = {
+      id: nextId,
+      source,
+      kind: "quiz",
+      name: parsed.quiz.title,
+      keepProgression: false,
+      progression: null,
+      quizzes: [{ id: 0, title: parsed.quiz.title, count: parsed.quiz.problems.length, keep: true, record: parsed.quiz }],
+    };
+    // Only one quiz can be added to the quiz being edited, so a second one takes
+    // the place of the first rather than queueing behind it.
+    staged = singleQuiz ? [item] : [...staged, item];
   }
 
   // Everything added goes through the server, so what is listed is exactly what
@@ -110,7 +117,12 @@
   }
 
   async function addFiles(files: FileList | File[] | null) {
-    for (const file of Array.from(files ?? [])) {
+    let chosen = Array.from(files ?? []);
+    if (singleQuiz && chosen.length > 1) {
+      pushToast("error", "Only one quiz can be added at a time.", `Reading ${chosen[0].name} and leaving the rest.`);
+      chosen = chosen.slice(0, 1);
+    }
+    for (const file of chosen) {
       const body = new FormData();
       body.append("file", file);
       await read(body, file.name);
@@ -163,6 +175,13 @@
   function removeStaged(id: number) {
     staged = staged.filter((item) => item.id !== id);
   }
+  // Only one quiz can go into the quiz being edited, so picking one from a
+  // progression puts the others back rather than adding to them.
+  function chooseQuiz(itemId: number, quizId: number) {
+    staged = staged.map((item) =>
+      item.id === itemId ? { ...item, quizzes: item.quizzes.map((quiz) => ({ ...quiz, keep: quiz.id === quizId })) } : item,
+    );
+  }
   function toggleQuiz(itemId: number, quizId: number) {
     staged = staged.map((item) =>
       item.id === itemId
@@ -175,6 +194,17 @@
   }
 
   async function commit() {
+    // Nothing is filed away when the questions are bound for an open quiz: the
+    // editor takes the record and decides what to do with it.
+    if (singleQuiz) {
+      const item = staged[0];
+      const quiz = item?.quizzes.find((entry) => entry.keep);
+      if (!quiz) return;
+      onImport(quiz.record, item.source);
+      onClose();
+      return;
+    }
+
     importing = true;
     try {
       // A path is rebuilt from only the quizzes still ticked, in their original
@@ -220,7 +250,7 @@
   class="import-dialog"
   role="dialog"
   aria-modal="true"
-  aria-label="Import quizzes"
+  aria-label={singleQuiz ? "Import questions" : "Import quizzes"}
   tabindex="-1"
   bind:this={dialogEl}
   on:dragover|preventDefault={() => (dragging = true)}
@@ -231,7 +261,7 @@
     <div class="import-dragover"><strong>Drop to add</strong></div>
   {/if}
   <header class="import-head">
-    <h2>Import</h2>
+    <h2>{singleQuiz ? "Import questions" : "Import"}</h2>
     <button type="button" class="modal-close" aria-label="Close" on:click={onClose}><Icon name="x" size={16} /></button>
   </header>
 
@@ -244,18 +274,19 @@
         <button type="button" class="ghost-btn" disabled={reading} on:click={() => fileInput.click()}>
           {reading ? "Reading…" : "Choose a file"}
         </button>
-        <small>Drop several at once, or paste a copied quiz.</small>
+        <small>{singleQuiz ? "One quiz goes in at a time — from a progression, pick a step. Pasting works too." : "Drop several at once, or paste a copied quiz."}</small>
       </div>
     {/if}
 
-    <input class="sr-only" type="file" multiple accept="application/pdf,.pdf,application/json,.json" bind:this={fileInput} on:change={() => addFiles(fileInput.files)} />
+    <input class="sr-only" type="file" multiple={!singleQuiz} accept="application/pdf,.pdf,application/json,.json" bind:this={fileInput} on:change={() => addFiles(fileInput.files)} />
 
     {#if staged.length}
       <div class="import-list">
         <div class="import-list-head-row">
-          <p class="import-list-head">Ready to import</p>
+          <p class="import-list-head">{singleQuiz ? "Ready to add" : "Ready to import"}</p>
           <button type="button" class="ghost-btn import-add-more" disabled={reading} on:click={() => fileInput.click()}>
-            <Icon name="plus" size={13} /> {reading ? "Reading…" : "Add another"}
+            {#if !singleQuiz}<Icon name="plus" size={13} />{/if}
+            {reading ? "Reading…" : singleQuiz ? "Choose another" : "Add another"}
           </button>
         </div>
         {#each staged as item (item.id)}
@@ -267,20 +298,34 @@
               <button type="button" class="import-drop-item" aria-label={`Remove ${item.name}`} on:click={() => removeStaged(item.id)}><Icon name="x" size={13} /></button>
             </div>
 
-            {#if item.kind === "progression"}
+            {#if item.kind === "progression" && !singleQuiz}
               <label class="import-check import-path-check">
                 <input type="checkbox" checked={item.keepProgression} on:change={() => togglePath(item.id)} />
                 <span>Build the progression itself{item.keepProgression ? "" : " — its quizzes will come in on their own"}</span>
               </label>
+            {:else if item.kind === "progression"}
+              <p class="import-choose">Choose the step to take questions from</p>
             {/if}
 
             <div class="import-quizzes">
               {#each item.quizzes as quiz (quiz.id)}
-                <label class="import-check">
-                  <input type="checkbox" checked={quiz.keep} on:change={() => toggleQuiz(item.id, quiz.id)} />
-                  <span>{quiz.title}</span>
-                  <em>{describe(quiz.count, "question", "questions")}</em>
-                </label>
+                <!-- With one quiz and nothing to weigh it against, a tickbox only
+                     offers a way to make the Import button do nothing. -->
+                {#if singleQuiz && item.quizzes.length === 1}
+                  <p class="import-count">{describe(quiz.count, "question", "questions")}</p>
+                {:else if singleQuiz}
+                  <label class="import-check">
+                    <input type="radio" name={`step-${item.id}`} checked={quiz.keep} on:change={() => chooseQuiz(item.id, quiz.id)} />
+                    <span>{quiz.title}</span>
+                    <em>{describe(quiz.count, "question", "questions")}</em>
+                  </label>
+                {:else}
+                  <label class="import-check">
+                    <input type="checkbox" checked={quiz.keep} on:change={() => toggleQuiz(item.id, quiz.id)} />
+                    <span>{quiz.title}</span>
+                    <em>{describe(quiz.count, "question", "questions")}</em>
+                  </label>
+                {/if}
               {/each}
             </div>
           </div>
@@ -292,6 +337,6 @@
   <footer class="import-actions">
     <p class="import-summary">{summary}</p>
     <button type="button" class="editor-ghost" disabled={importing} on:click={onClose}>Cancel</button>
-    <button type="button" class="editor-save" disabled={!canImport} on:click={commit}>{importing ? "Importing…" : "Import"}</button>
+    <button type="button" class="editor-save" disabled={!canImport} on:click={commit}>{importing ? "Importing…" : singleQuiz ? "Add questions" : "Import"}</button>
   </footer>
 </div>
