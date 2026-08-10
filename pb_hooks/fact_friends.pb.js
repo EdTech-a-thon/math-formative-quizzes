@@ -269,29 +269,21 @@ routerAdd("POST", "/api/fact-friends/record-attempt", (e) => {
   const percentage = total ? Math.round((correct / total) * 100) : 0;
   const passed = total > 0 && percentage >= found.progression.getInt("passPercentage");
 
-  // Every release allows exactly one attempt. Passing moves them along the
-  // ladder; falling short leaves them on this step for their next release.
-  found.enrollment.set("released", false);
-  let leveledUp = false;
-  let finishedProgression = false;
+  // Passing moves them along the ladder; falling short leaves them on this step
+  // for their next release. Worked out first, but not saved until the work
+  // itself is safely stored.
+  const nextStep = passed ? found.steps[found.position] : null;
+  const leveledUp = Boolean(passed && nextStep);
+  const finishedProgression = Boolean(passed && !nextStep);
   let nextQuizName = "";
-  if (passed) {
-    const nextStep = found.steps[found.position];
-    if (nextStep) {
-      found.enrollment.set("currentStep", nextStep.id);
-      leveledUp = true;
-      try {
-        const nextQuiz = e.app.findRecordById("quizzes", nextStep.getString("quiz"));
-        nextQuizName = JSON.parse(nextQuiz.getString("data") || "{}").title || "Next quiz";
-      } catch (_) {
-        nextQuizName = "Next quiz";
-      }
-    } else {
-      found.enrollment.set("status", "completed");
-      finishedProgression = true;
+  if (leveledUp) {
+    try {
+      const nextQuiz = e.app.findRecordById("quizzes", nextStep.getString("quiz"));
+      nextQuizName = JSON.parse(nextQuiz.getString("data") || "{}").title || "Next quiz";
+    } catch (_) {
+      nextQuizName = "Next quiz";
     }
   }
-  e.app.save(found.enrollment);
 
   const attempt = new Record(e.app.findCollectionByNameOrId("quiz_attempts"));
   attempt.set("quiz", found.step.getString("quiz"));
@@ -305,7 +297,15 @@ routerAdd("POST", "/api/fact-friends/record-attempt", (e) => {
   attempt.set("responses", data.responses || []);
   attempt.set("progressionEnrollment", found.enrollment.id);
   attempt.set("progressionStep", found.step.id);
+  // Saved before the enrollment moves, so a hand-in that cannot be stored also
+  // leaves the student their release rather than swallowing the attempt.
   e.app.save(attempt);
+
+  // Every release allows exactly one attempt.
+  found.enrollment.set("released", false);
+  if (leveledUp) found.enrollment.set("currentStep", nextStep.id);
+  if (finishedProgression) found.enrollment.set("status", "completed");
+  e.app.save(found.enrollment);
 
   return e.json(200, { correct: correct, total: total, percentage: percentage, passed: passed, leveledUp: leveledUp, finishedProgression: finishedProgression, nextQuizName: nextQuizName });
 });
