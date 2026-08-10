@@ -1,15 +1,18 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { answerFor, readProblems, type Problem } from "$lib/quizProblems";
+import { answerFor, readProblems, symbolFor, type Problem } from "$lib/quizProblems";
 
 const pocketBaseUrl = "http://127.0.0.1:8090";
 
 type QuizStep = {
-  quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; oneAtATime: boolean; passMessage: string };
+  quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string };
   progressionName: string;
   position: number;
   totalSteps: number;
   passPercentage: number;
   allowIncompleteAnswers: boolean;
+  // Both set on the progression, so every step of a path is sat the same way.
+  oneAtATime: boolean;
+  showAnswers: boolean;
   // Extra minutes this student's teacher gave them, on top of the quiz's limit.
   extraTimeMinutes: number;
 };
@@ -27,12 +30,14 @@ async function pocketBasePost(path: string, payload: unknown) {
 // Handing in a passing quiz moves the student on, so the step they just sat is
 // no longer open to them. This stands in while their results are on screen.
 const finishedSheet = {
-  quiz: { title: "", problems: [] as Problem[], timeLimitMinutes: 0, showScore: true, oneAtATime: false, passMessage: "" },
+  quiz: { title: "", problems: [] as Problem[], timeLimitMinutes: 0, showScore: true, passMessage: "" },
   progressionName: "",
   position: 0,
   totalSteps: 0,
   passPercentage: 0,
   allowIncompleteAnswers: true,
+  oneAtATime: false,
+  showAnswers: false,
   extraTimeMinutes: 0,
 };
 
@@ -102,6 +107,19 @@ export const actions = {
       ...(recorded.body as { correct: number; total: number; percentage: number; passed: boolean; leveledUp: boolean; finishedProgression: boolean; nextQuizName: string }),
       showScore: step.quiz.showScore,
       passMessage: step.quiz.passMessage,
+      // What to study: the questions they missed, with the right answer beside
+      // what they wrote. Only sent when this path shows students their answers.
+      missed: step.showAnswers
+        ? responses
+            .filter((response) => !response.correct)
+            .map((response) => ({
+              top: response.top,
+              bottom: response.bottom,
+              symbol: symbolFor(response.op),
+              answer: response.answer,
+              correctAnswer: answerFor(response),
+            }))
+        : [],
       progressionName: step.progressionName,
       position: step.position,
       totalSteps: step.totalSteps,

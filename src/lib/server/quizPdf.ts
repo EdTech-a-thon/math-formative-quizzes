@@ -175,7 +175,7 @@ export async function renderProgressionPdf(progression: ProgressionRecord): Prom
     fonts,
     progression.name,
     "Learning path",
-    `Pass at ${progression.passPercentage}%  ·  ${progression.quizzes.length} quiz${progression.quizzes.length === 1 ? "" : "zes"}  ·  ${total} question${total === 1 ? "" : "s"}`,
+    `Pass at ${progression.passPercentage}%  ·  ${progression.quizzes.length} quiz${progression.quizzes.length === 1 ? "" : "zes"}  ·  ${total} question${total === 1 ? "" : "s"}  ·  ${progression.oneAtATime ? "one question at a time" : "all questions at once"}`,
   );
   if (progression.description) {
     cover.drawText(safe(progression.description).slice(0, 110), { x: MARGIN, y, size: 11, font: fonts.body, color: MUTED });

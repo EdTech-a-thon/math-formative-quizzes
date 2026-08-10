@@ -16,7 +16,7 @@ export async function PATCH({ request, cookies, params }) {
   const update = await fetch(`${pocketBaseUrl}/api/collections/progressions/records/${params.id}`, {
     method: "PATCH",
     headers,
-    body: JSON.stringify({ name: body.name.trim(), description: String(body.description || "").trim(), passPercentage: Number(body.passPercentage) || 80, ...appearanceOf(body) }),
+    body: JSON.stringify({ name: body.name.trim(), description: String(body.description || "").trim(), passPercentage: Number(body.passPercentage) || 80, oneAtATime: body.oneAtATime === true, showAnswers: body.showAnswers === true, ...appearanceOf(body) }),
   });
   const progression = await update.json().catch(() => ({}));
   if (!update.ok) return json({ message: progression.message || "We could not save this progression." }, { status: update.status });

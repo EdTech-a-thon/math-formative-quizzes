@@ -5,7 +5,7 @@
   import type { ShadeId } from "$lib/shades";
 
   type Quiz = { id: string; data: { title: string; problems?: Problem[] } };
-  type Progression = { id: string; name: string; description: string; passPercentage: number; quizIds: string[]; icon: string | null; shade: ShadeId | null };
+  type Progression = { id: string; name: string; description: string; passPercentage: number; oneAtATime: boolean; showAnswers: boolean; quizIds: string[]; icon: string | null; shade: ShadeId | null };
   export let data: { quizzes: Quiz[]; progression: Progression };
 </script>
 

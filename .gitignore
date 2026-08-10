@@ -20,3 +20,12 @@ pb_backups/
 .next-dev/
 .next-build/
 out/
+
+# Local Claude Code permissions, per machine.
+.claude/settings.local.json
+
+# Fixtures the run-fact-friends driver writes as it works.
+.claude/skills/run-fact-friends/shots/
+.claude/skills/run-fact-friends/.fixture.json
+.claude/skills/run-fact-friends/.teacher-state.json
+.claude/skills/run-fact-friends/.quiz.json

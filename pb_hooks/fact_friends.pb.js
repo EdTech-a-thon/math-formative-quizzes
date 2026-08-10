@@ -174,12 +174,15 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
     attempts = e.app.findRecordsByFilter("quiz_attempts", "student = {:s}", "-completedAt", 30, 0, { s: student.id });
   } catch (_) {}
 
+  const attemptReview = require(`${__hooks}/attempt_review.js`);
   const history = [];
   for (let item = 0; item < attempts.length; item++) {
     const attempt = attempts[item];
     const quiz = quizDetails(attempt.getString("quiz"));
     history.push({
       id: attempt.id,
+      // Only paths that show students their answers offer a look back.
+      canReview: attemptReview.showsAnswers(e.app, attempt),
       title: quiz ? quiz.title : "Quiz",
       icon: quiz ? quiz.icon : "",
       shade: quiz ? quiz.shade : "",
@@ -234,6 +237,11 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
     totalSteps: found.steps.length,
     passPercentage: found.progression.getInt("passPercentage"),
     allowIncompleteAnswers: allowIncompleteAnswers,
+    // The path decides whether its steps arrive one question at a time. Paths
+    // built before this setting existed show the whole sheet.
+    oneAtATime: found.progression.getBool("oneAtATime"),
+    // Whether the results screen hands the student their wrong answers back.
+    showAnswers: found.progression.getBool("showAnswers"),
     quiz: {
       title: details.title || "Quiz",
       // The stored questions, in the order the teacher arranged them. Marking
@@ -241,8 +249,6 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
       problems: details.problems || [],
       timeLimitMinutes: details.timeLimitMinutes || 0,
       showScore: details.showScore !== false,
-      // Quizzes written before this setting existed show the whole sheet.
-      oneAtATime: details.oneAtATime === true,
       passMessage: details.passMessage || "Great work! You finished this quiz.",
     },
   });
@@ -263,29 +269,21 @@ routerAdd("POST", "/api/fact-friends/record-attempt", (e) => {
   const percentage = total ? Math.round((correct / total) * 100) : 0;
   const passed = total > 0 && percentage >= found.progression.getInt("passPercentage");
 
-  // Every release allows exactly one attempt. Passing moves them along the
-  // ladder; falling short leaves them on this step for their next release.
-  found.enrollment.set("released", false);
-  let leveledUp = false;
-  let finishedProgression = false;
+  // Passing moves them along the ladder; falling short leaves them on this step
+  // for their next release. Worked out first, but not saved until the work
+  // itself is safely stored.
+  const nextStep = passed ? found.steps[found.position] : null;
+  const leveledUp = Boolean(passed && nextStep);
+  const finishedProgression = Boolean(passed && !nextStep);
   let nextQuizName = "";
-  if (passed) {
-    const nextStep = found.steps[found.position];
-    if (nextStep) {
-      found.enrollment.set("currentStep", nextStep.id);
-      leveledUp = true;
-      try {
-        const nextQuiz = e.app.findRecordById("quizzes", nextStep.getString("quiz"));
-        nextQuizName = JSON.parse(nextQuiz.getString("data") || "{}").title || "Next quiz";
-      } catch (_) {
-        nextQuizName = "Next quiz";
-      }
-    } else {
-      found.enrollment.set("status", "completed");
-      finishedProgression = true;
+  if (leveledUp) {
+    try {
+      const nextQuiz = e.app.findRecordById("quizzes", nextStep.getString("quiz"));
+      nextQuizName = JSON.parse(nextQuiz.getString("data") || "{}").title || "Next quiz";
+    } catch (_) {
+      nextQuizName = "Next quiz";
     }
   }
-  e.app.save(found.enrollment);
 
   const attempt = new Record(e.app.findCollectionByNameOrId("quiz_attempts"));
   attempt.set("quiz", found.step.getString("quiz"));
@@ -299,7 +297,44 @@ routerAdd("POST", "/api/fact-friends/record-attempt", (e) => {
   attempt.set("responses", data.responses || []);
   attempt.set("progressionEnrollment", found.enrollment.id);
   attempt.set("progressionStep", found.step.id);
+  // Saved before the enrollment moves, so a hand-in that cannot be stored also
+  // leaves the student their release rather than swallowing the attempt.
   e.app.save(attempt);
 
+  // Every release allows exactly one attempt.
+  found.enrollment.set("released", false);
+  if (leveledUp) found.enrollment.set("currentStep", nextStep.id);
+  if (finishedProgression) found.enrollment.set("status", "completed");
+  e.app.save(found.enrollment);
+
   return e.json(200, { correct: correct, total: total, percentage: percentage, passed: passed, leveledUp: leveledUp, finishedProgression: finishedProgression, nextQuizName: nextQuizName });
+});
+
+// A quiz a student has already finished, question by question. The answers are
+// the ones saved at hand-in, so editing the quiz afterwards never rewrites what
+// a student is shown they did.
+routerAdd("POST", "/api/fact-friends/attempt-review", (e) => {
+  const data = new DynamicModel({ studentId: "", attemptId: "" });
+  e.bindBody(data);
+
+  const attemptReview = require(`${__hooks}/attempt_review.js`);
+  const found = attemptReview.reviewable(e.app, (data.studentId || "").trim(), (data.attemptId || "").trim());
+  if (!found) throw new NotFoundError("This quiz is not one you can look back at.");
+
+  let details = {};
+  try {
+    details = JSON.parse(e.app.findRecordById("quizzes", found.attempt.getString("quiz")).getString("data") || "{}");
+  } catch (_) {}
+
+  return e.json(200, {
+    title: details.title || "Quiz",
+    icon: details.icon || "",
+    shade: details.shade || "",
+    progressionName: found.progression.getString("name"),
+    correct: found.attempt.getInt("correct"),
+    total: found.attempt.getInt("total"),
+    passed: found.attempt.getBool("passed"),
+    completedAt: found.attempt.getDateTime("completedAt").string(),
+    responses: found.attempt.get("responses") || [],
+  });
 });

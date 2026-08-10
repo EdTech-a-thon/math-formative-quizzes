@@ -4,7 +4,7 @@
   import { shadeClass } from "$lib/shades";
 
   type Assigned = { stepId: string; progressionName: string; position: number; totalSteps: number; title: string; icon: string; shade: string; questionCount: number; timeLimitMinutes: number; released: boolean };
-  type Finished = { id: string; title: string; icon: string; shade: string; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string };
+  type Finished = { id: string; title: string; icon: string; shade: string; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string; canReview: boolean };
 
   export let data: { studentName: string; className: string; extraTimeMinutes: number; forYou: Assigned[]; history: Finished[] };
 
@@ -57,11 +57,17 @@
     </section>
 
     <section aria-labelledby="history-title">
-      <div class="student-section-heading"><h2 id="history-title">History</h2><p>Quizzes you have finished.</p></div>
+      <div class="student-section-heading"><h2 id="history-title">History</h2><p>Quizzes you have finished. Open one to see your answers.</p></div>
       {#if data.history.length}
         <div class="history-list">
           {#each data.history as finished}
-            <article class={`history-row ${shadeClass(finished.shade)}`}>
+            <!-- A finished quiz opens its answers, but only on paths whose
+                 teacher shows students their answers back. -->
+            <svelte:element
+              this={finished.canReview ? "a" : "article"}
+              class={`history-row ${shadeClass(finished.shade)}`}
+              href={finished.canReview ? `/history/${finished.id}` : undefined}
+            >
               <span class="history-symbol"><IconGlyph name={finished.icon || null} fallback="clipboard-list" size={18} /></span>
               <div class="history-name"><strong>{finished.title}</strong><small>{whenFinished(finished.completedAt)}</small></div>
               <span class="history-score">{finished.correct}/{finished.total}</span>
@@ -69,7 +75,8 @@
                 <Icon name={finished.passed ? "check" : "circle-dot"} size={13} />
                 {finished.leveledUp ? "Moved up" : finished.passed ? "Passed" : "Keep practicing"}
               </span>
-            </article>
+              {#if finished.canReview}<span class="history-open"><Icon name="arrow-right" size={16} /></span>{/if}
+            </svelte:element>
           {/each}
         </div>
       {:else}

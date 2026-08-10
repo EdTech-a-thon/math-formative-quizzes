@@ -42,6 +42,8 @@ export async function load({ cookies, params }) {
       name: progression.name,
       description: progression.description ?? "",
       passPercentage: progression.passPercentage,
+      oneAtATime: progression.oneAtATime === true,
+      showAnswers: progression.showAnswers === true,
       icon: progression.icon ?? null,
       shade: progression.shade || null,
       quizIds: steps.map((step) => step.quiz),

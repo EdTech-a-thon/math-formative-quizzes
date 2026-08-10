@@ -10,7 +10,7 @@
   import { pushToast } from "$lib/toasts";
   import { makeProblem, operations, problemProblem, readProblems, symbolFor, type Operation, type Problem } from "$lib/quizProblems";
 
-  type QuizData = { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; oneAtATime: boolean; passMessage: string; icon: string | null; shade: ShadeId | null };
+  type QuizData = { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string; icon: string | null; shade: ShadeId | null };
 
   export let classId: string;
   export let quiz: { id: string; data: Partial<QuizData> } | null = null;
@@ -22,9 +22,6 @@
   let problems: Problem[] = readProblems(quiz?.data?.problems);
   let timeLimitMinutes = quiz?.data?.timeLimitMinutes ?? 2;
   let showScore = quiz?.data?.showScore ?? true;
-  // How the student meets the questions: the whole sheet at once, or one
-  // question on screen at a time. It changes nothing about this editor.
-  let oneAtATime = quiz?.data?.oneAtATime ?? false;
   let passMessage = quiz?.data?.passMessage ?? "Great work! You finished this quiz.";
   let icon: string | null = quiz?.data?.icon ?? null;
   let shade: ShadeId | null = quiz?.data?.shade ?? null;
@@ -49,8 +46,8 @@
   $: faults = new Map(problems.map((item) => [item.id, problemProblem(item.op, item.top, item.bottom)]).filter(([, note]) => note) as [string, string][]);
 
   const snapshot = (values: unknown[]) => JSON.stringify(values);
-  const savedState = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade, oneAtATime]);
-  $: state = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade, oneAtATime]);
+  const savedState = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
+  $: state = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
   $: dirty = !saving && state !== savedState;
   beforeNavigate((navigation) => {
     if (!dirty) return;
@@ -88,7 +85,7 @@
     future = [];
   }
   function restore(json: string) {
-    const [nextTitle, nextProblems, nextTime, nextScore, nextMessage, nextIcon, nextShade, nextOneAtATime] = JSON.parse(json);
+    const [nextTitle, nextProblems, nextTime, nextScore, nextMessage, nextIcon, nextShade] = JSON.parse(json);
     title = nextTitle;
     problems = nextProblems;
     timeLimitMinutes = nextTime;
@@ -96,8 +93,6 @@
     passMessage = nextMessage;
     icon = nextIcon;
     shade = nextShade;
-    // A draft written before this setting existed simply keeps the sheet view.
-    oneAtATime = Boolean(nextOneAtATime);
     // Marking this as the newest state stops the restore being recorded as an edit.
     last = json;
     burstFrom = null;
@@ -397,7 +392,7 @@
     if (problems.length > 150) { error = "Keep the quiz to 150 questions or fewer."; return; }
     if (faults.size) { error = `Fix the highlighted question${faults.size === 1 ? "" : "s"}: ${[...faults.values()][0]}`; return; }
     saving = true; error = "";
-    const data = { title: title.trim(), problems, timeLimitMinutes, showScore, oneAtATime, passMessage: passMessage.trim(), icon, shade };
+    const data = { title: title.trim(), problems, timeLimitMinutes, showScore, passMessage: passMessage.trim(), icon, shade };
     try {
       const response = editing
         ? await fetch(`/api/quizzes/${quiz?.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data }) })
@@ -445,18 +440,6 @@
 
       <button type="button" class="bar-toggle" class:on={showScore} role="switch" aria-checked={showScore} on:click={() => (showScore = !showScore)}>
         <Icon name={showScore ? "check" : "x"} size={14} /> {showScore ? "Score shown" : "Score hidden"}
-      </button>
-
-      <button
-        type="button"
-        class="bar-toggle"
-        class:on={oneAtATime}
-        role="switch"
-        aria-checked={oneAtATime}
-        title={oneAtATime ? "Students see one question at a time" : "Students see the whole sheet of questions"}
-        on:click={() => (oneAtATime = !oneAtATime)}
-      >
-        <Icon name={oneAtATime ? "square" : "layout-grid"} size={14} /> {oneAtATime ? "One at a time" : "All at once"}
       </button>
 
       <div class="bar-popover-wrap">
@@ -520,7 +503,7 @@
         {/if}
         <div class="sheet-head">
           <p class="doc-eyebrow">Quiz</p>
-          <p class="doc-summary">{problems.length} question{problems.length === 1 ? "" : "s"} · {timeLimitMinutes} min · {oneAtATime ? "one question at a time" : "all questions at once"} · {showScore ? "score shown" : "score hidden"} at the end</p>
+          <p class="doc-summary">{problems.length} question{problems.length === 1 ? "" : "s"} · {timeLimitMinutes} min · {showScore ? "score shown" : "score hidden"} at the end</p>
         </div>
         {#if titleInvalid}<p class="doc-title-error" role="alert">Give your quiz a name up in the bar before saving.</p>{/if}
 
