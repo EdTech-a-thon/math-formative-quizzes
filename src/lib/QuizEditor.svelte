@@ -285,9 +285,16 @@
   // The editor bar's backdrop-filter makes it the containing block for anything
   // fixed inside it, so a full-screen overlay only ever covers the bar itself and
   // clicks on the sheet below never reach it. Watch the document instead.
+  //
+  // Watch the whole wrapper, trigger included, rather than the popover alone: the
+  // click that opened the popover is still on its way up to the document and
+  // arrives after this listener is in place, so a popover that ignored its own
+  // trigger's click would close again the instant it opened. Leaving the trigger
+  // out of "outside" also lets its own handler do the toggling.
   function dismissOnOutsideClick(node: HTMLElement, close: () => void) {
+    const wrap = node.parentElement ?? node;
     function handle(event: MouseEvent) {
-      if (!node.contains(event.target as Node)) close();
+      if (!wrap.contains(event.target as Node)) close();
     }
     document.addEventListener("click", handle);
     return { destroy: () => document.removeEventListener("click", handle) };
