@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "$lib/Icon.svelte";
+  import SiteFooter from "$lib/SiteFooter.svelte";
   import { enhance } from "$app/forms";
 
   export let data: { prefill: string; error?: string };
@@ -10,7 +11,7 @@
   $: errorMessage = form?.error ?? data.error ?? "";
 </script>
 
-<main>
+<main class="with-footer">
   <a class="brand" href="/" aria-label="Fact Friends home"><span class="brand-mark">+</span><span>Fact Friends</span></a>
   <section class="join-card" aria-labelledby="join-title">
     <div class="icon"><Icon name="smile" size={26} /></div><p class="eyebrow">STUDENT SIGN IN</p><h1 id="join-title">Join your class</h1><p class="intro">Enter the class code your teacher gave you.</p>
@@ -22,4 +23,5 @@
     </form>
     <p class="help">Are you a teacher? <a href="/teacher">Sign in or create an account.</a></p>
   </section>
+  <SiteFooter />
 </main>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import Icon from "$lib/Icon.svelte";
+  import SiteFooter from "$lib/SiteFooter.svelte";
 
   let mode: "sign-in" | "sign-up" = "sign-in";
   let name = "";
@@ -25,7 +26,7 @@
   }
 </script>
 
-<main>
+<main class="with-footer">
   <a class="brand" href="/" aria-label="Fact Friends home"><span class="brand-mark">+</span><span>Fact Friends</span></a>
   <section class="join-card teacher-card" aria-labelledby="teacher-title">
     <a class="back-link" href="/"><Icon name="arrow-left" size={14} /> Student sign in</a><div class="icon teacher-icon"><Icon name="graduation-cap" size={26} /></div><p class="eyebrow">TEACHER DESK</p><h1 id="teacher-title">Teacher account</h1><p class="intro">Sign in or create an account.</p>
@@ -38,4 +39,5 @@
       <button type="submit" disabled={pending}>{pending ? "Please wait..." : mode === "sign-in" ? "Sign in" : "Create account"} <span><Icon name="arrow-right" size={17} /></span></button>
     </form>
   </section>
+  <SiteFooter />
 </main>
