@@ -1,13 +1,19 @@
 <script lang="ts">
   import ImportDialog from "$lib/ImportDialog.svelte";
+  import type { Problem } from "$lib/quizProblems";
 
   export let classId: string;
+  // Passed straight to the dialog: on the quiz editor one quiz comes in and is
+  // handed back, rather than being filed away in the library.
+  export let singleQuiz = false;
+  export let onImport: (quiz: { title: string; problems: Problem[]; [key: string]: unknown }, source: string) => void = () => {};
+  // Bindable, so a host with its own Import button opens the same dialog rather
+  // than standing up a second one.
+  export let open = false;
 
   let dragging = false;
-  let open = false;
   let droppedFiles: File[] = [];
   let pastedText = "";
-  let target: HTMLDivElement;
 
   function looksImportable(text: string) {
     try {
@@ -41,19 +47,23 @@
     return Array.from(event.dataTransfer?.types ?? []).includes("Files");
   }
 
+  // A file can be dropped anywhere on the page, not only over the list, which
+  // matters most when the list is empty and takes up hardly any of it.
   function dragOver(event: DragEvent) {
-    if (!hasFiles(event)) return;
+    if (open || !hasFiles(event)) return;
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
     dragging = true;
   }
 
+  // Moving between elements fires dragleave, so only a pointer that has left the
+  // page altogether — leaving nothing behind to move on to — counts as leaving.
   function dragLeave(event: DragEvent) {
-    if (!target.contains(event.relatedTarget as Node | null)) dragging = false;
+    if (!document.body.contains(event.relatedTarget as Node | null)) dragging = false;
   }
 
   function drop(event: DragEvent) {
-    if (!hasFiles(event)) return;
+    if (open || !hasFiles(event)) return;
     event.preventDefault();
     dragging = false;
     const files = Array.from(event.dataTransfer?.files ?? []);
@@ -70,19 +80,17 @@
   }
 </script>
 
-<svelte:window on:paste={paste} />
+<svelte:window on:paste={paste} on:dragover={dragOver} on:dragleave={dragLeave} on:drop={drop} />
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="import-page-target" bind:this={target} on:dragover={dragOver} on:dragleave={dragLeave} on:drop={drop}>
-  <slot />
-  {#if dragging}
-    <div class="import-page-overlay" aria-hidden="true">
-      <strong>Drop to import</strong>
-      <span>Quiz or progression PDF</span>
-    </div>
-  {/if}
-</div>
+<slot />
+
+{#if dragging}
+  <div class="import-page-overlay" aria-hidden="true">
+    <strong>{singleQuiz ? "Drop to add questions" : "Drop to import"}</strong>
+    <span>Quiz or progression PDF</span>
+  </div>
+{/if}
 
 {#if open}
-  <ImportDialog {classId} initialFiles={droppedFiles} initialText={pastedText} onClose={close} />
+  <ImportDialog {classId} {singleQuiz} {onImport} initialFiles={droppedFiles} initialText={pastedText} onClose={close} />
 {/if}

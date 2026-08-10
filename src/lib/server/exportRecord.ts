@@ -7,6 +7,8 @@ export type QuizRecord = {
   title: string;
   timeLimitMinutes: number;
   showScore: boolean;
+  // True when the student meets the questions one at a time rather than as a sheet.
+  oneAtATime: boolean;
   passMessage: string;
   icon: string | null;
   shade: ShadeId | null;
@@ -53,6 +55,7 @@ export function readQuizRecord(value: unknown): QuizRecord | null {
     title: text(raw.title, "Untitled quiz", 120),
     timeLimitMinutes: Math.min(60, Math.max(1, Math.round(Number(raw.timeLimitMinutes)) || 2)),
     showScore: raw.showScore !== false,
+    oneAtATime: raw.oneAtATime === true,
     passMessage: text(raw.passMessage, "Great work! You finished this quiz.", 120),
     icon: iconOf(raw.icon),
     shade: shadeOf(raw.shade),

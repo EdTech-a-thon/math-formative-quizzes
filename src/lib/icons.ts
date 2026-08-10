@@ -32,6 +32,8 @@ export const icons = {
   pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
   "chevron-down": '<path d="m6 9 6 6 6-6"/>',
   search: '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+  "layout-grid": '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  square: '<rect width="18" height="18" x="3" y="3" rx="2"/>',
 } as const;
 
 export type IconName = keyof typeof icons;

@@ -14,6 +14,7 @@
   export let data: { quizzes: Quiz[]; usage: Usage };
 
   $: base = `/teacher/classes/${$page.params.id}/quizzes`;
+  let importOpen = false;
   let deletingId: string | null = null;
   let error = "";
 
@@ -67,9 +68,9 @@
   }
 </script>
 
-<ImportDropTarget classId={String($page.params.id)}>
+<ImportDropTarget classId={String($page.params.id)} bind:open={importOpen}>
 <section class="workspace-page">
-  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Ordered by progression membership, in the order students work through them. Quizzes in no progression sit at the bottom.</p></div><div class="workspace-heading-actions"><ImportButton classId={String($page.params.id)} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></div></header>
+  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Ordered by progression membership, in the order students work through them. Quizzes in no progression sit at the bottom.</p></div><div class="workspace-heading-actions"><ImportButton bind:open={importOpen} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></div></header>
   {#if error}<p class="message error">{error}</p>{/if}
 
   {#if data.quizzes.length}
