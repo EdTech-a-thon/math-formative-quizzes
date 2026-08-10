@@ -19,7 +19,6 @@ async function createQuiz(headers: Record<string, string>, classId: string, quiz
         problems: quiz.problems,
         timeLimitMinutes: quiz.timeLimitMinutes,
         showScore: quiz.showScore,
-        oneAtATime: quiz.oneAtATime,
         passMessage: quiz.passMessage,
         ...appearanceOf(quiz),
       },
@@ -66,6 +65,7 @@ export async function POST({ request, cookies }) {
             name: progression.name,
             description: progression.description,
             passPercentage: progression.passPercentage,
+            oneAtATime: progression.oneAtATime,
             ...appearanceOf(progression),
           }),
         });

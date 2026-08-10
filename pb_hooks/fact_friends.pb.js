@@ -234,6 +234,9 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
     totalSteps: found.steps.length,
     passPercentage: found.progression.getInt("passPercentage"),
     allowIncompleteAnswers: allowIncompleteAnswers,
+    // The path decides whether its steps arrive one question at a time. Paths
+    // built before this setting existed show the whole sheet.
+    oneAtATime: found.progression.getBool("oneAtATime"),
     quiz: {
       title: details.title || "Quiz",
       // The stored questions, in the order the teacher arranged them. Marking
@@ -241,8 +244,6 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
       problems: details.problems || [],
       timeLimitMinutes: details.timeLimitMinutes || 0,
       showScore: details.showScore !== false,
-      // Quizzes written before this setting existed show the whole sheet.
-      oneAtATime: details.oneAtATime === true,
       passMessage: details.passMessage || "Great work! You finished this quiz.",
     },
   });

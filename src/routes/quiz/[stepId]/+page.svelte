@@ -5,11 +5,12 @@
   import { symbolFor, type Problem } from "$lib/quizProblems";
 
   export let data: {
-    quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; oneAtATime: boolean; passMessage: string };
+    quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string };
     progressionName: string;
     position: number;
     totalSteps: number;
     allowIncompleteAnswers: boolean;
+    oneAtATime: boolean;
     extraTimeMinutes: number;
     timerStorageKey: string;
   };
@@ -19,9 +20,9 @@
   $: problems = data.quiz.problems;
 
   let answers: string[] = [];
-  // One-at-a-time quizzes keep every question in the page, so a hand-in still
+  // A one-at-a-time path keeps every question in the page, so a hand-in still
   // carries all the answers; only one of them is on screen at any moment.
-  $: oneAtATime = data.quiz.oneAtATime;
+  $: oneAtATime = data.oneAtATime;
   let current = 0;
   let fields: HTMLInputElement[] = [];
   $: lastQuestion = current >= problems.length - 1;
