@@ -241,6 +241,8 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
       problems: details.problems || [],
       timeLimitMinutes: details.timeLimitMinutes || 0,
       showScore: details.showScore !== false,
+      // Quizzes written before this setting existed show the whole sheet.
+      oneAtATime: details.oneAtATime === true,
       passMessage: details.passMessage || "Great work! You finished this quiz.",
     },
   });

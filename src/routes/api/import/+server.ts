@@ -19,6 +19,7 @@ async function createQuiz(headers: Record<string, string>, classId: string, quiz
         problems: quiz.problems,
         timeLimitMinutes: quiz.timeLimitMinutes,
         showScore: quiz.showScore,
+        oneAtATime: quiz.oneAtATime,
         passMessage: quiz.passMessage,
         ...appearanceOf(quiz),
       },
