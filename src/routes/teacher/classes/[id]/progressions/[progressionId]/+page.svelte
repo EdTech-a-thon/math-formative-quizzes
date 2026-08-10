@@ -9,7 +9,7 @@
 
   type Step = { id: string; quizId: string; position: number; title: string; questionCount: number };
   type Enrollment = { id: string; studentId: string; studentName: string; currentStep: string; position: number; status: string; released: boolean };
-  type Progression = { id: string; name: string; description: string; passPercentage: number; oneAtATime: boolean; icon: string | null; shade: ShadeId | null };
+  type Progression = { id: string; name: string; description: string; passPercentage: number; oneAtATime: boolean; showAnswers: boolean; icon: string | null; shade: ShadeId | null };
   type Student = { id: string; name: string; loginName: string };
   export let data: { progression: Progression; steps: Step[]; enrollments: Enrollment[]; students: Student[] };
 
@@ -105,7 +105,7 @@
       <p class="eyebrow">PROGRESSION</p>
       <h1>{data.progression.name}</h1>
       <p>{data.progression.description || `${data.steps.length} quizzes in this learning path.`}</p>
-      <div class="overview-facts"><span>{data.progression.passPercentage}% to pass</span><span>{data.steps.length} quizzes</span><span>{data.enrollments.length} students</span><span>{data.progression.oneAtATime ? "one question at a time" : "all questions at once"}</span></div>
+      <div class="overview-facts"><span>{data.progression.passPercentage}% to pass</span><span>{data.steps.length} quizzes</span><span>{data.enrollments.length} students</span><span>{data.progression.oneAtATime ? "one question at a time" : "all questions at once"}</span><span>{data.progression.showAnswers ? "answers shown" : "answers hidden"}</span></div>
     </div>
     <div class="overview-actions">
       <a class="ghost-btn" href={`${base}/${data.progression.id}/edit`}><Icon name="pencil" size={14} /> Edit progression</a>

@@ -1,5 +1,5 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { answerFor, readProblems, type Problem } from "$lib/quizProblems";
+import { answerFor, readProblems, symbolFor, type Problem } from "$lib/quizProblems";
 
 const pocketBaseUrl = "http://127.0.0.1:8090";
 
@@ -10,8 +10,9 @@ type QuizStep = {
   totalSteps: number;
   passPercentage: number;
   allowIncompleteAnswers: boolean;
-  // Set on the progression, so every step of a path is shown the same way.
+  // Both set on the progression, so every step of a path is sat the same way.
   oneAtATime: boolean;
+  showAnswers: boolean;
   // Extra minutes this student's teacher gave them, on top of the quiz's limit.
   extraTimeMinutes: number;
 };
@@ -36,6 +37,7 @@ const finishedSheet = {
   passPercentage: 0,
   allowIncompleteAnswers: true,
   oneAtATime: false,
+  showAnswers: false,
   extraTimeMinutes: 0,
 };
 
@@ -105,6 +107,19 @@ export const actions = {
       ...(recorded.body as { correct: number; total: number; percentage: number; passed: boolean; leveledUp: boolean; finishedProgression: boolean; nextQuizName: string }),
       showScore: step.quiz.showScore,
       passMessage: step.quiz.passMessage,
+      // What to study: the questions they missed, with the right answer beside
+      // what they wrote. Only sent when this path shows students their answers.
+      missed: step.showAnswers
+        ? responses
+            .filter((response) => !response.correct)
+            .map((response) => ({
+              top: response.top,
+              bottom: response.bottom,
+              symbol: symbolFor(response.op),
+              answer: response.answer,
+              correctAnswer: answerFor(response),
+            }))
+        : [],
       progressionName: step.progressionName,
       position: step.position,
       totalSteps: step.totalSteps,

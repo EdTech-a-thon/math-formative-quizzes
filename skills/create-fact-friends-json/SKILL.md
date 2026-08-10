@@ -42,6 +42,8 @@ Put complete quiz objects inside `quizzes` in the order students should complete
   "name": "Build multiplication confidence",
   "description": "Start with twos, then practise fives.",
   "passPercentage": 80,
+  "oneAtATime": false,
+  "showAnswers": false,
   "quizzes": [
     {
       "title": "Multiply by 2",
@@ -67,7 +69,10 @@ Put complete quiz objects inside `quizzes` in the order students should complete
 }
 ```
 
-Include at least one quiz. `passPercentage` applies to every step in the progression.
+Include at least one quiz. `passPercentage` applies to every step in the progression, and so do these two path-wide settings:
+
+- `oneAtATime`: `true` shows students one question on screen at a time; `false` shows the whole sheet.
+- `showAnswers`: `true` gives students the questions they got wrong, with the right answer, once they finish.
 
 ## Apply defaults and limits
 
@@ -80,6 +85,8 @@ Prefer writing every field shown above. If optional fields are omitted, the impo
 - `name`: `"Untitled path"`
 - `description`: empty text
 - `passPercentage`: `80` (accepted range: 1–100)
+- `oneAtATime`: `false`
+- `showAnswers`: `false`
 
 Keep a quiz at 500 problems or fewer and a progression at 100 quizzes or fewer. A JSON file imports one quiz or one progression. Re-importing adds another copy; it does not update the original.
 

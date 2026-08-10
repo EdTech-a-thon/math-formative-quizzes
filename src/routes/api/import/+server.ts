@@ -66,6 +66,7 @@ export async function POST({ request, cookies }) {
             description: progression.description,
             passPercentage: progression.passPercentage,
             oneAtATime: progression.oneAtATime,
+            showAnswers: progression.showAnswers,
             ...appearanceOf(progression),
           }),
         });

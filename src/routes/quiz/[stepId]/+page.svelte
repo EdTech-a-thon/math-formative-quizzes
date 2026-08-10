@@ -14,7 +14,8 @@
     extraTimeMinutes: number;
     timerStorageKey: string;
   };
-  export let form: { finished?: boolean; timedOut?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; error?: string } | null = null;
+  type Missed = { top: number; bottom: number; symbol: string; answer: string; correctAnswer: number };
+  export let form: { finished?: boolean; timedOut?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; missed?: Missed[]; error?: string } | null = null;
 
   // Exactly the questions the teacher arranged, in their order.
   $: problems = data.quiz.problems;
@@ -130,6 +131,17 @@
         <div class="results-score"><strong>{form.correct}<small>/{form.total}</small></strong><span>correct</span></div>
       {:else}
         <p class="results-note">Your teacher has received your work.</p>
+      {/if}
+      {#if form.missed?.length}
+        <section class="study-list" aria-labelledby="study-title">
+          <h2 id="study-title">Study up on</h2>
+          {#each form.missed as question}
+            <p>
+              <b>{question.top} {question.symbol} {question.bottom} = {question.correctAnswer}</b>
+              <span>You answered: {question.answer || "nothing"}</span>
+            </p>
+          {/each}
+        </section>
       {/if}
       {#if form.finishedProgression}
         <p class="results-note">You finished {form.progressionName}. Every step is done!</p>

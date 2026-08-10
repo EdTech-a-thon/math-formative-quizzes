@@ -7,7 +7,7 @@
   import type { Problem } from "$lib/quizProblems";
 
   type Quiz = { id: string; data: { title: string; problems?: Problem[] } };
-  type Progression = { id: string; name: string; description: string; passPercentage: number; oneAtATime?: boolean; quizIds: string[]; icon?: string | null; shade?: ShadeId | null };
+  type Progression = { id: string; name: string; description: string; passPercentage: number; oneAtATime?: boolean; showAnswers?: boolean; quizIds: string[]; icon?: string | null; shade?: ShadeId | null };
 
   export let classId: string;
   export let quizzes: Quiz[];
@@ -24,6 +24,8 @@
   // or the whole sheet. It is a path-wide setting so the way a student meets a
   // quiz does not change from step to step.
   let oneAtATime = progression?.oneAtATime === true;
+  // Whether a finished quiz hands the student their wrong answers back to study.
+  let showAnswers = progression?.showAnswers === true;
   let quizIds: string[] = progression?.quizIds ?? []; // Chosen quizzes, in the order learners will work through them.
   let icon: string | null = progression?.icon || null;
   let shade: ShadeId | null = progression?.shade || null;
@@ -33,8 +35,8 @@
 
   // Everything a save would write, so leaving with edits in hand can be caught.
   const snapshot = (values: unknown[]) => JSON.stringify(values);
-  const savedState = snapshot([name, description, passPercentage, oneAtATime, quizIds, icon, shade]);
-  $: dirty = !saving && snapshot([name, description, passPercentage, oneAtATime, quizIds, icon, shade]) !== savedState;
+  const savedState = snapshot([name, description, passPercentage, oneAtATime, showAnswers, quizIds, icon, shade]);
+  $: dirty = !saving && snapshot([name, description, passPercentage, oneAtATime, showAnswers, quizIds, icon, shade]) !== savedState;
   beforeNavigate((navigation) => {
     if (!dirty) return;
     // Closing the tab can only be warned about by the browser's own dialog,
@@ -69,7 +71,7 @@
     if (!name.trim()) { error = "Give this learning path a name first."; return; }
     if (!quizIds.length) { error = "Add at least one quiz to the path."; return; }
     saving = true; error = "";
-    const body = { class: classId, name: name.trim(), description: description.trim(), passPercentage, oneAtATime, quizIds, icon, shade };
+    const body = { class: classId, name: name.trim(), description: description.trim(), passPercentage, oneAtATime, showAnswers, quizIds, icon, shade };
     try {
       const response = editing
         ? await fetch(`/api/progressions/${progression?.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -120,6 +122,19 @@
               on:click={() => (oneAtATime = !oneAtATime)}
             >
               <Icon name={oneAtATime ? "square" : "layout-grid"} size={14} /> {oneAtATime ? "One at a time" : "All at once"}
+            </button>
+          </div>
+          <div class="doc-row">
+            <div><h2 class="doc-heading">Answers after a quiz</h2><p class="doc-note">Students see the questions they got wrong, with the right answer to study.</p></div>
+            <button
+              type="button"
+              class="bar-toggle"
+              class:on={showAnswers}
+              role="switch"
+              aria-checked={showAnswers}
+              on:click={() => (showAnswers = !showAnswers)}
+            >
+              <Icon name={showAnswers ? "check" : "x"} size={14} /> {showAnswers ? "Answers shown" : "Answers hidden"}
             </button>
           </div>
         </section>
