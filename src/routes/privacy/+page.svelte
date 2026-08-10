@@ -31,7 +31,7 @@
     <section class="setup-section">
       <h2>On your device</h2>
       <p>We set a sign-in cookie so teachers and students stay signed in, and we keep a couple of things in your browser's local storage: the countdown on a timed quiz, so it survives a refresh, and unsaved quiz drafts a teacher is still editing. That information stays on the device.</p>
-      <p>Questions or concerns? Email <a href="mailto:directors@edtechathon.com?subject=factfriends%20privacy">directors@edtechathon.com</a>.</p>
+      <p>Questions or concerns? Email <a href="mailto:support@factfriends.com?subject=factfriends%20privacy">support@factfriends.com</a>.</p>
     </section>
   </article>
   <SiteFooter />
