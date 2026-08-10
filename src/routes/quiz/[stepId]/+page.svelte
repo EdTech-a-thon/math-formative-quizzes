@@ -31,6 +31,21 @@
     // Land in the answer box, so a student can keep typing without reaching for the mouse.
     setTimeout(() => fields[current]?.focus(), 0);
   }
+  // Every answer is a whole, non-negative number, so nothing else belongs in the
+  // box. Letters and symbols are dropped as they are typed or pasted.
+  function onAnswerInput(event: Event, index: number) {
+    const field = event.currentTarget as HTMLInputElement;
+    const digits = field.value.replace(/\D/g, "");
+    if (digits !== field.value) {
+      // Rewriting the value drops the caret at the end, so put it back where the
+      // student was typing: as many digits along as they had in front of them.
+      const caret = field.selectionStart ?? field.value.length;
+      const kept = field.value.slice(0, caret).replace(/\D/g, "").length;
+      field.value = digits;
+      field.setSelectionRange(kept, kept);
+    }
+    answers[index] = digits;
+  }
   // Enter moves on rather than handing the quiz in early.
   function onAnswerKeydown(event: KeyboardEvent) {
     if (event.key !== "Enter" || !oneAtATime || lastQuestion) return;
@@ -152,7 +167,9 @@
               bind:value={answers[index]}
               bind:this={fields[index]}
               on:keydown={onAnswerKeydown}
+              on:input={(event) => onAnswerInput(event, index)}
               inputmode="numeric"
+              maxlength="6"
               autocomplete="off"
               aria-label={`Question ${index + 1}: ${problem.top} ${symbolFor(problem.op)} ${problem.bottom}`}
             />
