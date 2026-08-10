@@ -33,7 +33,7 @@
     <section class="setup-section">
       <h2>Feedback &amp; ideas</h2>
       <p>We'd love to hear from you. Tell us what's working, what's not, or pitch us an idea for a tool you wish existed. We're here to help.</p>
-      <a class="doc-mail" href="mailto:directors@edtechathon.com?subject=factfriends%20feedback">Email directors@edtechathon.com</a>
+      <a class="doc-mail" href="mailto:support@factfriends.com?subject=factfriends%20feedback">Email dsupport@factfriends.com</a>
     </section>
   </article>
   <SiteFooter />
