@@ -5,11 +5,12 @@
   import FactFamilyPicker from "$lib/FactFamilyPicker.svelte";
   import Icon from "$lib/Icon.svelte";
   import IconPicker from "$lib/IconPicker.svelte";
+  import ImportDropTarget from "$lib/ImportDropTarget.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
   import { pushToast } from "$lib/toasts";
   import { makeProblem, operations, problemProblem, readProblems, symbolFor, type Operation, type Problem } from "$lib/quizProblems";
 
-  type QuizData = { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string; icon: string | null; shade: ShadeId | null };
+  type QuizData = { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; oneAtATime: boolean; passMessage: string; icon: string | null; shade: ShadeId | null };
 
   export let classId: string;
   export let quiz: { id: string; data: Partial<QuizData> } | null = null;
@@ -21,6 +22,9 @@
   let problems: Problem[] = readProblems(quiz?.data?.problems);
   let timeLimitMinutes = quiz?.data?.timeLimitMinutes ?? 2;
   let showScore = quiz?.data?.showScore ?? true;
+  // How the student meets the questions: the whole sheet at once, or one
+  // question on screen at a time. It changes nothing about this editor.
+  let oneAtATime = quiz?.data?.oneAtATime ?? false;
   let passMessage = quiz?.data?.passMessage ?? "Great work! You finished this quiz.";
   let icon: string | null = quiz?.data?.icon ?? null;
   let shade: ShadeId | null = quiz?.data?.shade ?? null;
@@ -45,8 +49,8 @@
   $: faults = new Map(problems.map((item) => [item.id, problemProblem(item.op, item.top, item.bottom)]).filter(([, note]) => note) as [string, string][]);
 
   const snapshot = (values: unknown[]) => JSON.stringify(values);
-  const savedState = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
-  $: state = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
+  const savedState = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade, oneAtATime]);
+  $: state = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade, oneAtATime]);
   $: dirty = !saving && state !== savedState;
   beforeNavigate((navigation) => {
     if (!dirty) return;
@@ -84,7 +88,7 @@
     future = [];
   }
   function restore(json: string) {
-    const [nextTitle, nextProblems, nextTime, nextScore, nextMessage, nextIcon, nextShade] = JSON.parse(json);
+    const [nextTitle, nextProblems, nextTime, nextScore, nextMessage, nextIcon, nextShade, nextOneAtATime] = JSON.parse(json);
     title = nextTitle;
     problems = nextProblems;
     timeLimitMinutes = nextTime;
@@ -92,6 +96,8 @@
     passMessage = nextMessage;
     icon = nextIcon;
     shade = nextShade;
+    // A draft written before this setting existed simply keeps the sheet view.
+    oneAtATime = Boolean(nextOneAtATime);
     // Marking this as the newest state stops the restore being recorded as an edit.
     last = json;
     burstFrom = null;
@@ -249,6 +255,7 @@
   }
   // Escape clears a selection and Delete removes it, but never while a field has focus.
   function onKeydown(event: KeyboardEvent) {
+    if (importOpen) return; // The import dialog owns the keyboard while it is up.
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "p") {
       event.preventDefault();
       exportPdf();
@@ -273,6 +280,17 @@
       event.preventDefault();
       removeSelected();
     }
+  }
+
+  // The editor bar's backdrop-filter makes it the containing block for anything
+  // fixed inside it, so a full-screen overlay only ever covers the bar itself and
+  // clicks on the sheet below never reach it. Watch the document instead.
+  function dismissOnOutsideClick(node: HTMLElement, close: () => void) {
+    function handle(event: MouseEvent) {
+      if (!node.contains(event.target as Node)) close();
+    }
+    document.addEventListener("click", handle);
+    return { destroy: () => document.removeEventListener("click", handle) };
   }
 
   // ---- Dragging questions into order ----
@@ -351,42 +369,19 @@
     }
   }
 
-  // Pulls the questions out of a PDF or a JSON record and adds them to the quiz
-  // being written — unlike the library's Import, which files a separate quiz away.
-  let importInput: HTMLInputElement;
-  let importing = false;
+  // The same import dialog the library uses, held to a single quiz: its questions
+  // join the quiz being written rather than being filed away as a quiz of their own.
+  let importOpen = false;
 
-  async function importQuestions() {
-    const file = importInput.files?.[0];
-    if (!file) return;
-    importing = true;
-    try {
-      const body = new FormData();
-      body.append("file", file);
-      const response = await fetch("/api/import/read", { method: "POST", body });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        pushToast("error", result.message || `We could not read ${file.name}.`, result.detail || "Please try again.");
-        return;
-      }
-      // A progression holds a series of quizzes, so every question it carries
-      // comes across, in order.
-      const carried = result.kind === "progression" ? (result.progression?.quizzes ?? []).flatMap((item: { problems?: unknown }) => item.problems ?? []) : (result.quiz?.problems ?? []);
-      const incoming = readProblems(carried);
-      if (!incoming.length) {
-        pushToast("error", "That PDF has no questions in it.", "Nothing was added to this quiz.");
-        return;
-      }
-      problems = [...problems, ...incoming];
-      selected = new Set();
-      const from = result.kind === "progression" ? result.progression?.name : result.quiz?.title;
-      pushToast("success", `Added ${incoming.length} question${incoming.length === 1 ? "" : "s"}${from ? ` from “${from}”` : ""}.`);
-    } catch (caught) {
-      pushToast("error", `We could not read ${file.name}.`, caught instanceof Error && caught.message ? caught.message : "Check your connection and try again.");
-    } finally {
-      importing = false;
-      importInput.value = "";
+  function addImportedQuestions(quiz: { title?: string; problems?: unknown }, source: string) {
+    const incoming = readProblems(quiz.problems);
+    if (!incoming.length) {
+      pushToast("error", `${source} has no questions in it.`, "Nothing was added to this quiz.");
+      return;
     }
+    problems = [...problems, ...incoming];
+    selected = new Set();
+    pushToast("success", `Added ${incoming.length} question${incoming.length === 1 ? "" : "s"}${quiz.title ? ` from “${quiz.title}”` : ""}.`);
   }
 
   async function save() {
@@ -395,7 +390,7 @@
     if (problems.length > 150) { error = "Keep the quiz to 150 questions or fewer."; return; }
     if (faults.size) { error = `Fix the highlighted question${faults.size === 1 ? "" : "s"}: ${[...faults.values()][0]}`; return; }
     saving = true; error = "";
-    const data = { title: title.trim(), problems, timeLimitMinutes, showScore, passMessage: passMessage.trim(), icon, shade };
+    const data = { title: title.trim(), problems, timeLimitMinutes, showScore, oneAtATime, passMessage: passMessage.trim(), icon, shade };
     try {
       const response = editing
         ? await fetch(`/api/quizzes/${quiz?.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data }) })
@@ -414,6 +409,9 @@
 
 <svelte:window on:keydown={onKeydown} />
 
+<!-- A PDF dropped or a quiz pasted anywhere in the editor adds its questions
+     here, the same way it imports on the library screens. -->
+<ImportDropTarget {classId} singleQuiz onImport={addImportedQuestions} bind:open={importOpen}>
 <div class={`editor-screen ${sheetClass}`}>
   <header class="editor-bar editor-bar-quiz">
     <a class="editor-back" href={`/teacher/classes/${classId}/quizzes`}><Icon name="arrow-left" size={14} /> Quizzes</a>
@@ -426,8 +424,8 @@
     <div class="bar-history">
       <button type="button" class="bar-icon-button" disabled={!canUndo} title="Undo" aria-label="Undo" on:click={undo}><Icon name="rotate-ccw" size={15} /></button>
       <button type="button" class="bar-icon-button" disabled={!canRedo} title="Redo" aria-label="Redo" on:click={redo}><Icon name="rotate-cw" size={15} /></button>
-      <button type="button" class="bar-toggle" disabled={problems.length < 2} title="Put the questions in a random order" on:click={shuffleQuestions}>
-        <Icon name="shuffle" size={14} /> Shuffle
+      <button type="button" class="bar-icon-button" disabled={problems.length < 2} title="Shuffle: put the questions in a random order" aria-label="Shuffle the questions" on:click={shuffleQuestions}>
+        <Icon name="shuffle" size={15} />
       </button>
     </div>
 
@@ -442,14 +440,31 @@
         <Icon name={showScore ? "check" : "x"} size={14} /> {showScore ? "Score shown" : "Score hidden"}
       </button>
 
+      <button
+        type="button"
+        class="bar-toggle"
+        class:on={oneAtATime}
+        role="switch"
+        aria-checked={oneAtATime}
+        title={oneAtATime ? "Students see one question at a time" : "Students see the whole sheet of questions"}
+        on:click={() => (oneAtATime = !oneAtATime)}
+      >
+        <Icon name={oneAtATime ? "square" : "layout-grid"} size={14} /> {oneAtATime ? "One at a time" : "All at once"}
+      </button>
+
       <div class="bar-popover-wrap">
-        <button type="button" class="bar-toggle" aria-expanded={messageOpen} aria-haspopup="dialog" on:click|stopPropagation={() => (messageOpen = !messageOpen)}>
-          <Icon name="smile" size={14} /> Finished message
-        </button>
+        <button
+          type="button"
+          class="bar-icon-button"
+          class:on={messageOpen}
+          title="Finished message: the cheer students see when they finish"
+          aria-label="Finished message"
+          aria-expanded={messageOpen}
+          aria-haspopup="dialog"
+          on:click={() => (messageOpen = !messageOpen)}
+        ><Icon name="smile" size={15} /></button>
         {#if messageOpen}
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <div class="icon-picker-backdrop" role="presentation" on:click={() => (messageOpen = false)}></div>
-          <div class="bar-popover" role="dialog" aria-label="Finished message">
+          <div class="bar-popover" role="dialog" aria-label="Finished message" use:dismissOnOutsideClick={() => (messageOpen = false)}>
             <p class="doc-note">The cheer students see when they finish this quiz.</p>
             <input class="doc-inline-input" bind:value={passMessage} placeholder="Great work! You finished this quiz." maxlength="120" />
           </div>
@@ -458,17 +473,15 @@
     </div>
 
     <div class="editor-bar-actions">
-      <button class="editor-ghost" type="button" disabled={importing} title="Add the questions from a PDF to this quiz" on:click={() => importInput.click()}>
-        <Icon name="download" size={15} /> {importing ? "Reading…" : "Import"}
+      <button class="editor-ghost" type="button" title="Add the questions from a PDF to this quiz" on:click={() => (importOpen = true)}>
+        <Icon name="download" size={15} /> Import
       </button>
       <div class="export-menu-wrap">
-        <button class="editor-ghost export-trigger" type="button" aria-expanded={exportOpen} aria-haspopup="menu" on:click|stopPropagation={() => (exportOpen = !exportOpen)}>
+        <button class="editor-ghost export-trigger" type="button" aria-expanded={exportOpen} aria-haspopup="menu" on:click={() => (exportOpen = !exportOpen)}>
           <Icon name="upload" size={15} /> Export <Icon name="chevron-down" size={13} />
         </button>
         {#if exportOpen}
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <div class="icon-picker-backdrop" role="presentation" on:click={() => (exportOpen = false)}></div>
-          <div class="export-dropdown" role="menu" aria-label="Export quiz">
+          <div class="export-dropdown" role="menu" aria-label="Export quiz" use:dismissOnOutsideClick={() => (exportOpen = false)}>
             <button type="button" role="menuitem" on:click={exportPdf}>
               <Icon name="download" size={15} />
               <span><strong>Export as PDF</strong><small>Download a printable worksheet</small></span>
@@ -480,8 +493,6 @@
           </div>
         {/if}
       </div>
-      <input class="sr-only" type="file" accept="application/pdf,.pdf,application/json,.json" bind:this={importInput} on:change={importQuestions} />
-      <a class="editor-cancel" href={`/teacher/classes/${classId}/quizzes`}>Cancel</a>
       <button class="editor-save" type="button" disabled={saving} on:click={save}>{saving ? "Saving…" : editing ? "Save changes" : "Save quiz"}</button>
     </div>
   </header>
@@ -502,7 +513,7 @@
         {/if}
         <div class="sheet-head">
           <p class="doc-eyebrow">Quiz</p>
-          <p class="doc-summary">{problems.length} question{problems.length === 1 ? "" : "s"} · {timeLimitMinutes} min · {showScore ? "score shown" : "score hidden"} at the end</p>
+          <p class="doc-summary">{problems.length} question{problems.length === 1 ? "" : "s"} · {timeLimitMinutes} min · {oneAtATime ? "one question at a time" : "all questions at once"} · {showScore ? "score shown" : "score hidden"} at the end</p>
         </div>
         {#if titleInvalid}<p class="doc-title-error" role="alert">Give your quiz a name up in the bar before saving.</p>{/if}
 
@@ -615,3 +626,4 @@
     </ol>
   </div>
 </div>
+</ImportDropTarget>

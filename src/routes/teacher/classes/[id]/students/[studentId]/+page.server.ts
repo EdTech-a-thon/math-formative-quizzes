@@ -26,7 +26,12 @@ export async function load({ cookies, params }) {
   for (const step of stepItems as { progression: string }[]) stepCount[step.progression] = (stepCount[step.progression] ?? 0) + 1;
 
   return {
-    student: { id: student.id, name: student.name, loginName: student.loginName },
+    student: {
+      id: student.id,
+      name: student.name,
+      loginName: student.loginName,
+      extraTimeMinutes: Number(student.accommodations?.extraTimeMinutes) || 0,
+    },
     // Every path in this class, so the page can offer the ones this student is
     // not on yet.
     progressions: (progressionItems as { id: string; name: string; operation?: string; shade?: string }[]).map((progression) => ({

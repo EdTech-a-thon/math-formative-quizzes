@@ -48,7 +48,7 @@ export async function load({ cookies, params }) {
     },
     steps: steps.map((step) => {
       const quiz = quizById.get(step.quiz) as { data?: { title?: string; problems?: Problem[] } } | undefined;
-      return { id: step.id, position: step.position, title: quiz?.data?.title ?? "Quiz", questionCount: (quiz?.data?.problems ?? []).length };
+      return { id: step.id, quizId: step.quiz, position: step.position, title: quiz?.data?.title ?? "Quiz", questionCount: (quiz?.data?.problems ?? []).length };
     }),
     enrollments: enrollmentItems.map((enrollment: { id: string; currentStep: string; status: string; released: boolean; expand?: { student?: { id: string; name: string }; currentStep?: { position: number } } }) => ({
       id: enrollment.id,

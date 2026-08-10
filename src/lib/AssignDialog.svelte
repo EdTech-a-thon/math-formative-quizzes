@@ -95,3 +95,15 @@
     </footer>
   </div>
 </div>
+
+<style>
+  .assign-dialog-search input {
+    box-shadow: none;
+    text-align: left;
+  }
+
+  .assign-dialog-search input:focus {
+    border: 0;
+    box-shadow: none;
+  }
+</style>

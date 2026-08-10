@@ -5,11 +5,12 @@
   import { symbolFor, type Problem } from "$lib/quizProblems";
 
   export let data: {
-    quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string };
+    quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; oneAtATime: boolean; passMessage: string };
     progressionName: string;
     position: number;
     totalSteps: number;
     allowIncompleteAnswers: boolean;
+    extraTimeMinutes: number;
     timerStorageKey: string;
   };
   export let form: { finished?: boolean; timedOut?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; error?: string } | null = null;
@@ -18,7 +19,43 @@
   $: problems = data.quiz.problems;
 
   let answers: string[] = [];
-  let secondsLeft = data.quiz.timeLimitMinutes * 60;
+  // One-at-a-time quizzes keep every question in the page, so a hand-in still
+  // carries all the answers; only one of them is on screen at any moment.
+  $: oneAtATime = data.quiz.oneAtATime;
+  let current = 0;
+  let fields: HTMLInputElement[] = [];
+  $: lastQuestion = current >= problems.length - 1;
+
+  function goTo(index: number) {
+    current = Math.min(Math.max(0, index), problems.length - 1);
+    // Land in the answer box, so a student can keep typing without reaching for the mouse.
+    setTimeout(() => fields[current]?.focus(), 0);
+  }
+  // Every answer is a whole, non-negative number, so nothing else belongs in the
+  // box. Letters and symbols are dropped as they are typed or pasted.
+  function onAnswerInput(event: Event, index: number) {
+    const field = event.currentTarget as HTMLInputElement;
+    const digits = field.value.replace(/\D/g, "");
+    if (digits !== field.value) {
+      // Rewriting the value drops the caret at the end, so put it back where the
+      // student was typing: as many digits along as they had in front of them.
+      const caret = field.selectionStart ?? field.value.length;
+      const kept = field.value.slice(0, caret).replace(/\D/g, "").length;
+      field.value = digits;
+      field.setSelectionRange(kept, kept);
+    }
+    answers[index] = digits;
+  }
+  // Enter moves on rather than handing the quiz in early.
+  function onAnswerKeydown(event: KeyboardEvent) {
+    if (event.key !== "Enter" || !oneAtATime || lastQuestion) return;
+    event.preventDefault();
+    goTo(current + 1);
+  }
+
+  // A quiz with no time limit stays untimed, even for a student with extra time.
+  const minutesAllowed = data.quiz.timeLimitMinutes ? data.quiz.timeLimitMinutes + data.extraTimeMinutes : 0;
+  let secondsLeft = minutesAllowed * 60;
   let handingIn = false;
   let sheet: HTMLFormElement;
   let timeoutSubmit: HTMLButtonElement;
@@ -117,24 +154,22 @@
           <p class="eyebrow">{data.progressionName.toUpperCase()} · STEP {data.position} OF {data.totalSteps}</p>
           <h1>{data.quiz.title}</h1>
         </div>
-        <div class="quiz-head-side">
-          {#if data.quiz.timeLimitMinutes}
-            <span class="quiz-clock" class:low={secondsLeft <= 15}><Icon name="clock" size={16} /> {clock}</span>
-          {/if}
-          <span class="quiz-progress">{answered} of {problems.length} answered</span>
-        </div>
       </header>
 
-      <div class="quiz-grid">
+      <div class="quiz-grid" class:one-at-a-time={oneAtATime}>
         {#each problems as problem, index}
-          <div class="quiz-problem">
+          <div class="quiz-problem" class:showing={!oneAtATime || index === current}>
             <span class="quiz-num">{index + 1}</span>
             <div class="quiz-stack"><b>{problem.top}</b><b>{symbolFor(problem.op)} {problem.bottom}</b><i></i></div>
             <input
               class="quiz-answer"
               name={`answer-${index}`}
               bind:value={answers[index]}
+              bind:this={fields[index]}
+              on:keydown={onAnswerKeydown}
+              on:input={(event) => onAnswerInput(event, index)}
               inputmode="numeric"
+              maxlength="6"
               autocomplete="off"
               aria-label={`Question ${index + 1}: ${problem.top} ${symbolFor(problem.op)} ${problem.bottom}`}
             />
@@ -144,9 +179,31 @@
 
       {#if form?.error}<p class="message error" role="alert">{form.error}</p>{/if}
 
+      <!-- The bar the student always has in front of them: how long is left and
+           how far along they are, beside the button that hands the quiz in. -->
       <footer class="quiz-foot">
-        {#if !canHandIn}<span class="quiz-foot-note">Answer every question to hand this in.</span>{/if}
-        <button class="hand-in" type="submit" disabled={handingIn || !canHandIn}>{handingIn ? "Handing in..." : "Hand in"} <Icon name="arrow-right" size={16} /></button>
+        <div class="quiz-foot-inner">
+          <div class="quiz-foot-status">
+            {#if minutesAllowed}
+              <span class="quiz-clock" class:low={secondsLeft <= 15}><Icon name="clock" size={16} /> {clock}</span>
+            {/if}
+            <span class="quiz-progress">
+              {oneAtATime ? `Question ${current + 1} of ${problems.length}` : `${answered} of ${problems.length} answered`}
+            </span>
+          </div>
+
+          <div class="quiz-foot-actions">
+            {#if oneAtATime}
+              <button class="quiz-back" type="button" disabled={current === 0} on:click={() => goTo(current - 1)}><Icon name="arrow-left" size={16} /> Back</button>
+            {/if}
+            {#if oneAtATime && !lastQuestion}
+              <button class="hand-in" type="button" on:click={() => goTo(current + 1)}>Next <Icon name="arrow-right" size={16} /></button>
+            {:else}
+              {#if !canHandIn}<span class="quiz-foot-note">Answer every question to hand this in.</span>{/if}
+              <button class="hand-in" type="submit" disabled={handingIn || !canHandIn}>{handingIn ? "Handing in..." : "Hand in"} <Icon name="arrow-right" size={16} /></button>
+            {/if}
+          </div>
+        </div>
       </footer>
     </form>
   {/if}
