@@ -31,18 +31,33 @@
     await Promise.resolve();
     searchInput?.focus();
   }
+
+  // An overlay is no use for closing the popup: in the editor bar its backdrop-filter
+  // becomes the containing block for fixed children, so the overlay stops at the bar
+  // and never catches a click on the page below. Watch the document instead.
+  //
+  // Watch the whole picker, trigger included: the click that opened the panel is
+  // still on its way up to the document and arrives after this listener is in
+  // place, so treating the trigger as "outside" would close the panel the instant
+  // it opened. The trigger's own handler does the toggling.
+  function dismissOnOutsideClick(node: HTMLElement) {
+    const wrap = node.parentElement ?? node;
+    function handle(event: MouseEvent) {
+      if (!wrap.contains(event.target as Node)) open = false;
+    }
+    document.addEventListener("click", handle);
+    return { destroy: () => document.removeEventListener("click", handle) };
+  }
 </script>
 
 <div class="icon-picker">
-  <button type="button" class="icon-picker-trigger" class:compact aria-expanded={open} aria-haspopup="dialog" aria-label={title} title={title} on:click|preventDefault|stopPropagation={toggle}>
+  <button type="button" class="icon-picker-trigger" class:compact aria-expanded={open} aria-haspopup="dialog" aria-label={title} title={title} on:click|preventDefault={toggle}>
     <IconGlyph {name} {fallback} size={compact ? 18 : 21} />
   </button>
 
   {#if open}
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="icon-picker-backdrop" role="presentation" on:click={() => (open = false)}></div>
     <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-    <div class="icon-picker-panel" role="dialog" aria-label={title} on:keydown={(event) => event.key === "Escape" && (open = false)}>
+    <div class="icon-picker-panel" role="dialog" aria-label={title} use:dismissOnOutsideClick on:keydown={(event) => event.key === "Escape" && (open = false)}>
       <div class="icon-picker-shades">
         <ShadePicker {shade} defaultLabel={defaultShadeLabel} onPick={(picked) => onChange({ name, shade: picked })} />
         <div class="icon-picker-actions">
