@@ -1539,6 +1539,7 @@ main.landing-page::before, main.landing-page::after { display: none; }
 .landing-header nav { display: flex; align-items: center; gap: clamp(12px, 2.5vw, 30px); }
 .landing-header nav a { color: #625a76; font-size: .85rem; font-weight: 900; text-decoration: none; white-space: nowrap; }
 .landing-header nav a:hover, .landing-privacy a:hover { color: #6748d1; text-decoration: underline; }
+.landing-header nav .landing-create-account { color: #6748d1; }
 .landing-header nav .landing-sign-in { border: 1px solid #ded6ec; border-radius: 9px; padding: 9px 13px; color: #6748d1; }
 .landing-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(10px, 3vw, 42px); width: min(1160px, calc(100% - 48px)); min-height: 580px; margin: auto; padding: 50px 0 74px; }
 .landing-hero-copy { max-width: 530px; }
@@ -1569,6 +1570,7 @@ main.landing-page::before, main.landing-page::after { display: none; }
 .landing-page > .site-footer { width: 100%; padding: 20px 16px 30px; background: #f7f3ed; }
 @media (max-width: 850px) { .landing-hero { grid-template-columns: 1fr; gap: 0; padding: 55px 0 25px; }.landing-hero-copy { max-width: 650px; }.landing-hero .home-illustration { margin-top: 20px; }.landing-student { gap: 25px; } }
 @media (max-width: 650px) { .landing-header { flex-wrap: wrap; width: calc(100% - 36px); padding: 18px 0; }.landing-header nav { width: 100%; justify-content: space-between; gap: 9px; }.landing-header nav a { font-size: .78rem; }.landing-hero, .landing-student { width: calc(100% - 36px); }.landing-hero { padding-top: 50px; }.landing-hero h1 { font-size: clamp(2.8rem, 9vw, 3.8rem); }.landing-steps { grid-template-columns: 1fr; }.landing-how { padding: 55px 18px; }.landing-student { padding: 55px 0; }.landing-code-row { flex-wrap: wrap; }.landing-code-row input, .landing-code-row button { width: 100%; }.landing-privacy { padding: 50px 18px 35px; } }
+@media (max-width: 650px) { .landing-header nav { flex-wrap: wrap; justify-content: flex-start; gap: 9px 18px; } }
 
 .doc-page { display: block; min-height: 100vh; padding: 110px max(24px, calc((100vw - 760px) / 2)) 34px; overflow: visible; }
 .doc { position: relative; z-index: 1; }

@@ -17,7 +17,7 @@
 <main class="landing-page">
   <header class="landing-header">
     <a class="landing-brand" href="/" aria-label="Fact Friends home"><span class="brand-mark">+</span><span>Fact Friends</span></a>
-    <nav aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#join-class">Join a class</a><a class="landing-sign-in" href="/teacher">Teacher sign in</a></nav>
+    <nav aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#join-class">Join a class</a><a class="landing-create-account" href="/teacher?mode=sign-up">Create account</a><a class="landing-sign-in" href="/teacher">Teacher sign in</a></nav>
   </header>
 
   <section class="landing-hero" aria-labelledby="hero-title">
