@@ -1,33 +1,8 @@
 import { error, json } from "@sveltejs/kit";
-import { appearanceOf } from "$lib/server/appearance";
-import { readProgressionRecord, readQuizRecord, type QuizRecord } from "$lib/server/exportRecord";
-import { pocketBaseUrl } from "$lib/server/pdfResponse";
+import { readProgressionRecord, readQuizRecord } from "$lib/server/exportRecord";
+import { saveProgression, saveQuiz } from "$lib/server/saveProgression";
 
 const MAX_ITEMS = 200;
-
-// Importing only ever adds. Nothing already in the class is matched, changed or
-// removed, so re-importing something you already have gives you a second copy
-// rather than quietly overwriting work.
-async function createQuiz(headers: Record<string, string>, classId: string, quiz: QuizRecord): Promise<string> {
-  const response = await fetch(`${pocketBaseUrl}/api/collections/quizzes/records`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      class: classId,
-      data: {
-        title: quiz.title,
-        problems: quiz.problems,
-        timeLimitMinutes: quiz.timeLimitMinutes,
-        showScore: quiz.showScore,
-        passMessage: quiz.passMessage,
-        ...appearanceOf(quiz),
-      },
-    }),
-  });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.message || "We could not save an imported quiz.");
-  return body.id as string;
-}
 
 // Takes the items the dialog had selected. The browser has already been shown
 // these records, but they are re-read here rather than trusted — it is not the
@@ -53,43 +28,16 @@ export async function POST({ request, cookies }) {
         const progression = readProgressionRecord(entry.progression);
         if (!progression) continue;
 
-        const quizIds: string[] = [];
-        for (const quiz of progression.quizzes) quizIds.push(await createQuiz(headers, classId, quiz));
-        quizzes += quizIds.length;
-
-        const created = await fetch(`${pocketBaseUrl}/api/collections/progressions/records`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            class: classId,
-            name: progression.name,
-            description: progression.description,
-            passPercentage: progression.passPercentage,
-            oneAtATime: progression.oneAtATime,
-            showAnswers: progression.showAnswers,
-            ...appearanceOf(progression),
-          }),
+        await saveProgression(headers, classId, progression, {
+          quiz: () => quizzes++,
+          progression: () => progressions++,
         });
-        const saved = await created.json().catch(() => ({}));
-        if (!created.ok) throw new Error(saved.message || "We could not save an imported progression.");
-        progressions += 1;
-
-        // Steps carry the order the quizzes were listed in — that ordering is
-        // the only thing a progression adds over a pile of quizzes.
-        for (const [index, quiz] of quizIds.entries()) {
-          const step = await fetch(`${pocketBaseUrl}/api/collections/progression_steps/records`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ progression: saved.id, quiz, position: index + 1 }),
-          });
-          if (!step.ok) throw new Error("A progression was imported, but one of its steps could not be added.");
-        }
         continue;
       }
 
       const quiz = readQuizRecord(entry.quiz);
       if (!quiz) continue;
-      await createQuiz(headers, classId, quiz);
+      await saveQuiz(headers, classId, quiz);
       quizzes += 1;
     }
 

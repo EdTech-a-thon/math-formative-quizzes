@@ -19,6 +19,12 @@
     </section>
 
     <section class="setup-section">
+      <h2>Where class work is stored</h2>
+      <p>Class rosters, quizzes, answers, and scores are stored in Fact Friends' private classroom database on the website's server. This lets a teacher see their class from another device and lets a student find their assigned practice after signing in. The database is not directly open to visitors.</p>
+      <p>Unsaved quiz drafts and a running quiz countdown are kept on the device where they were started.</p>
+    </section>
+
+    <section class="setup-section">
       <h2>What we never do</h2>
       <p>We do not sell, share, or otherwise transfer teacher or student data to third parties, and we never use it for advertising. A teacher only ever sees their own classes. Deleting a class or a student removes their quiz history along with it.</p>
     </section>
