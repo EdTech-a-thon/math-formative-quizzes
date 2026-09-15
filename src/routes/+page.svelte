@@ -21,7 +21,7 @@
   </header>
 
   <section class="landing-hero" aria-labelledby="hero-title">
-    <div class="landing-hero-copy"><p class="eyebrow">MATH FACTS, MADE FRIENDLY</p><h1 id="hero-title">Give students math-fact practice you can follow.</h1><p class="landing-lede">Start with ready-made quizzes for addition, subtraction, multiplication, and division. Assign the right practice to each student, then see their scores and progress.</p>
+    <div class="landing-hero-copy"><p class="eyebrow">MATH FACTS, MADE FRIENDLY</p><h1 id="hero-title">Simple progress tracking for math-facts quizzes</h1><p class="landing-lede">Start with ready-made quizzes for addition, subtraction, multiplication, and division. Assign the right practice to each student, then see their scores and progress.</p>
       <form id="join-class" class="landing-hero-form" method="POST" use:enhance={() => { pending = true; return async ({ update }: { update: () => Promise<void> }) => { await update(); pending = false; }; }}><label for="class-code">Your class code</label><div class="landing-code-row"><input id="class-code" name="classCode" bind:value={classCode} inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Six-digit code" /><button type="submit" disabled={pending}>{pending ? "Checking..." : "Join class"} <Icon name="arrow-right" size={16} /></button></div>{#if errorMessage}<p class="message error" role="alert">{errorMessage}</p>{/if}</form>
       <p class="landing-cta-note">Your teacher will give you a class code to join.</p>
     </div>
