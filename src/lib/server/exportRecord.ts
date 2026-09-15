@@ -21,6 +21,8 @@ export type ProgressionRecord = {
   oneAtATime: boolean;
   // True when students get their wrong answers back to study after a quiz.
   showAnswers: boolean;
+  // True when attempts unlock automatically without a teacher release.
+  selfPaced: boolean;
   icon: string | null;
   shade: ShadeId | null;
   // A progression is only ever a series of quizzes, so they travel inline and
@@ -81,6 +83,7 @@ export function readProgressionRecord(value: unknown): ProgressionRecord | null 
     // keep the answers between the student and their teacher.
     oneAtATime: raw.oneAtATime === true,
     showAnswers: raw.showAnswers === true,
+    selfPaced: raw.selfPaced === true,
     icon: iconOf(raw.icon),
     shade: shadeOf(raw.shade),
     quizzes,

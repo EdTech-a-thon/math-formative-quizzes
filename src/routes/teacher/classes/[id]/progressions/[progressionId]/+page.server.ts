@@ -44,6 +44,7 @@ export async function load({ cookies, params }) {
       passPercentage: progression.passPercentage,
       oneAtATime: progression.oneAtATime === true,
       showAnswers: progression.showAnswers === true,
+      selfPaced: progression.selfPaced === true,
       icon: progression.icon ?? null,
       shade: progression.shade || null,
       quizIds: steps.map((step) => step.quiz),

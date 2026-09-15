@@ -301,8 +301,9 @@ routerAdd("POST", "/api/fact-friends/record-attempt", (e) => {
   // leaves the student their release rather than swallowing the attempt.
   e.app.save(attempt);
 
-  // Every release allows exactly one attempt.
-  found.enrollment.set("released", false);
+  // Teacher-paced paths consume their release after each attempt. Self-paced
+  // paths immediately make the retry or next step available instead.
+  found.enrollment.set("released", found.progression.getBool("selfPaced") && !finishedProgression);
   if (leveledUp) found.enrollment.set("currentStep", nextStep.id);
   if (finishedProgression) found.enrollment.set("status", "completed");
   e.app.save(found.enrollment);
