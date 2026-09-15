@@ -1,4 +1,6 @@
 import { error, json } from "@sveltejs/kit";
+import { saveProgression } from "$lib/server/saveProgression";
+import { isStarterPath, starterProgression } from "$lib/server/starterPaths";
 
 const pocketBaseUrl = "http://127.0.0.1:8090";
 
@@ -38,10 +40,13 @@ export async function POST({ request, cookies }) {
   const studentNames: string[] = (body.students || [])
     .map((student: { name?: unknown }) => String(student?.name ?? "").trim())
     .filter(Boolean);
+  const selectedPaths: unknown[] = Array.isArray(body.starterPaths) ? body.starterPaths : [];
 
   if (!name) return json({ message: "Add a class name." }, { status: 400 });
   if (signupMode === "closed" && !studentNames.length)
     return json({ message: "Add at least one student or import a roster." }, { status: 400 });
+  if (selectedPaths.some((path) => !isStarterPath(path)))
+    return json({ message: "Choose one of the four ready-made practice paths." }, { status: 400 });
 
   const auth = `Bearer ${teacherToken}`;
   const teacher = await pocketBaseRequest(
@@ -61,8 +66,8 @@ export async function POST({ request, cookies }) {
     )
   );
 
-  // A new class starts empty. Quizzes and progressions arrive either by being
-  // built in the app or by importing a PDF someone exported.
+  // Teachers can start with the ready-made paths, or leave the class empty and
+  // create their own quizzes later.
   const classRoom = await pocketBaseRequest(
     "/api/collections/classes/records",
     auth,
@@ -78,15 +83,26 @@ export async function POST({ request, cookies }) {
     },
   );
 
-  for (const studentName of studentNames) {
-    await pocketBaseRequest("/api/collections/students/records", auth, {
-      method: "POST",
-      body: JSON.stringify({
-        class: classRoom.id,
-        name: studentName,
-        loginName: loginName(studentName),
-      }),
-    });
+  try {
+    for (const studentName of studentNames) {
+      await pocketBaseRequest("/api/collections/students/records", auth, {
+        method: "POST",
+        body: JSON.stringify({
+          class: classRoom.id,
+          name: studentName,
+          loginName: loginName(studentName),
+        }),
+      });
+    }
+    const headers = { "Content-Type": "application/json", Authorization: auth };
+    for (const path of new Set(selectedPaths)) {
+      if (isStarterPath(path)) await saveProgression(headers, classRoom.id, starterProgression(path));
+    }
+  } catch (caught) {
+    return json({
+      classRoom,
+      message: caught instanceof Error ? caught.message : "The class was created, but part of the setup could not be completed.",
+    }, { status: 500 });
   }
 
   return json({ classRoom });

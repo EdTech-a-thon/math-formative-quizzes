@@ -119,6 +119,10 @@
 
   {#if error}<p class="message error">{error}</p>{/if}
 
+  {#if data.progressions.length && !data.enrollments.length}
+    <aside class="class-next-step"><span class="class-next-step-icon"><Icon name="route" size={19} /></span><div><strong>Your practice paths are ready.</strong><p>{data.students.length ? "Select a student below and choose Assign to give them a path. Then release their first quiz when you're ready." : "Share the class code with learners. Once they join, assign them a practice path and release their first quiz."}</p></div></aside>
+  {/if}
+
   {#if data.students.length}
     {#if selected.size}
       <div class="bulk-bar" role="region" aria-label="Bulk actions">
