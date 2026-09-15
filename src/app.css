@@ -1524,6 +1524,8 @@ a.history-row:hover .history-name strong { color: #5439bb; }
 .site-footer { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 18px; padding: 0 16px; text-align: center; }
 .site-footer a { color: #8a8399; font-size: .85rem; font-weight: 700; text-decoration: none; }
 .site-footer a:hover { color: #6748d1; text-decoration: underline; }
+.site-footer-brand { display: flex; align-items: center; gap: 8px; }
+.site-footer-brand img { flex: 0 0 auto; }
 /* The centred single-card pages fill the viewport, so the footer sits at the
    bottom of main rather than after it; the padding keeps it clear of the card. */
 main.with-footer { padding-bottom: 88px; }
