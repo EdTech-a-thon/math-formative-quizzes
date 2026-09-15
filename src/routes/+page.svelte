@@ -21,7 +21,10 @@
   </header>
 
   <section class="landing-hero" aria-labelledby="hero-title">
-    <div class="landing-hero-copy"><p class="eyebrow">MATH FACTS, MADE FRIENDLY</p><h1 id="hero-title">Give students math-fact practice you can follow.</h1><p class="landing-lede">Start with ready-made quizzes for addition, subtraction, multiplication, and division. Assign the right practice to each student, then see their scores and progress.</p><a class="landing-cta" href="/teacher?mode=sign-up">Get started <Icon name="arrow-right" size={17} /></a><p class="landing-cta-note">For teachers. Create an account and set up your first class.</p></div>
+    <div class="landing-hero-copy"><p class="eyebrow">MATH FACTS, MADE FRIENDLY</p><h1 id="hero-title">Give students math-fact practice you can follow.</h1><p class="landing-lede">Start with ready-made quizzes for addition, subtraction, multiplication, and division. Assign the right practice to each student, then see their scores and progress.</p>
+      <form id="join-class" class="landing-hero-form" method="POST" use:enhance={() => { pending = true; return async ({ update }: { update: () => Promise<void> }) => { await update(); pending = false; }; }}><label for="class-code">Your class code</label><div class="landing-code-row"><input id="class-code" name="classCode" bind:value={classCode} inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Six-digit code" /><button type="submit" disabled={pending}>{pending ? "Checking..." : "Join class"} <Icon name="arrow-right" size={16} /></button></div>{#if errorMessage}<p class="message error" role="alert">{errorMessage}</p>{/if}</form>
+      <p class="landing-cta-note">Your teacher will give you a class code to join.</p>
+    </div>
     <HomeHero />
   </section>
 
@@ -31,9 +34,7 @@
     <article><span>3</span><h3>See their progress</h3><p>Follow quiz scores and decide when to release the next attempt.</p></article>
   </div></div></section>
 
-  <section class="landing-student" id="join-class" aria-labelledby="join-title"><div class="landing-student-copy"><p class="eyebrow">FOR STUDENTS</p><h2 id="join-title">Join your class and start practising.</h2><p>Your teacher will give you a class code. Enter it here to join your class and see the practice waiting for you.</p></div>
-    <form method="POST" use:enhance={() => { pending = true; return async ({ update }: { update: () => Promise<void> }) => { await update(); pending = false; }; }}><label for="class-code">Your class code</label><div class="landing-code-row"><input id="class-code" name="classCode" bind:value={classCode} inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Six-digit code" /><button type="submit" disabled={pending}>{pending ? "Checking..." : "Join class"} <Icon name="arrow-right" size={16} /></button></div>{#if errorMessage}<p class="message error" role="alert">{errorMessage}</p>{/if}</form>
-  </section>
+  <section class="landing-student" aria-labelledby="join-title"><div class="landing-student-copy"><p class="eyebrow">FOR STUDENTS</p><h2 id="join-title">Join your class and start practising.</h2><p>Your teacher will give you a class code. Enter it above to see the practice waiting for you.</p><a href="#join-class">Enter your class code <Icon name="arrow-right" size={16} /></a></div></section>
 
   <section class="landing-privacy" aria-labelledby="privacy-title"><div><p class="eyebrow">WHERE YOUR WORK LIVES</p><h2 id="privacy-title">Class work stays with your class.</h2><p>Class rosters, quiz answers, and scores are stored in Fact Friends’ private classroom database so teachers can see progress across devices. Unsaved quiz drafts stay on the device where they were made. We do not use student data for advertising.</p><a href="/privacy">Read our privacy details <Icon name="arrow-right" size={15} /></a></div></section>
   <SiteFooter />
