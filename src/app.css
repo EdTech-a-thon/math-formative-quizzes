@@ -475,7 +475,7 @@ button span {
   display: block;
   min-height: 100vh;
   padding: 110px max(24px, calc((100vw - 820px) / 2)) 70px;
-  overflow: visible;
+  overflow: hidden;
 }
 .class-setup {
   position: relative;
