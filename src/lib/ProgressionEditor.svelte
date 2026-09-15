@@ -7,7 +7,7 @@
   import type { Problem } from "$lib/quizProblems";
 
   type Quiz = { id: string; data: { title: string; problems?: Problem[] } };
-  type Progression = { id: string; name: string; description: string; passPercentage: number; oneAtATime?: boolean; showAnswers?: boolean; quizIds: string[]; icon?: string | null; shade?: ShadeId | null };
+  type Progression = { id: string; name: string; description: string; passPercentage: number; oneAtATime?: boolean; showAnswers?: boolean; selfPaced?: boolean; quizIds: string[]; icon?: string | null; shade?: ShadeId | null };
 
   export let classId: string;
   export let quizzes: Quiz[];
@@ -26,6 +26,8 @@
   let oneAtATime = progression?.oneAtATime === true;
   // Whether a finished quiz hands the student their wrong answers back to study.
   let showAnswers = progression?.showAnswers === true;
+  // Self-paced paths make each retry or next step available automatically.
+  let selfPaced = progression?.selfPaced === true;
   let quizIds: string[] = progression?.quizIds ?? []; // Chosen quizzes, in the order learners will work through them.
   let icon: string | null = progression?.icon || null;
   let shade: ShadeId | null = progression?.shade || null;
@@ -35,8 +37,8 @@
 
   // Everything a save would write, so leaving with edits in hand can be caught.
   const snapshot = (values: unknown[]) => JSON.stringify(values);
-  const savedState = snapshot([name, description, passPercentage, oneAtATime, showAnswers, quizIds, icon, shade]);
-  $: dirty = !saving && snapshot([name, description, passPercentage, oneAtATime, showAnswers, quizIds, icon, shade]) !== savedState;
+  const savedState = snapshot([name, description, passPercentage, oneAtATime, showAnswers, selfPaced, quizIds, icon, shade]);
+  $: dirty = !saving && snapshot([name, description, passPercentage, oneAtATime, showAnswers, selfPaced, quizIds, icon, shade]) !== savedState;
   beforeNavigate((navigation) => {
     if (!dirty) return;
     // Closing the tab can only be warned about by the browser's own dialog,
@@ -71,7 +73,7 @@
     if (!name.trim()) { error = "Give this learning path a name first."; return; }
     if (!quizIds.length) { error = "Add at least one quiz to the path."; return; }
     saving = true; error = "";
-    const body = { class: classId, name: name.trim(), description: description.trim(), passPercentage, oneAtATime, showAnswers, quizIds, icon, shade };
+    const body = { class: classId, name: name.trim(), description: description.trim(), passPercentage, oneAtATime, showAnswers, selfPaced, quizIds, icon, shade };
     try {
       const response = editing
         ? await fetch(`/api/progressions/${progression?.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -110,6 +112,19 @@
           <div class="doc-row">
             <div><h2 class="doc-heading">Passing score</h2><p class="doc-note">Learners retry a step until they hit this, then unlock the next.</p></div>
             <div class="stepper"><button type="button" on:click={() => stepPass(-5)} aria-label="Lower passing score"><Icon name="minus" size={17} /></button><b>{passPercentage}<small>%</small></b><button type="button" on:click={() => stepPass(5)} aria-label="Raise passing score"><Icon name="plus" size={17} /></button></div>
+          </div>
+          <div class="doc-row">
+            <div><h2 class="doc-heading">Student pacing</h2><p class="doc-note">Choose whether each attempt needs your approval or opens automatically.</p></div>
+            <button
+              type="button"
+              class="bar-toggle"
+              class:on={selfPaced}
+              role="switch"
+              aria-checked={selfPaced}
+              on:click={() => (selfPaced = !selfPaced)}
+            >
+              <Icon name={selfPaced ? "unlock" : "lock"} size={14} /> {selfPaced ? "Students continue" : "Teacher releases"}
+            </button>
           </div>
           <div class="doc-row">
             <div><h2 class="doc-heading">How questions are shown</h2><p class="doc-note">Applies to every quiz in this path.</p></div>

@@ -16,7 +16,7 @@ export async function PATCH({ request, cookies, params }) {
   const update = await fetch(`${pocketBaseUrl}/api/collections/progressions/records/${params.id}`, {
     method: "PATCH",
     headers,
-    body: JSON.stringify({ name: body.name.trim(), description: String(body.description || "").trim(), passPercentage: Number(body.passPercentage) || 80, oneAtATime: body.oneAtATime === true, showAnswers: body.showAnswers === true, ...appearanceOf(body) }),
+    body: JSON.stringify({ name: body.name.trim(), description: String(body.description || "").trim(), passPercentage: Number(body.passPercentage) || 80, oneAtATime: body.oneAtATime === true, showAnswers: body.showAnswers === true, selfPaced: body.selfPaced === true, ...appearanceOf(body) }),
   });
   const progression = await update.json().catch(() => ({}));
   if (!update.ok) return json({ message: progression.message || "We could not save this progression." }, { status: update.status });
@@ -60,6 +60,23 @@ export async function PATCH({ request, cookies, params }) {
       ? await stepRequest(`/api/collections/progression_steps/records/${step.id}`, { method: "PATCH", body: JSON.stringify({ position: index + 1 }) })
       : await stepRequest(`/api/collections/progression_steps/records`, { method: "POST", body: JSON.stringify({ progression: params.id, quiz, position: index + 1 }) });
     if (!response.ok) return json({ message: "The progression was saved, but a step could not be updated." }, { status: 500 });
+  }
+
+  // Turning on self-paced mode should help students who are already waiting,
+  // not only students assigned after this setting changes.
+  if (body.selfPaced === true) {
+    const filter = encodeURIComponent(`progression="${params.id}" && status="active" && released=false`);
+    const enrollmentsResponse = await fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=2000&fields=id&filter=${filter}`, { headers });
+    const enrollments = await enrollmentsResponse.json().catch(() => ({ items: [] }));
+    if (!enrollmentsResponse.ok) return json({ message: "The progression was saved, but waiting students could not be released." }, { status: 500 });
+    for (const enrollment of enrollments.items as { id: string }[]) {
+      const response = await fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records/${enrollment.id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ released: true }),
+      });
+      if (!response.ok) return json({ message: "The progression was saved, but some waiting students could not be released." }, { status: 500 });
+    }
   }
 
   return json(progression);

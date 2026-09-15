@@ -9,7 +9,7 @@
 
   type Step = { id: string; quizId: string; position: number; title: string; questionCount: number };
   type Enrollment = { id: string; studentId: string; studentName: string; currentStep: string; position: number; status: string; released: boolean };
-  type Progression = { id: string; name: string; description: string; passPercentage: number; oneAtATime: boolean; showAnswers: boolean; icon: string | null; shade: ShadeId | null };
+  type Progression = { id: string; name: string; description: string; passPercentage: number; oneAtATime: boolean; showAnswers: boolean; selfPaced: boolean; icon: string | null; shade: ShadeId | null };
   type Student = { id: string; name: string; loginName: string };
   export let data: { progression: Progression; steps: Step[]; enrollments: Enrollment[]; students: Student[] };
 
@@ -105,15 +105,17 @@
       <p class="eyebrow">PROGRESSION</p>
       <h1>{data.progression.name}</h1>
       <p>{data.progression.description || `${data.steps.length} quizzes in this learning path.`}</p>
-      <div class="overview-facts"><span>{data.progression.passPercentage}% to pass</span><span>{data.steps.length} quizzes</span><span>{data.enrollments.length} students</span><span>{data.progression.oneAtATime ? "one question at a time" : "all questions at once"}</span><span>{data.progression.showAnswers ? "answers shown" : "answers hidden"}</span></div>
+      <div class="overview-facts"><span>{data.progression.passPercentage}% to pass</span><span>{data.steps.length} quizzes</span><span>{data.enrollments.length} students</span><span>{data.progression.oneAtATime ? "one question at a time" : "all questions at once"}</span><span>{data.progression.showAnswers ? "answers shown" : "answers hidden"}</span><span>{data.progression.selfPaced ? "self-paced" : "teacher released"}</span></div>
     </div>
     <div class="overview-actions">
       <a class="ghost-btn" href={`${base}/${data.progression.id}/edit`}><Icon name="pencil" size={14} /> Edit progression</a>
       <a class="ghost-btn" href={`/api/progressions/${data.progression.id}/pdf`} title="Export this path and all its quizzes as one PDF"><Icon name="upload" size={14} /> Export</a>
-      <button class="primary-action" type="button" disabled={!waitingCount || Boolean(releasing)} on:click={releaseAll}>
-        <Icon name={waitingCount ? "unlock" : "check"} size={15} />
-        {releasing === "all" ? "Releasing…" : waitingCount ? `Release ${waitingCount} waiting` : "Everyone ready"}
-      </button>
+      {#if !data.progression.selfPaced}
+        <button class="primary-action" type="button" disabled={!waitingCount || Boolean(releasing)} on:click={releaseAll}>
+          <Icon name={waitingCount ? "unlock" : "check"} size={15} />
+          {releasing === "all" ? "Releasing…" : waitingCount ? `Release ${waitingCount} waiting` : "Everyone ready"}
+        </button>
+      {/if}
     </div>
   </header>
 
@@ -152,6 +154,8 @@
                   <a class="step-student-link" href={`/teacher/classes/${$page.params.id}/students/${enrollment.studentId}`}><span class="student-avatar">{enrollment.studentName[0]}</span><strong>{enrollment.studentName}</strong></a>
                   {#if enrollment.released}
                     <span class="release-status ready"><Icon name="check" size={12} /> Ready</span>
+                  {:else if data.progression.selfPaced}
+                    <span class="release-status ready"><Icon name="unlock" size={12} /> Opens automatically</span>
                   {:else}
                     <span class="release-status waiting"><Icon name="lock" size={12} /> Waiting</span>
                     <button type="button" disabled={Boolean(releasing)} on:click={() => releaseOne(enrollment)}><Icon name="unlock" size={12} /> {releasing === enrollment.id ? "Releasing…" : "Release"}</button>

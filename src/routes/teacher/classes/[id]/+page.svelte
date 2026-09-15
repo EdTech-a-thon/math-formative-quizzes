@@ -2,6 +2,7 @@
   import Icon from "$lib/Icon.svelte";
   import IconGlyph from "$lib/IconGlyph.svelte";
   import AssignDialog from "$lib/AssignDialog.svelte";
+  import AddStudentsDialog from "$lib/AddStudentsDialog.svelte";
   import { invalidateAll } from "$app/navigation";
   import { shadeClass } from "$lib/shades";
   import { assignmentSummary } from "$lib/assignments";
@@ -22,6 +23,9 @@
   let showingClassCode = false;
   let busy = false;
   let error = "";
+  let addingStudents = false;
+  let addStudentsBusy = false;
+  let addStudentsError = "";
 
   let selected = new Set<string>();
   let bulkMessage = "";
@@ -102,6 +106,27 @@
     } catch (caught) { error = caught instanceof Error ? caught.message : "We could not release this attempt."; } finally { busy = false; }
   }
 
+  async function addStudents(names: string[]) {
+    addStudentsBusy = true;
+    addStudentsError = "";
+    try {
+      const response = await fetch(`/api/classes/${data.classRoom.id}/students`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ names }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message);
+      addingStudents = false;
+      bulkMessage = `${result.added} ${result.added === 1 ? "student was" : "students were"} added to the roster.`;
+      await invalidateAll();
+    } catch (caught) {
+      addStudentsError = caught instanceof Error ? caught.message : "We could not add these students.";
+    } finally {
+      addStudentsBusy = false;
+    }
+  }
+
   async function copyClassLink() {
     await navigator.clipboard.writeText(`${window.location.origin}/?classCode=${data.classRoom.classCode}`);
     copied = true;
@@ -115,7 +140,7 @@
 <svelte:window on:keydown={closeWithEscape} />
 
 <section class="class-roster" aria-labelledby="class-title">
-  <header class="class-roster-header"><div><p class="eyebrow">CLASS ROSTER</p><h1 id="class-title">{data.classRoom.name}</h1><p>{data.students.length} {data.students.length === 1 ? "student" : "students"} · Class code <code>{data.classRoom.classCode}</code></p></div><div class="class-roster-actions"><button class="display-code" type="button" aria-label="Display class code full screen" on:click={() => showingClassCode = true}><Icon name="maximize" size={18} /></button><button class="copy-class-link copy-link-button" type="button" on:click={copyClassLink}><Icon name={copied ? "check" : "copy"} size={16} />{copied ? "Class link copied" : "Copy class link"}</button></div></header>
+  <header class="class-roster-header"><div><p class="eyebrow">CLASS ROSTER</p><h1 id="class-title">{data.classRoom.name}</h1><p>{data.students.length} {data.students.length === 1 ? "student" : "students"} · Class code <code>{data.classRoom.classCode}</code></p></div><div class="class-roster-actions"><button class="assign-open" type="button" on:click={() => { addStudentsError = ""; addingStudents = true; }}><Icon name="plus" size={16} /> Add students</button><button class="display-code" type="button" aria-label="Display class code full screen" on:click={() => showingClassCode = true}><Icon name="maximize" size={18} /></button><button class="copy-class-link copy-link-button" type="button" on:click={copyClassLink}><Icon name={copied ? "check" : "copy"} size={16} />{copied ? "Class link copied" : "Copy class link"}</button></div></header>
 
   {#if error}<p class="message error">{error}</p>{/if}
 
@@ -152,9 +177,18 @@
       {/each}
     </section>
   {:else}
-    <section class="empty-roster"><span><Icon name="users" size={22} /></span><h2>No students yet</h2><p>Learners who join this class will appear here.</p></section>
+    <section class="empty-roster"><span><Icon name="users" size={22} /></span><h2>No students yet</h2><p>Add students yourself, or share the class code so learners can join.</p></section>
   {/if}
 </section>
+
+{#if addingStudents}
+  <AddStudentsDialog
+    busy={addStudentsBusy}
+    error={addStudentsError}
+    onClose={() => { addingStudents = false; addStudentsError = ""; }}
+    onConfirm={addStudents}
+  />
+{/if}
 
 {#if assignTo.length}
   <AssignDialog

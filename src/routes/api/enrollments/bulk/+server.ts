@@ -29,6 +29,13 @@ export async function POST({ request, cookies }) {
   let skipped = 0;
 
   for (const progression of progressions) {
+    const progressionResponse = await fetch(
+      `${pocketBaseUrl}/api/collections/progressions/records/${progression}?fields=selfPaced`,
+      { headers: { Authorization: authorization } },
+    );
+    const progressionRecord = await progressionResponse.json().catch(() => ({}));
+    if (!progressionResponse.ok) return json({ message: "We could not find one of those progressions.", assigned, skipped }, { status: progressionResponse.status });
+
     // Start each new student on this progression's first step.
     const stepsResponse = await fetch(
       `${pocketBaseUrl}/api/collections/progression_steps/records?perPage=1&sort=position&filter=progression%3D%22${progression}%22`,
@@ -56,7 +63,7 @@ export async function POST({ request, cookies }) {
           progression,
           student,
           status: "active",
-          released: false,
+          released: progressionRecord.selfPaced === true,
           ...(firstStep ? { currentStep: firstStep } : {}),
         }),
       });

@@ -40,6 +40,7 @@ export async function saveProgression(headers: Record<string, string>, classId: 
       passPercentage: progression.passPercentage,
       oneAtATime: progression.oneAtATime,
       showAnswers: progression.showAnswers,
+      selfPaced: progression.selfPaced,
       ...appearanceOf(progression),
     }),
   });
