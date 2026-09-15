@@ -17,11 +17,11 @@
 <main class="landing-page">
   <header class="landing-header">
     <a class="landing-brand" href="/" aria-label="Fact Friends home"><span class="brand-mark">+</span><span>Fact Friends</span></a>
-    <nav aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#join-class">Join a class</a><a class="landing-create-account" href="/teacher?mode=sign-up">Create account</a><a class="landing-sign-in" href="/teacher">Teacher sign in</a></nav>
+    <nav aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#join-class">Join a class</a><a href="/teacher?mode=sign-up">Create account</a><a class="landing-sign-in" href="/teacher">Teacher sign in</a></nav>
   </header>
 
   <section class="landing-hero" aria-labelledby="hero-title">
-    <div class="landing-hero-copy"><p class="eyebrow">MATH FACTS, MADE FRIENDLY</p><h1 id="hero-title">Simple progress tracking for math-facts quizzes</h1><p class="landing-lede">Start with ready-made quizzes for addition, subtraction, multiplication, and division. Assign the right practice to each student, then see their scores and progress.</p>
+    <div class="landing-hero-copy"><p class="eyebrow">MATH FACTS, MADE FRIENDLY</p><h1 id="hero-title">Simple progress tracking for <span class="landing-headline-last">math-facts</span></h1><p class="landing-lede">Start with ready-made quizzes for addition, subtraction, multiplication, and division. Assign the right practice to each student, then see their scores and progress.</p>
       <form id="join-class" class="landing-hero-form" method="POST" use:enhance={() => { pending = true; return async ({ update }: { update: () => Promise<void> }) => { await update(); pending = false; }; }}><label for="class-code">Your class code</label><div class="landing-code-row"><input id="class-code" name="classCode" bind:value={classCode} inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Six-digit code" /><button type="submit" disabled={pending}>{pending ? "Checking..." : "Join class"} <Icon name="arrow-right" size={16} /></button></div>{#if errorMessage}<p class="message error" role="alert">{errorMessage}</p>{/if}</form>
       <p class="landing-cta-note">Your teacher will give you a class code to join.</p>
     </div>
