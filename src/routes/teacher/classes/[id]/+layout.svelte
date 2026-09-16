@@ -6,6 +6,7 @@
   $: current = $page.url.pathname;
   let copied = false;
   let showingClassCode = false;
+  let showingHelp = false;
 
   async function copyClassLink() {
     await navigator.clipboard.writeText(`${window.location.origin}/?classCode=${data.classRoom.classCode}`);
@@ -14,7 +15,10 @@
   }
 
   function closeWithEscape(event: KeyboardEvent) {
-    if (event.key === "Escape") showingClassCode = false;
+    if (event.key === "Escape") {
+      showingClassCode = false;
+      showingHelp = false;
+    }
   }
 </script>
 
@@ -30,6 +34,7 @@
       <a class:active={current.startsWith(`${base}/quizzes`)} href={`${base}/quizzes`}><span><Icon name="clipboard-list" size={17} /></span> Quizzes</a>
       <a class:active={current.startsWith(`${base}/progressions`)} href={`${base}/progressions`}><span><Icon name="route" size={17} /></span> Progressions</a>
     </nav>
+    <button class="sidebar-help" type="button" aria-label="Help" aria-haspopup="dialog" on:click={() => showingHelp = true}><Icon name="circle-question-mark" size={22} /></button>
   </aside>
   <main class="workspace-content"><slot /></main>
 </div>
@@ -39,5 +44,14 @@
     <button class="close-code-modal" type="button" aria-label="Close class code display" on:click={() => showingClassCode = false}><Icon name="x" size={24} /></button>
     <div class="code-modal-center"><p class="eyebrow">JOIN {data.classRoom.name.toUpperCase()}</p><p class="large-class-code">{data.classRoom.classCode}</p><p>Enter this code at Fact Friends to join the class.</p></div>
     <footer><strong>{data.classRoom.name}</strong><button class="copy-link-button" type="button" on:click={copyClassLink}><Icon name={copied ? "check" : "copy"} size={16} />{copied ? "Class link copied" : "Copy class link"}</button></footer>
+  </div>
+{/if}
+
+{#if showingHelp}
+  <div class="help-dialog-backdrop" role="presentation" on:click|self={() => showingHelp = false}>
+    <div class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-dialog-title" tabindex="-1">
+      <header><h2 id="help-dialog-title">Need a hand?</h2><button type="button" aria-label="Close help" on:click={() => showingHelp = false}><Icon name="x" size={18} /></button></header>
+      <p>If you are running into trouble or have suggestions, email us at <a href="mailto:support@factfriends.com?subject=Fact%20Friends%20help">support@factfriends.com</a>.</p>
+    </div>
   </div>
 {/if}
