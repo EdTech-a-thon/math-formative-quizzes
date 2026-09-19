@@ -41,6 +41,8 @@ export async function POST({ request, cookies }) {
     .map((student: { name?: unknown }) => String(student?.name ?? "").trim())
     .filter(Boolean);
   const selectedPaths: unknown[] = Array.isArray(body.starterPaths) ? body.starterPaths : [];
+  // Pacing chosen during setup applies to every ready-made path.
+  const selfPaced = body.selfPaced === true;
 
   if (!name) return json({ message: "Add a class name." }, { status: 400 });
   if (signupMode === "closed" && !studentNames.length)
@@ -96,7 +98,7 @@ export async function POST({ request, cookies }) {
     }
     const headers = { "Content-Type": "application/json", Authorization: auth };
     for (const path of new Set(selectedPaths)) {
-      if (isStarterPath(path)) await saveProgression(headers, classRoom.id, starterProgression(path));
+      if (isStarterPath(path)) await saveProgression(headers, classRoom.id, { ...starterProgression(path), selfPaced });
     }
   } catch (caught) {
     return json({

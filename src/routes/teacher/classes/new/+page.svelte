@@ -14,6 +14,9 @@
     { key: "division", title: "Division", detail: "Divide with 1–12 · 12 short quizzes" },
   ];
   let selectedPaths = new Set<string>(["multiplication"]);
+  // Whether the ready-made paths open each attempt automatically or wait for a
+  // teacher release. Asked here so nobody has to edit every path afterwards.
+  let selfPaced = false;
   let error = "";
   let createdClassId = "";
   let pending = false;
@@ -41,7 +44,7 @@
     error = "";
     pending = true;
     try {
-      const response = await fetch("/api/classes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, signupMode, students: signupMode === "closed" ? students : [], starterPaths: [...selectedPaths] }) });
+      const response = await fetch("/api/classes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, signupMode, students: signupMode === "closed" ? students : [], starterPaths: [...selectedPaths], selfPaced }) });
       const result = await response.json();
       if (result.classRoom?.id) createdClassId = result.classRoom.id;
       if (!response.ok) throw new Error(result.message);
@@ -61,6 +64,10 @@
     <section class="setup-section"><h2>Class details</h2><label for="class-name">Class name</label><input id="class-name" bind:value={name} required /><p class="code-note">A unique six-digit class code will be created when you finish setup.</p></section>
 
     <section class="setup-section"><h2>Choose ready-made practice</h2><p class="section-help">Select as many math-fact paths as your class needs. You can also build your own quizzes later.</p><div class="starter-path-grid">{#each starterPaths as path}<button type="button" class={`starter-path op-${path.key}`} class:chosen={selectedPaths.has(path.key)} aria-pressed={selectedPaths.has(path.key)} on:click={() => togglePath(path.key)}><span class="starter-path-symbol">{path.key === "addition" ? "+" : path.key === "subtraction" ? "−" : path.key === "multiplication" ? "×" : "÷"}</span><span><strong>{path.title}</strong><small>{path.detail}</small></span><span class="starter-path-check" aria-hidden="true">{selectedPaths.has(path.key) ? "✓" : ""}</span></button>{/each}</div></section>
+
+    {#if selectedPaths.size}
+      <section class="setup-section"><h2>How will quizzes open?</h2><p class="section-help">Applies to every path you picked above. You can change this later in each path's settings.</p><div class="mode-grid"><button type="button" class:chosen={!selfPaced} aria-pressed={!selfPaced} on:click={() => selfPaced = false}><strong>Teacher releases</strong><small>Each attempt waits until you release it, so you decide when learners move on.</small></button><button type="button" class:chosen={selfPaced} aria-pressed={selfPaced} on:click={() => selfPaced = true}><strong>Students continue</strong><small>Each retry or next quiz opens automatically as soon as a learner finishes.</small></button></div></section>
+    {/if}
 
     <section class="setup-section"><h2>How will learners join?</h2><div class="mode-grid"><button type="button" class:chosen={signupMode === "open"} on:click={() => signupMode = "open"}><strong>Open sign-up</strong><small>Learners enter the class code and add their own name.</small></button><button type="button" class:chosen={signupMode === "closed"} on:click={() => signupMode = "closed"}><strong>Use a roster</strong><small>Only learners you add to the class can sign in.</small></button></div></section>
 
