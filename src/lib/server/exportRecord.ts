@@ -7,9 +7,6 @@ import { MAX_TIME_LIMIT_SECONDS, resolveTimeLimitSeconds } from "$lib/timeLimit"
 export type QuizRecord = {
   title: string;
   timeLimitSeconds: number;
-  // Kept beside the seconds so a file written here still imports into a copy of
-  // the app old enough to read only minutes.
-  timeLimitMinutes: number;
   showScore: boolean;
   passMessage: string;
   icon: string | null;
@@ -61,13 +58,14 @@ export function readQuizRecord(value: unknown): QuizRecord | null {
   const problems = readProblems(raw.problems).slice(0, MAX_QUESTIONS);
   if (!problems.length) return null;
   // A file that mentions no limit at all gets two minutes rather than arriving
-  // untimed; a file that says zero seconds meant it.
+  // untimed; a file that says zero seconds meant it. `resolveTimeLimitSeconds`
+  // reads whichever of `timeLimitSeconds`/`timeLimitMinutes` the raw file
+  // carries, so a legacy file with only minutes still imports correctly.
   const statesLimit = raw.timeLimitSeconds !== undefined || raw.timeLimitMinutes !== undefined;
   const seconds = statesLimit ? Math.min(MAX_TIME_LIMIT_SECONDS, resolveTimeLimitSeconds(raw)) : 120;
   return {
     title: text(raw.title, "Untitled quiz", 120),
     timeLimitSeconds: seconds,
-    timeLimitMinutes: seconds > 0 ? Math.max(1, Math.round(seconds / 60)) : 0,
     showScore: raw.showScore !== false,
     passMessage: text(raw.passMessage, "Great work! You finished this quiz.", 120),
     icon: iconOf(raw.icon),
