@@ -1,8 +1,8 @@
 import { error } from "@sveltejs/kit";
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl, teacherAuthorization } from "$lib/server/pocketbase";
 
 export async function load({ cookies, params }) {
-  const headers = { Authorization: `Bearer ${cookies.get("teacher_session")}` };
+  const headers = { Authorization: teacherAuthorization(cookies) };
   const studentFilter = encodeURIComponent(`student="${params.studentId}"`);
   const [studentResponse, enrollmentsResponse, stepsResponse, attemptsResponse, progressionsResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/students/records/${params.studentId}`, { headers }),

@@ -1,6 +1,7 @@
-import { error, json } from "@sveltejs/kit";
+import { json } from "@sveltejs/kit";
 import { readProgressionRecord, readQuizRecord } from "$lib/server/exportRecord";
 import { saveProgression, saveQuiz } from "$lib/server/saveProgression";
+import { teacherAuthorization } from "$lib/server/pocketbase";
 
 const MAX_ITEMS = 200;
 
@@ -8,9 +9,7 @@ const MAX_ITEMS = 200;
 // these records, but they are re-read here rather than trusted — it is not the
 // authority on what is valid to store.
 export async function POST({ request, cookies }) {
-  const token = cookies.get("teacher_session");
-  if (!token) error(401, "Please sign in again.");
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+  const authorization = teacherAuthorization(cookies);
 
   const body = await request.json().catch(() => ({}));
   const classId = String(body.class ?? "").trim();
@@ -28,7 +27,7 @@ export async function POST({ request, cookies }) {
         const progression = readProgressionRecord(entry.progression);
         if (!progression) continue;
 
-        await saveProgression(headers, classId, progression, {
+        await saveProgression(authorization, classId, progression, {
           quiz: () => quizzes++,
           progression: () => progressions++,
         });
@@ -37,7 +36,7 @@ export async function POST({ request, cookies }) {
 
       const quiz = readQuizRecord(entry.quiz);
       if (!quiz) continue;
-      await saveQuiz(headers, classId, quiz);
+      await saveQuiz(authorization, classId, quiz);
       quizzes += 1;
     }
 

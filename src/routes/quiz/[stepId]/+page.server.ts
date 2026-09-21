@@ -1,7 +1,7 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { answerFor, readProblems, symbolFor, type Problem } from "$lib/quizProblems";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl } from "$lib/server/pocketbase";
 
 type QuizStep = {
   quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string };

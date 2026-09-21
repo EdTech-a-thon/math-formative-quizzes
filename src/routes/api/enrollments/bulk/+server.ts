@@ -1,79 +1,76 @@
-import { error, json } from "@sveltejs/kit";
-
-const pocketBaseUrl = "http://127.0.0.1:8090";
-
-function auth(cookies: { get(name: string): string | undefined }) {
-  const token = cookies.get("teacher_session");
-  if (!token) error(401, "Please sign in again.");
-  return `Bearer ${token}`;
-}
+import { json } from "@sveltejs/kit";
+import { pocketBaseError, teacherPocketBaseRequest } from "$lib/server/pocketbase";
 
 function idList(value: unknown, single: unknown) {
   const list = Array.isArray(value) ? value : [single];
   return [...new Set(list.filter((id: unknown): id is string => typeof id === "string" && Boolean(id)))];
 }
 
+type Items<T> = { items?: T[] };
+
 // Every assignment in the app comes through here: any number of students onto
 // any number of progressions. Pairs that already exist are left alone, so
 // assigning twice never resets anybody's progress.
 export async function POST({ request, cookies }) {
-  const authorization = auth(cookies);
   const body = await request.json();
   const students = idList(body.students, body.student);
   const progressions = idList(body.progressions, body.progression);
   if (!progressions.length || !students.length)
     return json({ message: "Pick at least one student and one progression." }, { status: 400 });
 
-  const headers = { "Content-Type": "application/json", Authorization: authorization };
   let assigned = 0;
   let skipped = 0;
 
-  for (const progression of progressions) {
-    const progressionResponse = await fetch(
-      `${pocketBaseUrl}/api/collections/progressions/records/${progression}?fields=selfPaced`,
-      { headers: { Authorization: authorization } },
-    );
-    const progressionRecord = await progressionResponse.json().catch(() => ({}));
-    if (!progressionResponse.ok) return json({ message: "We could not find one of those progressions.", assigned, skipped }, { status: progressionResponse.status });
+  try {
+    for (const progression of progressions) {
+      const progressionRecord = await teacherPocketBaseRequest<{ selfPaced?: boolean }>(
+        cookies,
+        `/api/collections/progressions/records/${progression}?fields=selfPaced`,
+        { errorMessage: "We could not find one of those progressions.", preferErrorMessage: true },
+      );
 
-    // Start each new student on this progression's first step.
-    const stepsResponse = await fetch(
-      `${pocketBaseUrl}/api/collections/progression_steps/records?perPage=1&sort=position&filter=progression%3D%22${progression}%22`,
-      { headers: { Authorization: authorization } },
-    );
-    const steps = await stepsResponse.json().catch(() => ({ items: [] }));
-    const firstStep = steps.items?.[0]?.id as string | undefined;
+      // Start each new student on this progression's first step.
+      const steps = await teacherPocketBaseRequest<Items<{ id: string }>>(
+        cookies,
+        `/api/collections/progression_steps/records?perPage=1&sort=position&filter=progression%3D%22${progression}%22`,
+        { errorMessage: "We could not read this progression's steps." },
+      );
+      const firstStep = steps.items?.[0]?.id;
 
-    const existingResponse = await fetch(
-      `${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=1000&fields=student&filter=progression%3D%22${progression}%22`,
-      { headers: { Authorization: authorization } },
-    );
-    const existing = await existingResponse.json().catch(() => ({ items: [] }));
-    const alreadyOn = new Set<string>((existing.items ?? []).map((item: { student: string }) => item.student));
+      const existing = await teacherPocketBaseRequest<Items<{ student: string }>>(
+        cookies,
+        `/api/collections/progression_enrollments/records?perPage=1000&fields=student&filter=progression%3D%22${progression}%22`,
+        { errorMessage: "We could not read this progression's assignments." },
+      );
+      const alreadyOn = new Set((existing.items ?? []).map((item) => item.student));
 
-    for (const student of students) {
-      if (alreadyOn.has(student)) {
-        skipped++;
-        continue;
+      for (const student of students) {
+        if (alreadyOn.has(student)) {
+          skipped++;
+          continue;
+        }
+        await teacherPocketBaseRequest(
+          cookies,
+          "/api/collections/progression_enrollments/records",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              progression,
+              student,
+              status: "active",
+              released: progressionRecord.selfPaced === true,
+              ...(firstStep ? { currentStep: firstStep } : {}),
+            }),
+            errorMessage: "We could not finish every assignment.",
+          },
+        );
+        assigned++;
       }
-      const response = await fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          progression,
-          student,
-          status: "active",
-          released: progressionRecord.selfPaced === true,
-          ...(firstStep ? { currentStep: firstStep } : {}),
-        }),
-      });
-      if (!response.ok) {
-        const result = await response.json().catch(() => ({}));
-        return json({ message: result.message || "We could not finish every assignment.", assigned, skipped }, { status: response.status });
-      }
-      assigned++;
     }
+    return json({ assigned, skipped });
+  } catch (caught) {
+    const failure = pocketBaseError(caught, "We could not finish every assignment.");
+    return json({ message: failure.message, assigned, skipped }, { status: failure.status });
   }
-
-  return json({ assigned, skipped });
 }

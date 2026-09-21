@@ -1,8 +1,7 @@
-import { error, json } from "@sveltejs/kit";
+import { json } from "@sveltejs/kit";
 import { saveProgression } from "$lib/server/saveProgression";
 import { isStarterPath, starterProgression } from "$lib/server/starterPaths";
-
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { teacherAuthorization, teacherPocketBaseRequest } from "$lib/server/pocketbase";
 
 function loginName(name: string) {
   return name
@@ -11,29 +10,7 @@ function loginName(name: string) {
     .replace(/[^a-z]/g, "");
 }
 
-async function pocketBaseRequest(
-  path: string,
-  auth: string,
-  init: RequestInit = {},
-) {
-  const response = await fetch(`${pocketBaseUrl}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: auth,
-      ...init.headers,
-    },
-  });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok)
-    throw new Error(body.message || "PocketBase request failed.");
-  return body;
-}
-
 export async function POST({ request, cookies }) {
-  const teacherToken = cookies.get("teacher_session");
-  if (!teacherToken) error(401, "Please sign in again.");
-
   const body = await request.json();
   const signupMode = body.signupMode === "open" ? "open" : "closed";
   const name = String(body.name || "").trim();
@@ -50,31 +27,27 @@ export async function POST({ request, cookies }) {
   if (selectedPaths.some((path) => !isStarterPath(path)))
     return json({ message: "Choose one of the four ready-made practice paths." }, { status: 400 });
 
-  const auth = `Bearer ${teacherToken}`;
-  const teacher = await pocketBaseRequest(
+  const teacher = await teacherPocketBaseRequest<{ record: { id: string } }>(
+    cookies,
     "/api/collections/teachers/auth-refresh",
-    auth,
     { method: "POST" },
   );
-  const usedCodes = await pocketBaseRequest(
+  const usedCodes = await teacherPocketBaseRequest<{ items: { classCode: string }[] }>(
+    cookies,
     "/api/collections/classes/records?perPage=500",
-    auth,
   );
   let classCode = "";
   do classCode = String(Math.floor(100000 + Math.random() * 900000));
-  while (
-    usedCodes.items.some(
-      (item: { classCode: string }) => item.classCode === classCode,
-    )
-  );
+  while (usedCodes.items.some((item) => item.classCode === classCode));
 
   // Teachers can start with the ready-made paths, or leave the class empty and
   // create their own quizzes later.
-  const classRoom = await pocketBaseRequest(
+  const classRoom = await teacherPocketBaseRequest<{ id: string }>(
+    cookies,
     "/api/collections/classes/records",
-    auth,
     {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         teacher: teacher.record.id,
         name,
@@ -87,8 +60,9 @@ export async function POST({ request, cookies }) {
 
   try {
     for (const studentName of studentNames) {
-      await pocketBaseRequest("/api/collections/students/records", auth, {
+      await teacherPocketBaseRequest(cookies, "/api/collections/students/records", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           class: classRoom.id,
           name: studentName,
@@ -96,9 +70,11 @@ export async function POST({ request, cookies }) {
         }),
       });
     }
-    const headers = { "Content-Type": "application/json", Authorization: auth };
+    const authorization = teacherAuthorization(cookies);
     for (const path of new Set(selectedPaths)) {
-      if (isStarterPath(path)) await saveProgression(headers, classRoom.id, { ...starterProgression(path), selfPaced });
+      if (isStarterPath(path)) {
+        await saveProgression(authorization, classRoom.id, { ...starterProgression(path), selfPaced });
+      }
     }
   } catch (caught) {
     return json({

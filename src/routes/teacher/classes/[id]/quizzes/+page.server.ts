@@ -1,13 +1,13 @@
 import { error } from "@sveltejs/kit";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl, teacherAuthorization } from "$lib/server/pocketbase";
 
 type Quiz = { id: string; class: string; data: { title: string; icon?: string } };
 type Step = { quiz: string; progression: string; position: number };
 type Progression = { id: string; class: string; name: string; operation?: string; icon?: string; shade?: string };
 
 export async function load({ cookies, params }) {
-  const headers = { Authorization: `Bearer ${cookies.get("teacher_session")}` };
+  const headers = { Authorization: teacherAuthorization(cookies) };
   const [quizzesResponse, stepsResponse, attemptsResponse, progressionsResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/quizzes/records?perPage=500`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=500`, { headers }),

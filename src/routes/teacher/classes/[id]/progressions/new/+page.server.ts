@@ -1,11 +1,11 @@
 import { error } from "@sveltejs/kit";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl, teacherAuthorization } from "$lib/server/pocketbase";
 
 export async function load({ cookies, params }) {
   const response = await globalThis.fetch(
     `${pocketBaseUrl}/api/collections/quizzes/records?perPage=500`,
-    { headers: { Authorization: `Bearer ${cookies.get("teacher_session")}` } },
+    { headers: { Authorization: teacherAuthorization(cookies) } },
   );
   if (!response.ok) error(500, "We could not load this class's quizzes.");
   const quizzes = await response.json();

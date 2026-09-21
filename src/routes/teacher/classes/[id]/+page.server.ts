@@ -1,13 +1,13 @@
 import { error, redirect } from "@sveltejs/kit";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl, teacherAuthorization } from "$lib/server/pocketbase";
 
 type Operation = "multiplication" | "division" | "addition" | "subtraction";
 
 export async function load({ locals, cookies, params }) {
   if (!locals.teacher) redirect(303, "/teacher");
 
-  const headers = { Authorization: `Bearer ${cookies.get("teacher_session")}` };
+  const headers = { Authorization: teacherAuthorization(cookies) };
   const classFilter = encodeURIComponent(`class="${params.id}"`);
   const nestedFilter = (path: string) => encodeURIComponent(`${path}.class="${params.id}"`);
 
