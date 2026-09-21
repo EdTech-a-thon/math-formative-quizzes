@@ -22,7 +22,7 @@
   export let quiz: { id: string; data: Partial<QuizData> } | null = null;
   // How far a change here reaches: the classes whose learning paths use this
   // quiz. A quiz being written for the first time has no reach yet.
-  export let reach: { classes: string[]; paths: number } | null = null;
+  export let reach: { classes: string[]; paths: number; usedByCurrentClass: boolean } | null = null;
 
   $: reachText =
     !reach || !reach.classes.length
@@ -426,6 +426,33 @@
       saving = false;
     }
   }
+
+  // The escape hatch for a shared quiz: a plain, independent copy, with only
+  // this class's path repointed at it. Every other class using the original
+  // keeps using the original, and a later edit to either quiz never reaches
+  // the other.
+  let copying = false;
+  async function copyForClass() {
+    if (!quiz?.id) return;
+    if (dirty) { pushToast("error", "Save your changes first.", "The copy is made from what is saved, so save before copying."); return; }
+    if (!confirm(`Make a separate copy of "${title.trim() || "this quiz"}" for this class? This class's path will use the copy from now on; every other class keeps using the original.`)) return;
+    copying = true;
+    try {
+      const response = await fetch(`/api/quizzes/${quiz.id}/copy-for-class`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classId }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+      pushToast("success", "Made a separate copy for this class.", "Other classes still use the original quiz.");
+      forgetDraft();
+      await goto(`/teacher/classes/${classId}/quizzes/${result.id}`);
+    } catch (caught) {
+      pushToast("error", caught instanceof Error ? caught.message : "We could not make a copy of this quiz.");
+      copying = false;
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} />
@@ -444,6 +471,11 @@
         <span class="bar-reach" class:shared={(reach?.classes.length ?? 0) > 1} title={reach?.classes.length ? `Used by: ${reach.classes.join(", ")}` : "No class is using this quiz yet"}>
           <Icon name="users" size={13} /> {reachText}
         </span>
+        {#if reach?.usedByCurrentClass}
+          <button type="button" class="editor-ghost bar-copy-button" disabled={copying} title="Make a plain copy of this quiz just for this class, without changing it for anyone else" on:click={copyForClass}>
+            <Icon name="copy" size={14} /> {copying ? "Copying…" : "Make a copy for this class"}
+          </button>
+        {/if}
       {/if}
     </div>
 

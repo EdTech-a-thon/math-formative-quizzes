@@ -32,6 +32,10 @@ export async function load({ cookies, params }) {
   const classes = [...new Set(reachedClasses)]
     .map((classId) => classNames.get(classId) ?? "Another class")
     .sort((a, b) => a.localeCompare(b));
+  // Whether this class's own path is one of the ones using this quiz. "Make a
+  // separate copy for this class" only makes sense when there is a step here
+  // to repoint at the copy.
+  const usedByCurrentClass = progressions.some((progression) => progression.class === params.id && usedBy.has(progression.id));
 
-  return { quiz, reach: { classes, paths: usedBy.size } };
+  return { quiz, reach: { classes, paths: usedBy.size, usedByCurrentClass } };
 }
