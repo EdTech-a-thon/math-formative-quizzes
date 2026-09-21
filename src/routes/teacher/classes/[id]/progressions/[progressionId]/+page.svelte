@@ -5,7 +5,7 @@
   import IconGlyph from "$lib/IconGlyph.svelte";
   import AssignDialog from "$lib/AssignDialog.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
-  import { assignmentSummary } from "$lib/assignments";
+  import { assignmentSummary, sendToStepSummary } from "$lib/assignments";
 
   type Step = { id: string; quizId: string; position: number; title: string; questionCount: number };
   type Enrollment = { id: string; studentId: string; studentName: string; currentStep: string; position: number; status: string; released: boolean };
@@ -49,6 +49,47 @@
       message = assignmentSummary(result.assigned, result.skipped);
     } catch (caught) {
       dialogError = caught instanceof Error ? caught.message : "We could not add these students.";
+    } finally {
+      dialogBusy = false;
+    }
+  }
+
+  // Sending students straight to one quiz in this path. The same picker again,
+  // but this time the whole class is on offer: a student who has never been on
+  // this path joins it here, and one who is already on it moves here.
+  let sending: Step | null = null;
+  $: enrollmentByStudent = new Map(data.enrollments.map((enrollment) => [enrollment.studentId, enrollment]));
+  $: stepTitleById = new Map(data.steps.map((step) => [step.id, step.title]));
+  // Where each student stands today, so the teacher can see who she is moving.
+  $: sendCandidates = (step: Step) =>
+    data.students.map((student) => {
+      const enrollment = enrollmentByStudent.get(student.id);
+      let detail = "not on this path yet";
+      if (enrollment?.status === "completed") detail = "finished this path";
+      else if (enrollment?.currentStep === step.id) detail = "already on this quiz";
+      else if (enrollment) detail = `on ${stepTitleById.get(enrollment.currentStep) ?? "this path"}`;
+      return { id: student.id, name: student.name, detail, shade: data.progression.shade ?? "" };
+    });
+
+  async function sendToStep(studentIds: string[]) {
+    const step = sending;
+    if (!step) return;
+    dialogBusy = true;
+    dialogError = "";
+    message = "";
+    try {
+      const response = await fetch("/api/enrollments/step", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progression: data.progression.id, step: step.id, students: studentIds }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message);
+      await invalidateAll();
+      sending = null;
+      message = sendToStepSummary(result.moved, step.title);
+    } catch (caught) {
+      dialogError = caught instanceof Error ? caught.message : "We could not move these students.";
     } finally {
       dialogBusy = false;
     }
@@ -145,7 +186,12 @@
               <h3>{step.title}</h3>
               <p>{step.questionCount} questions</p>
             </a>
-            <span>{students.length} {students.length === 1 ? "student" : "students"}</span>
+            <div class="step-header-side">
+              <span>{students.length} {students.length === 1 ? "student" : "students"}</span>
+              {#if data.students.length}
+                <button type="button" class="step-send-button" on:click={() => (sending = step)}><Icon name="arrow-right" size={12} /> Send students here</button>
+              {/if}
+            </div>
           </header>
           {#if students.length}
             <div class="step-students">
@@ -186,5 +232,21 @@
     error={dialogError}
     onClose={() => { picking = false; dialogError = ""; }}
     onConfirm={assignStudents}
+  />
+{/if}
+
+{#if sending}
+  <AssignDialog
+    title={`Send students to ${sending.title}`}
+    subtitle="Everyone you pick goes straight to this quiz and can start it right away."
+    kind="student"
+    verb="Send"
+    busyLabel="Sending…"
+    confirmIcon="arrow-right"
+    items={sendCandidates(sending)}
+    busy={dialogBusy}
+    error={dialogError}
+    onClose={() => { sending = null; dialogError = ""; }}
+    onConfirm={sendToStep}
   />
 {/if}

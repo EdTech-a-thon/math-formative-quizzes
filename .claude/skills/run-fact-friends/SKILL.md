@@ -77,7 +77,7 @@ editor filed a quiz in the library instead of handing it back to the draft.
 Screenshots land in `.claude/skills/run-fact-friends/shots/`. **Open them** —
 `smoke` passing its printed checks does not mean the page looks right.
 
-`smoke` ends with six named scenarios, each of which prints `PASS`/`FAIL` per
+`smoke` ends with seven named scenarios, each of which prints `PASS`/`FAIL` per
 check and a count at the end. `time-limits` is the other one worth knowing: a
 quiz's limit is stored in seconds, but quizzes saved before that carry whole
 minutes, and two copies of the resolver read the two fields — one in the app,
@@ -100,6 +100,16 @@ her quizzes stay: a quiz she renamed in the deleted class still opens, still
 carries the rename, is still editable, and can be added to a path in the class
 she kept.
 
+`send-to-step` builds its own class from scratch, because it needs students in
+three different states at once. A teacher-released four-quiz ladder, one student
+on its first quiz and two not on the path at all: all three are sent to the
+third quiz and must sit there, read as ready, and start from their own home
+screens with no release pressed. The other half is what a move must not do — no
+attempt records for the steps they were sent past, and a student moved backwards
+keeps the attempt she really sat and is offered the earlier quiz again. It ends
+with a student who had completed a path being pulled back to its first quiz and
+going active again.
+
 Other commands:
 
 ```bash
@@ -109,6 +119,7 @@ node .claude/skills/run-fact-friends/driver.mjs student-records  # places and at
 node .claude/skills/run-fact-friends/driver.mjs time-limits      # seconds-based time limits
 node .claude/skills/run-fact-friends/driver.mjs cross-class      # one quiz used by two classes
 node .claude/skills/run-fact-friends/driver.mjs class-delete     # a deleted class leaves the quizzes
+node .claude/skills/run-fact-friends/driver.mjs send-to-step     # students sent straight to one quiz
 node .claude/skills/run-fact-friends/driver.mjs shot /teacher/home home
 node .claude/skills/run-fact-friends/driver.mjs student-shot quiz student-quiz
 node .claude/skills/run-fact-friends/driver.mjs release
@@ -154,7 +165,9 @@ localhost URL or a port number.
 - **Sign-up tab vs submit button.** Both match `getByRole("button", { name: /Create account/ })`.
   Use `.tabs button` for the tab.
 - **The assign dialog's confirm button is `Assign 1 progression`**, not `Assign` —
-  `hasText: /^Assign$/` never matches and times out after 30s.
+  `hasText: /^Assign$/` never matches and times out after 30s. The same picker
+  reads `Send 3 students` when it is sending students to a step, so match the
+  count there too.
 - **The import dialog's file input is `.sr-only`.** Don't click it; use
   `setInputFiles` on `.import-dialog input[type=file]`. It takes JSON as well as
   PDF, which is why the driver ships a JSON fixture instead of a binary.

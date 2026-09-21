@@ -8,7 +8,7 @@
 //                              progression, student, released attempt.
 //                              Writes .claude/skills/run-fact-friends/.fixture.json
 //   smoke                      seed, then walk both import paths, sit a quiz,
-//                              and run the six scenarios below.
+//                              and run the seven scenarios below.
 //   ownership                  A second teacher sees none of the first
 //                              teacher's quizzes and cannot open one by id.
 //   quiz-lifecycle             Create, edit, export and delete one quiz.
@@ -19,6 +19,9 @@
 //                              the other, and sat attempts and places do not move.
 //   class-delete               Deleting a class leaves the teacher's quizzes,
 //                              and takes its path, students and attempts.
+//   send-to-step               Students sent straight to one quiz in a path,
+//                              forwards and backwards, and what that must not
+//                              disturb.
 //   release                    Release another attempt for the seeded student.
 //   shot <path> [name]         Screenshot any page signed in as the teacher.
 //   student-shot <path|quiz> [name]
@@ -444,11 +447,13 @@ async function makeQuiz(page, title, settings) {
   return (await response.json()).id;
 }
 
-// One quiz per path, so each limit can be sat on its own. Self-paced, so an
-// attempt is waiting without a release and a failed one comes back.
-async function makePath(page, classId, name, quizId, extra = {}) {
+// One quiz per path by default, so each limit can be sat on its own, but a
+// list of quizzes builds a ladder with a step each. Self-paced unless a
+// scenario says otherwise, so an attempt is waiting without a release and a
+// failed one comes back.
+async function makePath(page, classId, name, quiz, extra = {}) {
   const response = await page.request.post(`${BASE}/api/progressions`, {
-    data: { class: classId, name, quizIds: [quizId], passPercentage: 80, selfPaced: true, ...extra },
+    data: { class: classId, name, quizIds: Array.isArray(quiz) ? quiz : [quiz], passPercentage: 80, selfPaced: true, ...extra },
   });
   if (!response.ok()) throw new Error(`could not save "${name}": ${response.status()} ${await response.text()}`);
   return (await response.json()).id;
@@ -827,6 +832,196 @@ async function classDelete() {
   await b.close();
 }
 
+// --- Sending students to a step -------------------------------------------
+//
+// A teacher already past multiplying by 5 could not give her class "Multiply by
+// 6": assigning a learning path always started a student at its first quiz.
+// Sending students to a step is one action covering three cases — a student who
+// was never on the path, one partway along it, and one who had finished it —
+// and it grants the release itself, so nothing waits on a second button. What
+// it must never do is invent history: the steps a student is sent past were
+// never sat, and nothing she really did is taken away.
+
+// One step of the path on screen, found by the quiz sitting on it.
+const stepFor = (page, quizTitle) => page.locator(".progression-step-detail", { hasText: quizTitle });
+
+// Fill every answer with the right number, read off the card. Every quiz this
+// driver builds is multiplication, so the two numbers on the card are all it
+// takes to pass one.
+async function answerCorrectly(student) {
+  const problems = student.locator(".quiz-problem");
+  const count = await problems.count();
+  for (let index = 0; index < count; index++) {
+    const numbers = (await problems.nth(index).locator(".quiz-stack").innerText()).match(/\d+/g).map(Number);
+    await problems.nth(index).locator(".quiz-answer").fill(String(numbers[0] * numbers[1]));
+  }
+}
+
+// Sit a quiz from the student's home screen and hand it in. A wrong answer in
+// every box is still an attempt, and still lands in her history.
+async function sitQuiz(student, title, passing) {
+  await student.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  await student.locator("article.assigned-card", { hasText: title }).locator("a.start-quiz").click();
+  await student.waitForSelector(".quiz-answer", { timeout: 15000 });
+  if (passing) await answerCorrectly(student);
+  else {
+    const boxes = student.locator(".quiz-answer");
+    const count = await boxes.count();
+    for (let index = 0; index < count; index++) await boxes.nth(index).fill("1");
+  }
+  await student.locator("button.hand-in").click();
+  await student.waitForSelector(".quiz-results", { timeout: 20000 });
+}
+
+async function studentId(page, classId, name) {
+  await page.goto(`${BASE}/teacher/classes/${classId}`, { waitUntil: "networkidle" });
+  const href = await page.locator("a.student-detail-link", { hasText: name }).first().getAttribute("href");
+  return href.match(/\/students\/([^/?#]+)/)[1];
+}
+
+// What the student's home screen offers her, and whether she can start it
+// without the teacher releasing anything afterwards.
+async function offered(student, title) {
+  await student.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  const card = student.locator("article.assigned-card", { hasText: title });
+  if (!(await card.count())) return { onScreen: false, canStart: false };
+  const start = card.locator("a.start-quiz");
+  if (!(await start.count())) return { onScreen: true, canStart: false };
+  await start.click();
+  await student.waitForSelector(".quiz-answer", { timeout: 15000 });
+  return { onScreen: true, canStart: true };
+}
+
+async function openSendDialog(page, classId, pathId, quizTitle) {
+  await page.goto(`${BASE}/teacher/classes/${classId}/progressions/${pathId}`, { waitUntil: "networkidle" });
+  await stepFor(page, quizTitle).locator("button.step-send-button").click();
+  await page.waitForSelector(".assign-dialog");
+}
+
+// Tick the named students and confirm. The confirm button carries the count, so
+// a bare "Send" never matches it.
+async function confirmSend(page, names) {
+  for (const name of names) await page.locator(".assign-dialog-row", { hasText: name }).locator("input[type=checkbox]").check();
+  const confirm = page.locator(".assign-dialog footer button.primary-action");
+  const label = (await confirm.innerText()).trim();
+  await confirm.click();
+  await page.waitForSelector(".assign-dialog", { state: "detached", timeout: 20000 });
+  await page.waitForTimeout(500);
+  return label;
+}
+
+// Every quiz title in a student's attempt history, as the teacher sees it.
+async function attemptTitles(page, classId, id) {
+  await page.goto(`${BASE}/teacher/classes/${classId}/students/${id}`, { waitUntil: "networkidle" });
+  return page.locator(".teacher-attempt-row .attempt-quiz strong").allInnerTexts();
+}
+
+async function sendToStep() {
+  const b = await browser();
+  const { page } = await signUpTeacher(b, "Sending Teacher");
+  const classId = await createEmptyClass(page, "Multiplication Period 3");
+  const code = await teacherClassCode(page, classId);
+
+  // A four-quiz ladder, teacher released on purpose: on a self-paced path every
+  // student is ready anyway, so "moving also lets them start" would prove
+  // nothing.
+  const ladder = [];
+  for (const title of ["Multiply by 3", "Multiply by 4", "Multiply by 5", "Multiply by 6"]) ladder.push(await makeQuiz(page, title, {}));
+  const pathId = await makePath(page, classId, "Times tables ladder", ladder, { selfPaced: false });
+
+  const ada = await joinAsStudent(b, code, "Ada Ahead");
+  const bo = await joinAsStudent(b, code, "Bo Behind");
+  const cy = await joinAsStudent(b, code, "Cy Catchup");
+  const adaId = await studentId(page, classId, "Ada Ahead");
+
+  // Only Ada is on the path, at its first quiz, the way assigning has always
+  // worked. Bo and Cy are in the class and nowhere near it.
+  const assigned = await page.request.post(`${BASE}/api/enrollments/bulk`, { data: { students: [adaId], progressions: [pathId] } });
+  if (!assigned.ok()) throw new Error(`could not assign: ${assigned.status()} ${await assigned.text()}`);
+
+  // ---- Three students, two of them new to the path, sent to the third quiz --
+  await openSendDialog(page, classId, pathId, "Multiply by 5");
+  await page.fill(".assign-dialog-search input", "Bo");
+  await page.waitForTimeout(300);
+  const filtered = await page.locator(".assign-dialog-row").count();
+  await page.locator(".assign-dialog-toolbar button").click();
+  const afterSelectAll = (await page.locator(".assign-dialog-toolbar span").innerText()).trim();
+  check("the picker's search narrows the list and select-all takes only those", filtered === 1 && afterSelectAll === "1 selected", `${filtered} shown, ${afterSelectAll}`);
+  await page.fill(".assign-dialog-search input", "");
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: join(SHOTS, "send-to-step-picker.png") });
+  const label = await confirmSend(page, ["Ada Ahead", "Bo Behind", "Cy Catchup"]);
+  check("the picker's confirm button says send, not assign", /^Send 3 students$/.test(label), `"${label}"`);
+
+  const told = (await page.locator(".message.success").innerText()).trim();
+  check("the teacher is told how many students moved", /Moved 3 students to Multiply by 5/.test(told), `"${told}"`);
+
+  const atStep = stepFor(page, "Multiply by 5");
+  const names = (await atStep.locator(".step-student-link strong").allInnerTexts()).map((name) => name.trim()).sort();
+  check("all three sit at the quiz they were sent to", JSON.stringify(names) === JSON.stringify(["Ada Ahead", "Bo Behind", "Cy Catchup"]), names.join(", "));
+  const ready = await atStep.locator(".release-status.ready").count();
+  check("and all three read as ready, with no release pressed", ready === 3, `${ready} ready`);
+  const stepCount = (await atStep.locator(".step-header-side > span").innerText()).trim();
+  check("the path view counts the students sitting at that step", stepCount === "3 students", `"${stepCount}"`);
+  await page.screenshot({ path: join(SHOTS, "send-to-step-path.png"), fullPage: true });
+
+  // ---- Each of them can start it, with nothing released afterwards ---------
+  for (const [student, name] of [[ada, "Ada Ahead"], [bo, "Bo Behind"], [cy, "Cy Catchup"]]) {
+    const seen = await offered(student, "Multiply by 5");
+    check(`${name}'s home screen offers the quiz and starts it with no separate release`, seen.onScreen && seen.canStart, JSON.stringify(seen));
+  }
+  await ada.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  await ada.screenshot({ path: join(SHOTS, "send-to-step-student-home.png"), fullPage: true });
+
+  // ---- The steps they were sent past were never sat ------------------------
+  let skipped = [];
+  for (const name of ["Ada Ahead", "Bo Behind", "Cy Catchup"]) {
+    skipped = skipped.concat(await attemptTitles(page, classId, await studentId(page, classId, name)));
+  }
+  check("no attempt records exist for the steps they skipped", skipped.length === 0, skipped.join(", ") || "no attempts at all");
+
+  // ---- Moving backwards keeps everything she really did --------------------
+  await sitQuiz(ada, "Multiply by 5", false);
+  await openSendDialog(page, classId, pathId, "Multiply by 4");
+  await confirmSend(page, ["Ada Ahead"]);
+  const backAt = (await stepFor(page, "Multiply by 4").locator(".step-student-link strong").allInnerTexts()).map((name) => name.trim());
+  check("a student can be moved backwards to an earlier quiz", backAt.includes("Ada Ahead"), backAt.join(", ") || "nobody");
+  const kept = await attemptTitles(page, classId, adaId);
+  check("the move keeps her earlier attempt in her history", kept.includes("Multiply by 5"), kept.join(", ") || "no attempts");
+  const again = await offered(ada, "Multiply by 4");
+  check("and the earlier quiz is offered to her again", again.onScreen && again.canStart, JSON.stringify(again));
+  await ada.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  const history = await ada.locator(".history-row .history-name strong").allInnerTexts();
+  check("her own history still shows the quiz she sat", history.includes("Multiply by 5"), history.join(", ") || "empty");
+
+  // ---- A student who had finished the path, pulled back ---------------------
+  const warmUp = await makeQuiz(page, "Doubling warm up", {});
+  const sprint = await makeQuiz(page, "Doubling sprint", {});
+  const doubles = await makePath(page, classId, "Doubles", [warmUp, sprint], { passPercentage: 50 });
+  const dee = await joinAsStudent(b, code, "Dee Done");
+  const deeId = await studentId(page, classId, "Dee Done");
+  const onDoubles = await page.request.post(`${BASE}/api/enrollments/bulk`, { data: { students: [deeId], progressions: [doubles] } });
+  if (!onDoubles.ok()) throw new Error(`could not assign: ${onDoubles.status()} ${await onDoubles.text()}`);
+  await sitQuiz(dee, "Doubling warm up", true);
+  await sitQuiz(dee, "Doubling sprint", true);
+
+  await page.goto(`${BASE}/teacher/classes/${classId}/progressions/${doubles}`, { waitUntil: "networkidle" });
+  const finished = await page.locator(".progression-completed").innerText().catch(() => "");
+  check("she finishes the path", finished.includes("Dee Done"), finished.replace(/\n+/g, " | ") || "not listed as completed");
+
+  await openSendDialog(page, classId, doubles, "Doubling warm up");
+  await confirmSend(page, ["Dee Done"]);
+  const stillCompleted = await page.locator(".progression-completed", { hasText: "Dee Done" }).count();
+  const pulledBack = (await stepFor(page, "Doubling warm up").locator(".step-student-link strong").allInnerTexts()).map((name) => name.trim());
+  check("pulling her back to a step makes her active again", stillCompleted === 0 && pulledBack.includes("Dee Done"), `completed: ${stillCompleted}, at the step: ${pulledBack.join(", ") || "nobody"}`);
+  const deeOffered = await offered(dee, "Doubling warm up");
+  check("and the quiz is offered to her", deeOffered.onScreen && deeOffered.canStart, JSON.stringify(deeOffered));
+  await page.screenshot({ path: join(SHOTS, "send-to-step-completed.png"), fullPage: true });
+
+  log(`\nshots in ${SHOTS}`);
+  await b.close();
+}
+
 async function smoke() {
   const fx = existsSync(FIXTURE) ? fixture() : await seed();
   const b = await browser();
@@ -916,6 +1111,8 @@ async function smoke() {
   await crossClass();
   log("\n-- deleting a class --");
   await classDelete();
+  log("\n-- sending students to a step --");
+  await sendToStep();
   summarise();
 }
 
@@ -951,10 +1148,11 @@ else if (cmd === "student-records") { await studentRecords(); summarise(); }
 else if (cmd === "time-limits") { await timeLimits(); summarise(); }
 else if (cmd === "cross-class") { await crossClass(); summarise(); }
 else if (cmd === "class-delete") { await classDelete(); summarise(); }
+else if (cmd === "send-to-step") { await sendToStep(); summarise(); }
 else if (cmd === "release") await release();
 else if (cmd === "shot") await shot(args[0] ?? "/", args[1]);
 else if (cmd === "student-shot") await shot(args[0] ?? "quiz", args[1] ?? "student", true);
 else {
-  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | cross-class | class-delete | release | shot <path> [name] | student-shot <path|quiz> [name]");
+  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | cross-class | class-delete | send-to-step | release | shot <path> [name] | student-shot <path|quiz> [name]");
   process.exit(1);
 }

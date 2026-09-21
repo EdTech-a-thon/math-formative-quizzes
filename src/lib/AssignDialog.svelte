@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "$lib/Icon.svelte";
+  import type { IconName } from "$lib/icons";
   import IconGlyph from "$lib/IconGlyph.svelte";
   import { shadeClass } from "$lib/shades";
 
@@ -14,6 +15,12 @@
   export let items: Item[] = [];
   export let busy = false;
   export let error = "";
+  // The confirm button says what this particular picker does. Assigning a
+  // student to a learning path and sending one to a step are different actions,
+  // so they must not read the same on screen.
+  export let verb = "Assign";
+  export let busyLabel = "Assigning…";
+  export let confirmIcon: IconName = "plus";
   export let onClose: () => void;
   export let onConfirm: (ids: string[]) => void;
 
@@ -89,8 +96,8 @@
     <footer>
       <button type="button" class="ghost-btn" disabled={busy} on:click={onClose}>Cancel</button>
       <button type="button" class="primary-action" disabled={!chosen.size || busy} on:click={() => onConfirm([...chosen])}>
-        <Icon name="plus" size={15} />
-        {busy ? "Assigning…" : chosen.size ? `Assign ${chosen.size} ${chosen.size === 1 ? noun : `${noun}s`}` : "Assign"}
+        <Icon name={confirmIcon} size={15} />
+        {busy ? busyLabel : chosen.size ? `${verb} ${chosen.size} ${chosen.size === 1 ? noun : `${noun}s`}` : verb}
       </button>
     </footer>
   </div>
