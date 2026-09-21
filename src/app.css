@@ -1347,7 +1347,7 @@ a.history-row:hover .history-name strong { color: #5439bb; }
 .bar-settings { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
 .stepper-compact { padding: 3px; border-radius: 11px; }
 .stepper-compact button { width: 26px; height: 26px; border-radius: 8px; }
-.stepper-compact b { min-width: 52px; font-size: .95rem; }
+.stepper-compact b { min-width: 66px; font-size: .95rem; }
 .bar-toggle { display: inline-flex; align-items: center; gap: 7px; width: auto; margin: 0; padding: 8px 12px; border: 1px solid #e0dbe8; border-radius: 11px; background: #fff; box-shadow: none; color: #6b6479; font-size: .8rem; font-weight: 800; }
 .bar-toggle:hover { transform: none; border-color: var(--operation, #6748d1); color: #4d399b; }
 .bar-toggle.on { border-color: var(--operation, #6748d1); background: var(--operation-soft, #eee9ff); color: var(--operation, #6748d1); }

@@ -5,7 +5,7 @@
   import { symbolFor, type Problem } from "$lib/quizProblems";
 
   export let data: {
-    quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string };
+    quiz: { title: string; problems: Problem[]; timeLimitSeconds: number; showScore: boolean; passMessage: string };
     progressionName: string;
     position: number;
     totalSteps: number;
@@ -56,8 +56,9 @@
   }
 
   // A quiz with no time limit stays untimed, even for a student with extra time.
-  const minutesAllowed = data.quiz.timeLimitMinutes ? data.quiz.timeLimitMinutes + data.extraTimeMinutes : 0;
-  let secondsLeft = minutesAllowed * 60;
+  // The accommodation is still set in whole minutes, so it converts on the way in.
+  const secondsAllowed = data.quiz.timeLimitSeconds ? data.quiz.timeLimitSeconds + data.extraTimeMinutes * 60 : 0;
+  let secondsLeft = secondsAllowed;
   let handingIn = false;
   let sheet: HTMLFormElement;
   let timeoutSubmit: HTMLButtonElement;
@@ -197,7 +198,7 @@
       <footer class="quiz-foot">
         <div class="quiz-foot-inner">
           <div class="quiz-foot-status">
-            {#if minutesAllowed}
+            {#if secondsAllowed}
               <span class="quiz-clock" class:low={secondsLeft <= 15}><Icon name="clock" size={16} /> {clock}</span>
             {/if}
             <span class="quiz-progress">

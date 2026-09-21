@@ -77,8 +77,13 @@ editor filed a quiz in the library instead of handing it back to the draft.
 Screenshots land in `.claude/skills/run-fact-friends/shots/`. **Open them** —
 `smoke` passing its printed checks does not mean the page looks right.
 
-`smoke` ends with three named scenarios, each of which prints `PASS`/`FAIL` per
-check and a count at the end. `ownership` is the one that cannot be seen in
+`smoke` ends with four named scenarios, each of which prints `PASS`/`FAIL` per
+check and a count at the end. `time-limits` is the other one worth knowing: a
+quiz's limit is stored in seconds, but quizzes saved before that carry whole
+minutes, and two copies of the resolver read the two fields — one in the app,
+one in `pb_hooks`, which cannot import from `$lib`. It drives both sides of the
+same quiz, so a legacy quiz reading one way for the teacher and another for the
+student shows up as a failure. `ownership` is the one that cannot be seen in
 ordinary use: it signs up a **second** teacher and asserts she sees none of the
 first teacher's quizzes and gets a 404 opening one by id, while the same id
 opens fine for its owner.
@@ -89,6 +94,7 @@ Other commands:
 node .claude/skills/run-fact-friends/driver.mjs ownership        # two-teacher access rules
 node .claude/skills/run-fact-friends/driver.mjs quiz-lifecycle   # create, edit, export, delete
 node .claude/skills/run-fact-friends/driver.mjs student-records  # places and attempt history
+node .claude/skills/run-fact-friends/driver.mjs time-limits      # seconds-based time limits
 node .claude/skills/run-fact-friends/driver.mjs shot /teacher/home home
 node .claude/skills/run-fact-friends/driver.mjs student-shot quiz student-quiz
 node .claude/skills/run-fact-friends/driver.mjs release

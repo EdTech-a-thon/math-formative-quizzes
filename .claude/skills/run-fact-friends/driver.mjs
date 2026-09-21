@@ -8,11 +8,13 @@
 //                              progression, student, released attempt.
 //                              Writes .claude/skills/run-fact-friends/.fixture.json
 //   smoke                      seed, then walk both import paths, sit a quiz,
-//                              and run the three scenarios below.
+//                              and run the four scenarios below.
 //   ownership                  A second teacher sees none of the first
 //                              teacher's quizzes and cannot open one by id.
 //   quiz-lifecycle             Create, edit, export and delete one quiz.
 //   student-records            A student's place and attempt history still read.
+//   time-limits                Seconds-based time limits, legacy quizzes
+//                              included, from the editor through to the clock.
 //   release                    Release another attempt for the seeded student.
 //   shot <path> [name]         Screenshot any page signed in as the teacher.
 //   student-shot <path|quiz> [name]
@@ -22,10 +24,12 @@
 // Screenshots land in .claude/skills/run-fact-friends/shots/.
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+const REPO = join(HERE, "..", "..", "..");
 const SHOTS = join(HERE, "shots");
 const FIXTURE = join(HERE, ".fixture.json");
 const STATE = join(HERE, ".teacher-state.json");
@@ -344,6 +348,257 @@ async function studentRecords() {
   await b.close();
 }
 
+// --- Time limits ----------------------------------------------------------
+//
+// A quiz's time limit is stored in seconds. Quizzes saved before that carry
+// whole minutes instead, and two copies of the resolver read the two fields:
+// one in the app, one in pb_hooks, because a hook cannot import from $lib. The
+// teacher's editor and quiz list read through the app copy; the student's home
+// card and countdown read through the hook copy. So a legacy quiz that reads
+// one way for the teacher and another for the student is exactly the failure
+// these checks are here to catch.
+
+const THREE_QUESTIONS = [
+  { id: "t1", op: "multiplication", top: 3, bottom: 4 },
+  { id: "t2", op: "multiplication", top: 5, bottom: 6 },
+  { id: "t3", op: "multiplication", top: 7, bottom: 8 },
+];
+
+// PocketBase's hooks are CommonJS, but this repo is ESM, so node would read
+// one of them as a module and choke on `module.exports`. Running the file in a
+// wrapper of its own is enough to get at what it exports.
+function loadHook(name) {
+  const scope = { exports: {} };
+  new Function("module", "exports", "require", readFileSync(join(REPO, "pb_hooks", name), "utf8"))(scope, scope.exports, createRequire(import.meta.url));
+  return scope.exports;
+}
+
+// Both copies of the resolver, over the same table of stored settings. Node
+// reads the app's TypeScript directly; the hook copy comes through the wrapper.
+async function resolverParity() {
+  const app = await import(pathToFileURL(join(REPO, "src/lib/timeLimit.ts")).href);
+  const hook = loadHook("time_limit.js");
+  const stored = [
+    {},
+    { timeLimitMinutes: 1 },
+    { timeLimitMinutes: 2 },
+    { timeLimitMinutes: 0 },
+    { timeLimitSeconds: 45 },
+    { timeLimitSeconds: 90 },
+    { timeLimitSeconds: 300 },
+    { timeLimitSeconds: 0, timeLimitMinutes: 2 },
+    { timeLimitSeconds: 45, timeLimitMinutes: 3 },
+    { timeLimitSeconds: null, timeLimitMinutes: 2 },
+    { timeLimitSeconds: "120" },
+    { timeLimitSeconds: 9999 },
+    { timeLimitMinutes: 999 },
+  ];
+  const differences = [];
+  for (const settings of stored) {
+    const mine = app.resolveTimeLimitSeconds(settings);
+    const theirs = hook.resolveTimeLimitSeconds(settings);
+    const shownByApp = app.timeLimitLabel(mine);
+    const shownByHook = hook.timeLimitLabel(theirs);
+    log(`  ${JSON.stringify(settings).padEnd(42)} -> ${String(theirs).padStart(4)}s  "${shownByHook}"`);
+    if (mine !== theirs || shownByApp !== shownByHook) {
+      differences.push(`${JSON.stringify(settings)}: app ${mine} "${shownByApp}" vs hook ${theirs} "${shownByHook}"`);
+    }
+  }
+  check("the app and pb_hooks copies of the resolver agree", differences.length === 0, differences.join("; ") || `${stored.length} stored shapes, same answer both sides`);
+}
+
+// A class with no ready-made paths, so the quiz list holds only the quizzes
+// this scenario makes. Multiplication is ticked when the page opens.
+async function createEmptyClass(page, className) {
+  await page.goto(`${BASE}/teacher/classes/new`, { waitUntil: "networkidle" });
+  await page.fill("#class-name", className);
+  for (const key of ["addition", "subtraction", "multiplication", "division"]) {
+    const path = page.locator(`button.starter-path.op-${key}`);
+    if ((await path.getAttribute("aria-pressed")) === "true") await path.click();
+  }
+  await page.locator("button.create-class").click();
+  await page.waitForURL((u) => !u.pathname.endsWith("/classes/new"), { timeout: 60000 });
+  await page.goto(`${BASE}/teacher/home`, { waitUntil: "networkidle" });
+  const hrefs = await page.locator('a[href*="/teacher/classes/"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+  const ids = hrefs.map((h) => h.match(/classes\/([^/?]+)/)[1]).filter((id) => id !== "new");
+  return ids[ids.length - 1];
+}
+
+// Saved straight through the app's own route, so a quiz can be stored with
+// exactly the settings a scenario needs — including the legacy minutes field
+// on its own, which no editor writes any more.
+async function makeQuiz(page, title, settings) {
+  const response = await page.request.post(`${BASE}/api/quizzes`, {
+    data: { data: { title, problems: THREE_QUESTIONS, showScore: true, passMessage: "Great work!", ...settings } },
+  });
+  if (!response.ok()) throw new Error(`could not save "${title}": ${response.status()} ${await response.text()}`);
+  return (await response.json()).id;
+}
+
+// One quiz per path, so each limit can be sat on its own. Self-paced, so an
+// attempt is waiting without a release and a failed one comes back.
+async function makePath(page, classId, name, quizId) {
+  const response = await page.request.post(`${BASE}/api/progressions`, {
+    data: { class: classId, name, quizIds: [quizId], passPercentage: 80, selfPaced: true },
+  });
+  if (!response.ok()) throw new Error(`could not save "${name}": ${response.status()} ${await response.text()}`);
+  return (await response.json()).id;
+}
+
+async function joinAsStudent(b, code, name) {
+  const ctx = await b.newContext({ viewport: { width: 1100, height: 900 } });
+  const student = watch(await ctx.newPage(), name);
+  await student.goto(`${BASE}/join/${code}`, { waitUntil: "networkidle" });
+  await student.locator('input[type="text"], input:not([type])').first().fill(name);
+  await student.locator("form button[type=submit]").first().click();
+  await student.waitForTimeout(2000);
+  return student;
+}
+
+async function openEditor(page, classId, quizId) {
+  await page.goto(`${BASE}/teacher/classes/${classId}/quizzes/${quizId}`, { waitUntil: "networkidle" });
+  return page.locator(".stepper-compact b");
+}
+async function cardMeta(student, title) {
+  await student.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  return (await student.locator("article.assigned-card", { hasText: title }).locator(".assigned-meta").innerText()).trim();
+}
+// Open the quiz on a card and read what the clock says as it starts. A second
+// or two goes by between the page loading and the read, so the check allows it.
+async function startingClock(student, title) {
+  await student.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  await student.locator("article.assigned-card", { hasText: title }).locator("a.start-quiz").click();
+  await student.waitForSelector(".quiz-answer", { timeout: 15000 });
+  const clock = student.locator(".quiz-clock");
+  return (await clock.count()) ? (await clock.innerText()).trim() : "no clock";
+}
+const within = (clock, ...allowed) => allowed.includes(clock);
+
+async function timeLimits() {
+  log("-- both copies of the resolver, over the same stored settings --");
+  await resolverParity();
+
+  const b = await browser();
+  const { page } = await signUpTeacher(b, "Timing Teacher");
+  const classId = await createEmptyClass(page, "Timing Test Class");
+
+  // Five quizzes, each stored the way a real one would be. "Legacy" carries
+  // only the old minutes field, as every quiz did before this change; "Untimed"
+  // carries a stored zero with a legacy two minutes still sitting beside it.
+  const quiz = {
+    legacy: await makeQuiz(page, "Legacy minute drill", { timeLimitMinutes: 1 }),
+    short: await makeQuiz(page, "Forty-five second drill", { timeLimitSeconds: 45 }),
+    long: await makeQuiz(page, "Ninety second drill", { timeLimitSeconds: 90 }),
+    untimed: await makeQuiz(page, "Untimed drill", { timeLimitSeconds: 0, timeLimitMinutes: 2 }),
+    stepper: await makeQuiz(page, "Stepper drill", { timeLimitSeconds: 285 }),
+  };
+  const paths = [];
+  for (const [key, title] of [["legacy", "Legacy minute path"], ["short", "Forty-five second path"], ["long", "Ninety second path"], ["untimed", "Untimed path"]]) {
+    paths.push(await makePath(page, classId, title, quiz[key]));
+  }
+
+  // ---- What the teacher sees ----
+  const stepperOf = async (id) => (await (await openEditor(page, classId, id)).innerText()).trim();
+  const legacyStepper = await stepperOf(quiz.legacy);
+  check("a legacy one-minute quiz reads as 1:00 in the editor", legacyStepper === "1:00", `stepper "${legacyStepper}" (expect 1:00)`);
+  const shortStepper = await stepperOf(quiz.short);
+  check("a 45-second quiz reads as 45 sec in the editor", shortStepper === "45 sec", `stepper "${shortStepper}" (expect 45 sec)`);
+  const longStepper = await stepperOf(quiz.long);
+  check("a 90-second quiz reads as 1:30 in the editor", longStepper === "1:30", `stepper "${longStepper}" (expect 1:30)`);
+  const untimedStepper = await stepperOf(quiz.untimed);
+  check("a stored zero beats the legacy minutes beside it", untimedStepper === "No limit", `stepper "${untimedStepper}" (expect No limit)`);
+
+  // ---- The stepper's own steps ----
+  const readings = [];
+  const stepper = await openEditor(page, classId, quiz.stepper);
+  const less = page.locator('.stepper-compact button[aria-label="Less time"]');
+  const more = page.locator('.stepper-compact button[aria-label="More time"]');
+  readings.push((await stepper.innerText()).trim());
+  for (let press = 0; press < 3; press++) { await more.click(); await page.waitForTimeout(150); readings.push((await stepper.innerText()).trim()); }
+  for (let press = 0; press < 3; press++) { await less.click(); await page.waitForTimeout(150); readings.push((await stepper.innerText()).trim()); }
+  const expectedSteps = ["4:45", "5:00", "6:00", "7:00", "6:00", "5:00", "4:45"];
+  check("the stepper moves in 15-second steps to five minutes, then minutes", readings.join(" ") === expectedSteps.join(" "), `${readings.join(" ")} (expect ${expectedSteps.join(" ")})`);
+  await page.screenshot({ path: join(SHOTS, "time-limit-stepper.png") });
+
+  // The bottom of the range: zero is reachable, and it stops there.
+  const lowReadings = [];
+  const shortEditor = await openEditor(page, classId, quiz.short);
+  for (let press = 0; press < 4; press++) { await less.click(); await page.waitForTimeout(150); lowReadings.push((await shortEditor.innerText()).trim()); }
+  await more.click();
+  await page.waitForTimeout(150);
+  lowReadings.push((await shortEditor.innerText()).trim());
+  const expectedLow = ["30 sec", "15 sec", "No limit", "No limit", "15 sec"];
+  check("the stepper reaches no limit at the bottom and stops there", lowReadings.join(" ") === expectedLow.join(" "), `${lowReadings.join(" ")} (expect ${expectedLow.join(" ")})`);
+
+  // The quiz list and the editor have to agree, so both are read.
+  const listed = await listedQuizzes(page, classId);
+  check("the quiz list shows 45 sec and 1:30", listed.text.includes("45 sec") && listed.text.includes("1:30"), listed.text.replace(/\n+/g, " | ").slice(0, 220));
+  await page.screenshot({ path: join(SHOTS, "time-limit-quiz-list.png"), fullPage: true });
+
+  // ---- Two students: one plain, one with five extra minutes ----
+  const code = await teacherClassCode(page, classId);
+  const plain = await joinAsStudent(b, code, "Ada Plain");
+  const extra = await joinAsStudent(b, code, "Tim Extra");
+
+  await page.goto(`${BASE}/teacher/classes/${classId}`, { waitUntil: "networkidle" });
+  const studentId = async (name) => (await page.locator("a.student-detail-link", { hasText: name }).first().getAttribute("href")).match(/\/students\/([^/?#]+)/)[1];
+  const plainId = await studentId("Ada Plain");
+  const extraId = await studentId("Tim Extra");
+  const assigned = await page.request.post(`${BASE}/api/enrollments/bulk`, { data: { students: [plainId, extraId], progressions: paths } });
+  if (!assigned.ok()) throw new Error(`could not assign: ${assigned.status()} ${await assigned.text()}`);
+  const accommodation = await page.request.patch(`${BASE}/api/students/${extraId}`, { data: { extraTimeMinutes: 5 } });
+  if (!accommodation.ok()) throw new Error(`could not give extra time: ${accommodation.status()} ${await accommodation.text()}`);
+
+  // ---- What a student sees ----
+  const legacyCard = await cardMeta(plain, "Legacy minute drill");
+  check("a legacy quiz's card shows 1:00", legacyCard.endsWith("· 1:00"), `"${legacyCard}" (expect 3 questions · 1:00)`);
+  const shortCard = await cardMeta(plain, "Forty-five second drill");
+  check("a 45-second quiz's card shows 45 sec", shortCard.endsWith("· 45 sec"), `"${shortCard}" (expect 3 questions · 45 sec)`);
+  const longCard = await cardMeta(plain, "Ninety second drill");
+  check("a 90-second quiz's card shows 1:30", longCard.endsWith("· 1:30"), `"${longCard}" (expect 3 questions · 1:30)`);
+  const untimedCard = await cardMeta(plain, "Untimed drill");
+  check("an untimed quiz's card shows no time at all", untimedCard === "3 questions", `"${untimedCard}" (expect 3 questions)`);
+  await plain.screenshot({ path: join(SHOTS, "time-limit-student-home.png"), fullPage: true });
+
+  const legacyClock = await startingClock(plain, "Legacy minute drill");
+  check("a legacy quiz counts down from 1:00", within(legacyClock, "1:00", "0:59"), `clock "${legacyClock}" (expect 1:00)`);
+  const longClock = await startingClock(plain, "Ninety second drill");
+  check("a 90-second quiz counts down from 1:30", within(longClock, "1:30", "1:29"), `clock "${longClock}" (expect 1:30)`);
+  const untimedClock = await startingClock(plain, "Untimed drill");
+  check("an untimed quiz shows no countdown", untimedClock === "no clock", `clock "${untimedClock}" (expect no clock)`);
+
+  // ---- Extra time, which is still set in whole minutes ----
+  const extraCard = await cardMeta(extra, "Forty-five second drill");
+  check("extra time is on the card the student starts from", extraCard.endsWith("· 5:45"), `"${extraCard}" (expect 3 questions · 5:45)`);
+  const extraClock = await startingClock(extra, "Forty-five second drill");
+  check("extra time is on the clock too", within(extraClock, "5:45", "5:44"), `clock "${extraClock}" (expect 5:45)`);
+  await extra.screenshot({ path: join(SHOTS, "time-limit-extra-time.png"), fullPage: true });
+  const extraUntimed = await startingClock(extra, "Untimed drill");
+  check("an untimed quiz stays untimed for a student with extra time", extraUntimed === "no clock", `clock "${extraUntimed}" (expect no clock)`);
+  await extra.screenshot({ path: join(SHOTS, "time-limit-untimed.png"), fullPage: true });
+
+  // ---- Saving a legacy quiz leaves the limit where it was ----
+  await openEditor(page, classId, quiz.legacy);
+  await page.locator("button.editor-save").click();
+  await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
+  const savedStepper = await stepperOf(quiz.legacy);
+  check("saving a legacy quiz converts it without changing its limit", savedStepper === "1:00", `stepper "${savedStepper}" (expect 1:00)`);
+  const savedCard = await cardMeta(plain, "Legacy minute drill");
+  check("and the student still gets the same 1:00", savedCard.endsWith("· 1:00"), `"${savedCard}" (expect 3 questions · 1:00)`);
+
+  // ---- The short quiz hands itself in when the clock runs out ----
+  const runOut = await startingClock(plain, "Forty-five second drill");
+  check("a 45-second quiz counts down from 0:45", within(runOut, "0:45", "0:44"), `clock "${runOut}" (expect 0:45)`);
+  await plain.screenshot({ path: join(SHOTS, "time-limit-45-seconds.png"), fullPage: true });
+  let handedItself = true;
+  await plain.waitForSelector(".quiz-results", { timeout: 75000 }).catch(() => { handedItself = false; });
+  check("it hands itself in when the clock reaches zero", handedItself, handedItself ? "results came up on their own" : "no results after 75s");
+  await plain.screenshot({ path: join(SHOTS, "time-limit-timed-out.png"), fullPage: true });
+
+  log(`\nshots in ${SHOTS}`);
+  await b.close();
+}
+
 async function smoke() {
   const fx = existsSync(FIXTURE) ? fixture() : await seed();
   const b = await browser();
@@ -427,6 +682,8 @@ async function smoke() {
   await quizLifecycle();
   log("\n-- student records --");
   await studentRecords();
+  log("\n-- time limits --");
+  await timeLimits();
   summarise();
 }
 
@@ -459,10 +716,11 @@ else if (cmd === "smoke") await smoke();
 else if (cmd === "ownership") { await ownership(); summarise(); }
 else if (cmd === "quiz-lifecycle") { await quizLifecycle(); summarise(); }
 else if (cmd === "student-records") { await studentRecords(); summarise(); }
+else if (cmd === "time-limits") { await timeLimits(); summarise(); }
 else if (cmd === "release") await release();
 else if (cmd === "shot") await shot(args[0] ?? "/", args[1]);
 else if (cmd === "student-shot") await shot(args[0] ?? "quiz", args[1] ?? "student", true);
 else {
-  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | release | shot <path> [name] | student-shot <path|quiz> [name]");
+  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | release | shot <path> [name] | student-shot <path|quiz> [name]");
   process.exit(1);
 }

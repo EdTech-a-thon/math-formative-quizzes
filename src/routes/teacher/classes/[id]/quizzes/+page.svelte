@@ -6,10 +6,11 @@
   import ImportButton from "$lib/ImportButton.svelte";
   import ImportDropTarget from "$lib/ImportDropTarget.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
+  import { formatTimeLimit, resolveTimeLimitSeconds } from "$lib/timeLimit";
   import type { Problem } from "$lib/quizProblems";
 
   type Membership = { id: string; name: string; operation: string; icon: string; shade: string };
-  type Quiz = { id: string; data: { title: string; problems?: Problem[]; timeLimitMinutes: number; shade?: ShadeId; icon?: string }; progressions: Membership[] };
+  type Quiz = { id: string; data: { title: string; problems?: Problem[]; timeLimitSeconds?: number; timeLimitMinutes?: number; shade?: ShadeId; icon?: string }; progressions: Membership[] };
   type Usage = Record<string, { progressions: number; attempts: number }>;
   export let data: { quizzes: Quiz[]; usage: Usage };
 
@@ -91,7 +92,7 @@
           <span class={`quiz-operation ${shadeClass(quiz.data.shade)}`}><IconGlyph name={quiz.data.icon ?? null} fallback="clipboard-list" size={20} /></span>
           <div class="library-card-body">
             <h2>{quiz.data.title}</h2>
-            <p>{(quiz.data.problems ?? []).length} questions · {quiz.data.timeLimitMinutes} min</p>
+            <p>{(quiz.data.problems ?? []).length} questions{formatTimeLimit(resolveTimeLimitSeconds(quiz.data)) ? ` · ${formatTimeLimit(resolveTimeLimitSeconds(quiz.data))}` : " · no time limit"}</p>
             <div class="card-memberships">
               {#each quiz.progressions as progression}
                 <span class={`membership-tag ${shadeClass(progression.shade, progression.operation)}`}><IconGlyph name={progression.icon} fallback="route" size={11} /> {progression.name}</span>

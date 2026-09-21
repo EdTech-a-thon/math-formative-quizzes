@@ -25,7 +25,7 @@ async function saveQuiz(authorization: string, teacherId: string, quiz: QuizReco
         data: {
           title: quiz.title,
           problems: quiz.problems,
-          timeLimitMinutes: quiz.timeLimitMinutes,
+          timeLimitSeconds: quiz.timeLimitSeconds,
           showScore: quiz.showScore,
           passMessage: quiz.passMessage,
           ...appearanceOf(quiz),

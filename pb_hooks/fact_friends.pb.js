@@ -114,7 +114,9 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
         icon: details.icon || "",
         shade: details.shade || "",
         questionCount: (details.problems || []).length,
-        timeLimitMinutes: details.timeLimitMinutes || 0,
+        // Quizzes saved before the limit became seconds still carry minutes,
+        // so the resolver is what makes the two read the same.
+        timeLimitSeconds: require(`${__hooks}/time_limit.js`).resolveTimeLimitSeconds(details),
       };
     } catch (_) {
       return null;
@@ -164,7 +166,7 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
       icon: quiz.icon,
       shade: quiz.shade,
       questionCount: quiz.questionCount,
-      timeLimitMinutes: quiz.timeLimitMinutes,
+      timeLimitSeconds: quiz.timeLimitSeconds,
       released: enrollment.getBool("released"),
     });
   }
@@ -247,7 +249,7 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
       // The stored questions, in the order the teacher arranged them. Marking
       // reads this same list back, so it is the one source of truth.
       problems: details.problems || [],
-      timeLimitMinutes: details.timeLimitMinutes || 0,
+      timeLimitSeconds: require(`${__hooks}/time_limit.js`).resolveTimeLimitSeconds(details),
       showScore: details.showScore !== false,
       passMessage: details.passMessage || "Great work! You finished this quiz.",
     },

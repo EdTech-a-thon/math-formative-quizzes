@@ -4,7 +4,7 @@ import { answerFor, readProblems, symbolFor, type Problem } from "$lib/quizProbl
 import { pocketBaseUrl } from "$lib/server/pocketbase";
 
 type QuizStep = {
-  quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string };
+  quiz: { title: string; problems: Problem[]; timeLimitSeconds: number; showScore: boolean; passMessage: string };
   progressionName: string;
   position: number;
   totalSteps: number;
@@ -30,7 +30,7 @@ async function pocketBasePost(path: string, payload: unknown) {
 // Handing in a passing quiz moves the student on, so the step they just sat is
 // no longer open to them. This stands in while their results are on screen.
 const finishedSheet = {
-  quiz: { title: "", problems: [] as Problem[], timeLimitMinutes: 0, showScore: true, passMessage: "" },
+  quiz: { title: "", problems: [] as Problem[], timeLimitSeconds: 0, showScore: true, passMessage: "" },
   progressionName: "",
   position: 0,
   totalSteps: 0,

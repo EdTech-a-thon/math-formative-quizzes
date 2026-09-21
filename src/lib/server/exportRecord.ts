@@ -1,10 +1,14 @@
 import { isShade, type ShadeId } from "$lib/shades";
 import { readProblems, type Problem } from "$lib/quizProblems";
+import { MAX_TIME_LIMIT_SECONDS, resolveTimeLimitSeconds } from "$lib/timeLimit";
 
 // The shape of the pdfcx record this app writes and reads. Keeping both
 // directions in one file is what stops an export and an import drifting apart.
 export type QuizRecord = {
   title: string;
+  timeLimitSeconds: number;
+  // Kept beside the seconds so a file written here still imports into a copy of
+  // the app old enough to read only minutes.
   timeLimitMinutes: number;
   showScore: boolean;
   passMessage: string;
@@ -56,9 +60,14 @@ export function readQuizRecord(value: unknown): QuizRecord | null {
   const raw = value as Record<string, unknown>;
   const problems = readProblems(raw.problems).slice(0, MAX_QUESTIONS);
   if (!problems.length) return null;
+  // A file that mentions no limit at all gets two minutes rather than arriving
+  // untimed; a file that says zero seconds meant it.
+  const statesLimit = raw.timeLimitSeconds !== undefined || raw.timeLimitMinutes !== undefined;
+  const seconds = statesLimit ? Math.min(MAX_TIME_LIMIT_SECONDS, resolveTimeLimitSeconds(raw)) : 120;
   return {
     title: text(raw.title, "Untitled quiz", 120),
-    timeLimitMinutes: Math.min(60, Math.max(1, Math.round(Number(raw.timeLimitMinutes)) || 2)),
+    timeLimitSeconds: seconds,
+    timeLimitMinutes: seconds > 0 ? Math.max(1, Math.round(seconds / 60)) : 0,
     showScore: raw.showScore !== false,
     passMessage: text(raw.passMessage, "Great work! You finished this quiz.", 120),
     icon: iconOf(raw.icon),
