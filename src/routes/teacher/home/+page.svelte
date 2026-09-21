@@ -10,7 +10,7 @@
 
   async function deleteClass(classRoom: ClassCard) {
     openMenu = null;
-    const warning = `Delete "${classRoom.name}"? This permanently removes the class along with its ${classRoom.studentCount} student${classRoom.studentCount === 1 ? "" : "s"}, quizzes, and progressions. This cannot be undone.`;
+    const warning = `Delete "${classRoom.name}"? This permanently removes the class along with its ${classRoom.studentCount} student${classRoom.studentCount === 1 ? "" : "s"} and progressions. This cannot be undone. Your quizzes are not tied to this class, so they will stay untouched and still usable in your other classes.`;
     if (!confirm(warning)) return;
     deletingId = classRoom.id;
     try {

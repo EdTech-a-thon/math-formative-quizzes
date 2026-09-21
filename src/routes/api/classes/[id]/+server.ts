@@ -1,10 +1,12 @@
 import { json } from "@sveltejs/kit";
 import { pocketBaseError, teacherPocketBaseRequest } from "$lib/server/pocketbase";
 
-// Deleting a class cascades to its students, quizzes, progressions, steps,
+// Deleting a class cascades to its students, progressions, steps,
 // enrollments, and attempts (all their `class`/parent relations use
-// cascadeDelete). PocketBase's collection rule ensures only the owning teacher
-// can delete their own class.
+// cascadeDelete). Quizzes belong to the teacher, not the class, so they are
+// never touched by this — they stay available to the teacher's other
+// classes. PocketBase's collection rule ensures only the owning teacher can
+// delete their own class.
 export async function DELETE({ params, cookies }) {
   try {
     await teacherPocketBaseRequest(
