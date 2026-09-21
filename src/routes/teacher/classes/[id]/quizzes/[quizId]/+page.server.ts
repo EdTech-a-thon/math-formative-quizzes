@@ -9,7 +9,7 @@ export async function load({ cookies, params }) {
   );
   if (response.status === 404) error(404, "Quiz not found.");
   if (!response.ok) error(500, "We could not load this quiz.");
-  const quiz = await response.json();
-  if (quiz.class !== params.id) error(404, "Quiz not found.");
-  return { quiz };
+  // A quiz is the teacher's, not the class's, so PocketBase's access rules are
+  // the whole ownership check: another teacher's quiz comes back as a 404.
+  return { quiz: await response.json() };
 }

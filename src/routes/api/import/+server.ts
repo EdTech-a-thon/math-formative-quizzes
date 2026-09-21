@@ -8,8 +8,11 @@ const MAX_ITEMS = 200;
 // Takes the items the dialog had selected. The browser has already been shown
 // these records, but they are re-read here rather than trusted — it is not the
 // authority on what is valid to store.
-export async function POST({ request, cookies }) {
+export async function POST({ request, cookies, locals }) {
   const authorization = teacherAuthorization(cookies);
+  // Imported quizzes belong to the teacher; only the learning path they arrive
+  // in belongs to the class being imported into.
+  const teacherId = locals.teacher?.id ?? "";
 
   const body = await request.json().catch(() => ({}));
   const classId = String(body.class ?? "").trim();
@@ -27,7 +30,7 @@ export async function POST({ request, cookies }) {
         const progression = readProgressionRecord(entry.progression);
         if (!progression) continue;
 
-        await saveProgression(authorization, classId, progression, {
+        await saveProgression(authorization, { teacherId, classId }, progression, {
           quiz: () => quizzes++,
           progression: () => progressions++,
         });
@@ -36,7 +39,7 @@ export async function POST({ request, cookies }) {
 
       const quiz = readQuizRecord(entry.quiz);
       if (!quiz) continue;
-      await saveQuiz(authorization, classId, quiz);
+      await saveQuiz(authorization, teacherId, quiz);
       quizzes += 1;
     }
 

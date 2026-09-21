@@ -18,7 +18,9 @@ export async function load({ cookies, params }) {
   if (!studentResponse.ok || !attemptResponse.ok) error(500, "We could not load this attempt.");
   const student = await studentResponse.json();
   const attempt = await attemptResponse.json();
-  if (student.class !== params.id || attempt.student !== params.studentId || attempt.expand?.quiz?.class !== params.id) error(404, "Attempt not found.");
+  // The student pins the attempt to this class. The quiz no longer belongs to a
+  // class — it is the teacher's, and may be used by several of her classes.
+  if (student.class !== params.id || attempt.student !== params.studentId) error(404, "Attempt not found.");
 
   const quiz = attempt.expand?.quiz?.data ?? {};
   const responses = (Array.isArray(attempt.responses) ? attempt.responses : []) as Response[];

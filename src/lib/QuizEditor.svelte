@@ -396,7 +396,7 @@
     try {
       const response = editing
         ? await fetch(`/api/quizzes/${quiz?.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data }) })
-        : await fetch("/api/quizzes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ class: classId, data }) });
+        : await fetch("/api/quizzes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message);
       clearTimeout(draftTimer);

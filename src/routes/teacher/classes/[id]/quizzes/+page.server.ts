@@ -2,7 +2,7 @@ import { error } from "@sveltejs/kit";
 
 import { pocketBaseUrl, teacherAuthorization } from "$lib/server/pocketbase";
 
-type Quiz = { id: string; class: string; data: { title: string; icon?: string } };
+type Quiz = { id: string; teacher: string; data: { title: string; icon?: string } };
 type Step = { quiz: string; progression: string; position: number };
 type Progression = { id: string; class: string; name: string; operation?: string; icon?: string; shade?: string };
 
@@ -15,7 +15,9 @@ export async function load({ cookies, params }) {
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=500`, { headers }),
   ]);
   if (!quizzesResponse.ok) error(500, "We could not load this class's quizzes.");
-  const quizzes: Quiz[] = (await quizzesResponse.json()).items.filter((quiz: Quiz) => quiz.class === params.id);
+  // Quizzes belong to the teacher, so PocketBase's access rules already narrow
+  // this to hers and there is nothing left to filter by class.
+  const quizzes: Quiz[] = (await quizzesResponse.json()).items;
   const steps: Step[] = stepsResponse.ok ? (await stepsResponse.json()).items : [];
   const attempts = attemptsResponse.ok ? (await attemptsResponse.json()).items : [];
   const progressions: Progression[] = progressionsResponse.ok

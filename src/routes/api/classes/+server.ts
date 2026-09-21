@@ -73,7 +73,11 @@ export async function POST({ request, cookies }) {
     const authorization = teacherAuthorization(cookies);
     for (const path of new Set(selectedPaths)) {
       if (isStarterPath(path)) {
-        await saveProgression(authorization, classRoom.id, { ...starterProgression(path), selfPaced });
+        await saveProgression(
+          authorization,
+          { teacherId: teacher.record.id, classId: classRoom.id },
+          { ...starterProgression(path), selfPaced },
+        );
       }
     }
   } catch (caught) {

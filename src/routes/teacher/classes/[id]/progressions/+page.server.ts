@@ -15,7 +15,9 @@ export async function load({ cookies, params }) {
   const progressions = await progressionsResponse.json();
   const steps = await stepsResponse.json();
   const enrollmentItems = enrollmentsResponse.ok ? (await enrollmentsResponse.json()).items : [];
-  const classQuizzes = quizzes.items.filter((quiz: { class: string }) => quiz.class === params.id);
+  // Quizzes are the teacher's, so the access rules have already narrowed these
+  // to hers; only the learning paths below are still per class.
+  const teacherQuizzes = quizzes.items;
 
   // How many students are assigned to each progression.
   const studentCount: Record<string, number> = {};
@@ -38,7 +40,7 @@ export async function load({ cookies, params }) {
     }));
   const progressionIds = new Set(classProgressions.map((progression: { id: string }) => progression.id));
   return {
-    quizzes: classQuizzes,
+    quizzes: teacherQuizzes,
     progressions: classProgressions,
     steps: steps.items.filter((step: { progression: string }) => progressionIds.has(step.progression)),
   };

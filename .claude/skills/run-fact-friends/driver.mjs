@@ -7,7 +7,12 @@
 //   seed                       Build a whole fixture: teacher, class, quiz,
 //                              progression, student, released attempt.
 //                              Writes .claude/skills/run-fact-friends/.fixture.json
-//   smoke                      seed, then walk both import paths and sit a quiz.
+//   smoke                      seed, then walk both import paths, sit a quiz,
+//                              and run the three scenarios below.
+//   ownership                  A second teacher sees none of the first
+//                              teacher's quizzes and cannot open one by id.
+//   quiz-lifecycle             Create, edit, export and delete one quiz.
+//   student-records            A student's place and attempt history still read.
 //   release                    Release another attempt for the seeded student.
 //   shot <path> [name]         Screenshot any page signed in as the teacher.
 //   student-shot <path|quiz> [name]
@@ -85,7 +90,10 @@ async function seed() {
   await page.goto(`${BASE}/teacher/classes/new`, { waitUntil: "networkidle" });
   await page.fill("#class-name", "Driver Test Class");
   await page.locator("button.create-class").click();
-  await page.waitForURL(/\/teacher\/(home|classes)/, { timeout: 20000 });
+  // Wait to leave the setup page itself: matching "/teacher/classes" alone
+  // matches the page the click started on, so the id gets read before the class
+  // has been created.
+  await page.waitForURL((u) => !u.pathname.endsWith("/classes/new"), { timeout: 60000 });
   await page.goto(`${BASE}/teacher/home`, { waitUntil: "networkidle" });
   const hrefs = await page.locator('a[href*="/teacher/classes/"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")));
   const classId = hrefs.map((h) => h.match(/classes\/([^/?]+)/)[1]).find((id) => id !== "new");
@@ -175,6 +183,167 @@ async function studentQuiz(b, fx) {
   return s;
 }
 
+// --- Quiz ownership -------------------------------------------------------
+//
+// A quiz belongs to the teacher, not to a class, so one quiz can be used by the
+// learning paths of several of her classes. The regression that buys is one
+// teacher's quizzes leaking into another teacher's list: ordinary use never
+// shows it, because a teacher only ever signs in as herself. `ownership` signs
+// in as a second teacher on purpose and asserts she sees none of the first
+// teacher's quizzes and cannot open one by id.
+
+const results = [];
+function check(label, pass, detail = "") {
+  results.push({ label, pass });
+  log(`${pass ? "PASS" : "FAIL"} ${label}${detail ? ` — ${detail}` : ""}`);
+}
+
+// Signs up a throwaway teacher in her own browser context, the same way `seed`
+// does, but without touching the shared fixture files.
+async function signUpTeacher(b, name) {
+  const ctx = await b.newContext({ viewport: { width: 1400, height: 950 } });
+  const page = watch(await ctx.newPage(), name);
+  const email = `t${Date.now()}x${Math.floor(Math.random() * 10000)}@example.org`;
+  await page.goto(`${BASE}/teacher`, { waitUntil: "networkidle" });
+  await page.locator(".tabs button", { hasText: "Create account" }).click();
+  await page.fill("#name", name);
+  await page.fill("#email", email);
+  await page.fill("#password", "password12345");
+  await page.locator("form button[type=submit]").click();
+  await page.waitForURL((u) => !u.pathname.endsWith("/teacher"), { timeout: 20000 });
+  return { page, email };
+}
+
+// Creating a class redirects to /teacher/home, so the id is read off the class
+// links there — and "new" is one of those links.
+async function createClass(page, className, starterPath) {
+  await page.goto(`${BASE}/teacher/classes/new`, { waitUntil: "networkidle" });
+  await page.fill("#class-name", className);
+  // One ready-made path is already ticked when the page opens, so clicking it
+  // would turn it off.
+  const starter = page.locator(`button.starter-path.op-${starterPath}`);
+  if (starterPath && (await starter.getAttribute("aria-pressed")) !== "true") await starter.click();
+  await page.locator("button.create-class").click();
+  await page.waitForURL((u) => !u.pathname.endsWith("/classes/new"), { timeout: 60000 });
+  await page.goto(`${BASE}/teacher/home`, { waitUntil: "networkidle" });
+  const hrefs = await page.locator('a[href*="/teacher/classes/"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+  const ids = hrefs.map((h) => h.match(/classes\/([^/?]+)/)[1]).filter((id) => id !== "new");
+  return ids[ids.length - 1];
+}
+
+async function listedQuizzes(page, classId) {
+  await page.goto(`${BASE}/teacher/classes/${classId}/quizzes`, { waitUntil: "networkidle" });
+  const hrefs = await page.locator('a[href*="/quizzes/"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+  const ids = hrefs.map((h) => h.match(/\/quizzes\/([^/?#]+)/)?.[1]).filter((id) => id && id !== "new");
+  return { ids: [...new Set(ids)], text: await page.locator("body").innerText() };
+}
+
+async function ownership() {
+  const fx = existsSync(FIXTURE) ? fixture() : await seed();
+  const b = await browser();
+  const hers = await teacherPage(b);
+
+  // 1. The first teacher still sees her own quizzes, in both places she reads
+  //    them from: the quizzes page and her learning path.
+  const mine = await listedQuizzes(hers, fx.classId);
+  check("first teacher sees her own quizzes on the quizzes page", mine.ids.length > 0, `${mine.ids.length} listed`);
+  check("her quiz is named in the list", mine.text.includes("Imported sevens drill"));
+  await hers.goto(`${BASE}/teacher/classes/${fx.classId}/progressions`, { waitUntil: "networkidle" });
+  const pathHref = await hers.locator('a[href*="/progressions/"]').first().getAttribute("href");
+  await hers.goto(`${BASE}${pathHref}`, { waitUntil: "networkidle" });
+  check("her learning path still lists its quiz", (await hers.locator("body").innerText()).includes("Imported sevens drill"));
+
+  // 2. A second teacher, signed in separately. Her class is built from a
+  //    ready-made path, which also proves that route still works.
+  const other = await signUpTeacher(b, "Second Teacher");
+  const otherClassId = await createClass(other.page, "Second Teacher Class", "multiplication");
+  const theirs = await listedQuizzes(other.page, otherClassId);
+  check("a class from a ready-made path arrives with its quizzes", theirs.ids.length > 0, `${theirs.ids.length} listed`);
+
+  // 3. The assertion this whole migration turns on.
+  const leaked = theirs.ids.filter((id) => mine.ids.includes(id));
+  check("second teacher sees none of the first teacher's quizzes", leaked.length === 0, leaked.length ? `leaked ${leaked.join(",")}` : "no overlap");
+  check("second teacher's list does not name the first teacher's quiz", !theirs.text.includes("Imported sevens drill"));
+
+  // Both teachers ask for the same quiz id down the same route, so the 404
+  // below means the access rule turned it away rather than the id being dead.
+  const ownerById = await hers.goto(`${BASE}/teacher/classes/${fx.classId}/quizzes/${mine.ids[0]}`, { waitUntil: "networkidle" });
+  check("the quiz opens for the teacher who owns it", ownerById.status() === 200, `status ${ownerById.status()}`);
+  const byId = await other.page.goto(`${BASE}/teacher/classes/${otherClassId}/quizzes/${mine.ids[0]}`, { waitUntil: "networkidle" });
+  check("second teacher cannot open the first teacher's quiz by id", byId.status() === 404, `status ${byId.status()}`);
+
+  await b.close();
+}
+
+// Create, edit, export and delete one quiz, end to end. Importing is covered by
+// `smoke` itself.
+async function quizLifecycle() {
+  const fx = existsSync(FIXTURE) ? fixture() : await seed();
+  const b = await browser();
+  const page = await teacherPage(b);
+
+  await page.goto(`${BASE}/teacher/classes/${fx.classId}/quizzes/new`, { waitUntil: "networkidle" });
+  await page.locator("input.bar-title").fill("Lifecycle quiz");
+  // The add control is a big empty-state button until the first question exists.
+  await page.locator("button.sheet-empty, li.sheet-add button").first().click();
+  await page.waitForTimeout(500);
+  const operands = page.locator("input.sheet-operand");
+  await operands.nth(0).fill("6");
+  await operands.nth(1).fill("7");
+  await page.locator("button.editor-save").click();
+  await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
+  let listed = await listedQuizzes(page, fx.classId);
+  check("a new quiz is saved and listed", listed.text.includes("Lifecycle quiz"));
+
+  // Edit it: open the quiz the list just gained and rename it.
+  const editHref = await page.locator('a[href*="/quizzes/"]', { hasText: "Lifecycle quiz" }).first().getAttribute("href");
+  const quizId = editHref.match(/\/quizzes\/([^/?#]+)/)[1];
+  await page.goto(`${BASE}${editHref}`, { waitUntil: "networkidle" });
+  await page.locator("input.bar-title").fill("Lifecycle quiz edited");
+  await page.locator("button.editor-save").click();
+  await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
+  listed = await listedQuizzes(page, fx.classId);
+  check("editing a quiz saves the new title", listed.text.includes("Lifecycle quiz edited"));
+
+  // Export: the PDF endpoint is what the Export button points at.
+  const pdf = await page.request.get(`${BASE}/api/quizzes/${quizId}/pdf`);
+  check("exporting a quiz returns a PDF", pdf.ok() && (await pdf.body()).slice(0, 4).toString() === "%PDF", `status ${pdf.status()}`);
+
+  const deleted = await page.request.delete(`${BASE}/api/quizzes/${quizId}`);
+  listed = await listedQuizzes(page, fx.classId);
+  check("deleting a quiz removes it from the list", deleted.ok() && !listed.text.includes("Lifecycle quiz edited"), `status ${deleted.status()}`);
+
+  await b.close();
+}
+
+// A student's place on her path and her finished attempts are the teacher's
+// records too, and both are read through the quiz. Neither should have moved.
+async function studentRecords() {
+  const fx = existsSync(FIXTURE) ? fixture() : await seed();
+  const b = await browser();
+
+  const sctx = await b.newContext({ viewport: { width: 1100, height: 900 } });
+  const s = watch(await sctx.newPage(), "student");
+  await s.goto(`${BASE}/join/${fx.code}`, { waitUntil: "networkidle" });
+  await s.locator('input[type="text"], input:not([type])').first().fill(fx.student);
+  await s.locator("form button[type=submit]").first().click();
+  await s.waitForTimeout(2000);
+  const home = await s.locator("body").innerText();
+  check("the student still has a place on her path", /step \d+ of \d+/.test(home), home.match(/step \d+ of \d+/)?.[0] ?? "no place shown");
+  check("the student still has her finished quizzes", (await s.locator(".history-list a, .history-list > *").count()) > 0);
+
+  // The same attempt, read from the teacher's side.
+  const page = await teacherPage(b);
+  await page.goto(`${BASE}/teacher/classes/${fx.classId}`, { waitUntil: "networkidle" });
+  const studentHref = await page.locator('a[href*="/students/"]').first().getAttribute("href");
+  await page.goto(`${BASE}${studentHref}`, { waitUntil: "networkidle" });
+  const attemptHref = await page.locator("a.teacher-attempt-row").first().getAttribute("href");
+  const review = await page.goto(`${BASE}${attemptHref}`, { waitUntil: "networkidle" });
+  check("the teacher can still open a recorded attempt", review.status() === 200 && (await page.locator(".problem-review-list").count()) > 0, `status ${review.status()}`);
+
+  await b.close();
+}
+
 async function smoke() {
   const fx = existsSync(FIXTURE) ? fixture() : await seed();
   const b = await browser();
@@ -231,10 +400,15 @@ async function smoke() {
   await box.type("q7");
   log("caret 45 + Home + q7 ->", JSON.stringify(await box.inputValue()), "(expect 745)");
 
+  // Every box needs a digit or Hand in stays disabled, and the released quiz is
+  // not always the three-question one the driver imported — a class is set up
+  // with a ready-made path by default.
   const boxes = s.locator(".quiz-answer");
+  const boxCount = await boxes.count();
   await boxes.nth(0).fill(""); await boxes.nth(0).type("7");
-  await boxes.nth(1).type("1x4");
-  await boxes.nth(2).type("9z");
+  if (boxCount > 1) await boxes.nth(1).type("1x4");
+  if (boxCount > 2) await boxes.nth(2).type("9z");
+  for (let i = 3; i < boxCount; i++) await boxes.nth(i).fill("0");
   await s.screenshot({ path: join(SHOTS, "student-quiz.png"), fullPage: true });
   await s.locator("button.hand-in").click();
   await s.waitForSelector(".quiz-results", { timeout: 15000 });
@@ -243,6 +417,26 @@ async function smoke() {
 
   log(`\nshots in ${SHOTS}`);
   await b.close();
+
+  // Quizzes belong to the teacher, so these three scenarios assert what a
+  // second teacher cannot see, and that nothing a teacher or student already
+  // had has moved.
+  log("\n-- quiz ownership --");
+  await ownership();
+  log("\n-- quiz lifecycle --");
+  await quizLifecycle();
+  log("\n-- student records --");
+  await studentRecords();
+  summarise();
+}
+
+function summarise() {
+  const failed = results.filter((result) => !result.pass);
+  log(`\n${results.length - failed.length}/${results.length} checks passed`);
+  if (failed.length) {
+    for (const result of failed) log(`  FAILED: ${result.label}`);
+    process.exitCode = 1;
+  }
 }
 
 async function shot(path, name = "shot", asStudent = false) {
@@ -262,10 +456,13 @@ async function shot(path, name = "shot", asStudent = false) {
 const [cmd, ...args] = process.argv.slice(2);
 if (cmd === "seed") await seed();
 else if (cmd === "smoke") await smoke();
+else if (cmd === "ownership") { await ownership(); summarise(); }
+else if (cmd === "quiz-lifecycle") { await quizLifecycle(); summarise(); }
+else if (cmd === "student-records") { await studentRecords(); summarise(); }
 else if (cmd === "release") await release();
 else if (cmd === "shot") await shot(args[0] ?? "/", args[1]);
 else if (cmd === "student-shot") await shot(args[0] ?? "quiz", args[1] ?? "student", true);
 else {
-  log("commands: seed | smoke | release | shot <path> [name] | student-shot <path|quiz> [name]");
+  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | release | shot <path> [name] | student-shot <path|quiz> [name]");
   process.exit(1);
 }

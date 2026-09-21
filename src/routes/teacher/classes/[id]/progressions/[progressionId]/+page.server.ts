@@ -22,7 +22,9 @@ export async function load({ cookies, params }) {
   if (!stepsResponse.ok) error(500, "We could not load this progression's steps.");
   if (!enrollmentsResponse.ok) error(500, "We could not load student progress.");
 
-  const quizzes = (await quizzesResponse.json()).items.filter((quiz: { class: string }) => quiz.class === params.id);
+  // Quizzes belong to the teacher, so a step can point at one she built in
+  // another class; the access rules keep the list to hers.
+  const quizzes = (await quizzesResponse.json()).items;
   const steps: Step[] = (await stepsResponse.json()).items.sort((a: Step, b: Step) => a.position - b.position);
   const quizById = new Map(quizzes.map((quiz: { id: string }) => [quiz.id, quiz]));
   const enrollmentItems = enrollmentsResponse.ok ? (await enrollmentsResponse.json()).items : [];

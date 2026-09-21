@@ -10,14 +10,18 @@ function request<T>(authorization: string, path: string, init: RequestInit, erro
   });
 }
 
-async function saveQuiz(authorization: string, classId: string, quiz: QuizRecord): Promise<string> {
+// A quiz belongs to the teacher and a learning path belongs to one of her
+// classes, so saving a path needs both owners.
+export type PathOwner = { teacherId: string; classId: string };
+
+async function saveQuiz(authorization: string, teacherId: string, quiz: QuizRecord): Promise<string> {
   const saved = await request<{ id: string }>(
     authorization,
     "/api/collections/quizzes/records",
     {
       method: "POST",
       body: JSON.stringify({
-        class: classId,
+        teacher: teacherId,
         data: {
           title: quiz.title,
           problems: quiz.problems,
@@ -33,10 +37,10 @@ async function saveQuiz(authorization: string, classId: string, quiz: QuizRecord
   return saved.id;
 }
 
-export async function saveProgression(authorization: string, classId: string, progression: ProgressionRecord, onSaved?: { quiz?: () => void; progression?: () => void }): Promise<number> {
+export async function saveProgression(authorization: string, owner: PathOwner, progression: ProgressionRecord, onSaved?: { quiz?: () => void; progression?: () => void }): Promise<number> {
   const quizIds: string[] = [];
   for (const quiz of progression.quizzes) {
-    quizIds.push(await saveQuiz(authorization, classId, quiz));
+    quizIds.push(await saveQuiz(authorization, owner.teacherId, quiz));
     onSaved?.quiz?.();
   }
 
@@ -46,7 +50,7 @@ export async function saveProgression(authorization: string, classId: string, pr
     {
       method: "POST",
       body: JSON.stringify({
-        class: classId,
+        class: owner.classId,
         name: progression.name,
         description: progression.description,
         passPercentage: progression.passPercentage,
