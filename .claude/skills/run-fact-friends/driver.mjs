@@ -8,13 +8,17 @@
 //                              progression, student, released attempt.
 //                              Writes .claude/skills/run-fact-friends/.fixture.json
 //   smoke                      seed, then walk both import paths, sit a quiz,
-//                              and run the four scenarios below.
+//                              and run the six scenarios below.
 //   ownership                  A second teacher sees none of the first
 //                              teacher's quizzes and cannot open one by id.
 //   quiz-lifecycle             Create, edit, export and delete one quiz.
 //   student-records            A student's place and attempt history still read.
 //   time-limits                Seconds-based time limits, legacy quizzes
 //                              included, from the editor through to the clock.
+//   cross-class                One quiz in two classes: an edit in one reaches
+//                              the other, and sat attempts and places do not move.
+//   class-delete               Deleting a class leaves the teacher's quizzes,
+//                              and takes its path, students and attempts.
 //   release                    Release another attempt for the seeded student.
 //   shot <path> [name]         Screenshot any page signed in as the teacher.
 //   student-shot <path|quiz> [name]
@@ -218,9 +222,19 @@ async function signUpTeacher(b, name) {
   return { page, email };
 }
 
-// Creating a class redirects to /teacher/home, so the id is read off the class
-// links there — and "new" is one of those links.
+// Every class of hers, read off the links on /teacher/home — and "new" is one
+// of those links.
+async function classIds(page) {
+  await page.goto(`${BASE}/teacher/home`, { waitUntil: "networkidle" });
+  const hrefs = await page.locator('a[href*="/teacher/classes/"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+  return [...new Set(hrefs.map((h) => h.match(/classes\/([^/?]+)/)[1]).filter((id) => id !== "new"))];
+}
+
+// Creating a class redirects to /teacher/home, not to the class, so the new
+// class is found by which id is new. Position would do for a teacher's first
+// class and quietly pick the wrong one for her second.
 async function createClass(page, className, starterPath) {
+  const before = new Set(await classIds(page));
   await page.goto(`${BASE}/teacher/classes/new`, { waitUntil: "networkidle" });
   await page.fill("#class-name", className);
   // One ready-made path is already ticked when the page opens, so clicking it
@@ -229,10 +243,7 @@ async function createClass(page, className, starterPath) {
   if (starterPath && (await starter.getAttribute("aria-pressed")) !== "true") await starter.click();
   await page.locator("button.create-class").click();
   await page.waitForURL((u) => !u.pathname.endsWith("/classes/new"), { timeout: 60000 });
-  await page.goto(`${BASE}/teacher/home`, { waitUntil: "networkidle" });
-  const hrefs = await page.locator('a[href*="/teacher/classes/"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")));
-  const ids = hrefs.map((h) => h.match(/classes\/([^/?]+)/)[1]).filter((id) => id !== "new");
-  return ids[ids.length - 1];
+  return (await classIds(page)).find((id) => !before.has(id));
 }
 
 async function listedQuizzes(page, classId) {
@@ -410,6 +421,7 @@ async function resolverParity() {
 // A class with no ready-made paths, so the quiz list holds only the quizzes
 // this scenario makes. Multiplication is ticked when the page opens.
 async function createEmptyClass(page, className) {
+  const before = new Set(await classIds(page));
   await page.goto(`${BASE}/teacher/classes/new`, { waitUntil: "networkidle" });
   await page.fill("#class-name", className);
   for (const key of ["addition", "subtraction", "multiplication", "division"]) {
@@ -418,10 +430,7 @@ async function createEmptyClass(page, className) {
   }
   await page.locator("button.create-class").click();
   await page.waitForURL((u) => !u.pathname.endsWith("/classes/new"), { timeout: 60000 });
-  await page.goto(`${BASE}/teacher/home`, { waitUntil: "networkidle" });
-  const hrefs = await page.locator('a[href*="/teacher/classes/"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")));
-  const ids = hrefs.map((h) => h.match(/classes\/([^/?]+)/)[1]).filter((id) => id !== "new");
-  return ids[ids.length - 1];
+  return (await classIds(page)).find((id) => !before.has(id));
 }
 
 // Saved straight through the app's own route, so a quiz can be stored with
@@ -437,9 +446,9 @@ async function makeQuiz(page, title, settings) {
 
 // One quiz per path, so each limit can be sat on its own. Self-paced, so an
 // attempt is waiting without a release and a failed one comes back.
-async function makePath(page, classId, name, quizId) {
+async function makePath(page, classId, name, quizId, extra = {}) {
   const response = await page.request.post(`${BASE}/api/progressions`, {
-    data: { class: classId, name, quizIds: [quizId], passPercentage: 80, selfPaced: true },
+    data: { class: classId, name, quizIds: [quizId], passPercentage: 80, selfPaced: true, ...extra },
   });
   if (!response.ok()) throw new Error(`could not save "${name}": ${response.status()} ${await response.text()}`);
   return (await response.json()).id;
@@ -599,6 +608,225 @@ async function timeLimits() {
   await b.close();
 }
 
+// --- One quiz, two classes ------------------------------------------------
+//
+// The complaint the whole change comes from: "I edited the Multiply by 6 test
+// for one class, but when I click on a different class it shows the test you
+// created." A quiz is the teacher's now, so one quiz record can sit in the
+// learning paths of two of her classes and an edit reaches both. The half that
+// ordinary use hides is what must *not* move with it: an attempt a student
+// already sat keeps the questions she was sat with, and her place stays put.
+
+// One quiz's card on the quizzes page: where it says it is used, and the link
+// that opens it.
+async function quizCard(page, classId, title) {
+  await page.goto(`${BASE}/teacher/classes/${classId}/quizzes`, { waitUntil: "networkidle" });
+  const card = page.locator(".library-card", { hasText: title }).first();
+  return {
+    tags: (await card.locator(".card-memberships").innerText()).replace(/\s*\n+\s*/g, " | ").trim(),
+    href: await card.getAttribute("href"),
+  };
+}
+
+// The student's place on her path, in her own words on her home page.
+async function studentPlace(student) {
+  await student.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  return (await student.locator("body").innerText()).match(/step \d+ of \d+/)?.[0] ?? "no place shown";
+}
+
+async function crossClass() {
+  const b = await browser();
+  const { page } = await signUpTeacher(b, "Sharing Teacher");
+  const period1 = await createEmptyClass(page, "Period 1 Sharing");
+  const period2 = await createEmptyClass(page, "Period 2 Sharing");
+
+  // One quiz, used by a learning path in each class. Untimed, so no clock can
+  // hand a student's attempt in mid-run; answers shown, so she can open her
+  // finished attempt again afterwards.
+  const shared = await makeQuiz(page, "Multiply by 6", { timeLimitSeconds: 0 });
+  const path1 = await makePath(page, period1, "Period 1 sixes", shared, { showAnswers: true });
+  const path2 = await makePath(page, period2, "Period 2 sixes", shared, { showAnswers: true });
+
+  // A quiz built in the editor while standing in Period 1, which no path uses.
+  await page.goto(`${BASE}/teacher/classes/${period1}/quizzes/new`, { waitUntil: "networkidle" });
+  await page.locator("input.bar-title").fill("Spare sevens drill");
+  await page.locator("button.sheet-empty, li.sheet-add button").first().click();
+  await page.waitForTimeout(500);
+  await page.locator("input.sheet-operand").nth(0).fill("7");
+  await page.locator("input.sheet-operand").nth(1).fill("3");
+  await page.locator("button.editor-save").click();
+  await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
+
+  // A student in Period 1 sits the shared quiz *before* it is edited. Two of
+  // three right is under the 80% pass mark, so she stays on the step she is on.
+  const code = await teacherClassCode(page, period1);
+  const ada = await joinAsStudent(b, code, "Ada Sharing");
+  await page.goto(`${BASE}/teacher/classes/${period1}`, { waitUntil: "networkidle" });
+  const adaId = (await page.locator("a.student-detail-link", { hasText: "Ada Sharing" }).first().getAttribute("href")).match(/\/students\/([^/?#]+)/)[1];
+  const assigned = await page.request.post(`${BASE}/api/enrollments/bulk`, { data: { students: [adaId], progressions: [path1] } });
+  if (!assigned.ok()) throw new Error(`could not assign: ${assigned.status()} ${await assigned.text()}`);
+
+  await ada.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  await ada.locator("article.assigned-card", { hasText: "Multiply by 6" }).locator("a.start-quiz").click();
+  await ada.waitForSelector(".quiz-answer", { timeout: 15000 });
+  const boxes = ada.locator(".quiz-answer");
+  const given = ["999", "30", "56"]; // 3 × 4 wrong on purpose, 5 × 6 and 7 × 8 right
+  for (let index = 0; index < given.length; index++) await boxes.nth(index).fill(given[index]);
+  await ada.locator("button.hand-in").click();
+  await ada.waitForSelector(".quiz-results", { timeout: 15000 });
+  const placeBefore = await studentPlace(ada);
+
+  // ---- What the quizzes page says, standing in the *other* class ----
+  const sharedCard = await quizCard(page, period2, "Multiply by 6");
+  check("a quiz used by another class's path is listed here too", Boolean(sharedCard.href), sharedCard.href ?? "no card");
+  const named = ["Period 1 sixes", "Period 1 Sharing", "Period 2 sixes", "Period 2 Sharing"];
+  check("its tags name both paths and both classes using it", named.every((text) => sharedCard.tags.includes(text)), sharedCard.tags);
+  const spareCard = await quizCard(page, period2, "Spare sevens drill");
+  check("a quiz no path uses is still listed", spareCard.tags.includes("Not in a progression"), spareCard.tags);
+  await page.screenshot({ path: join(SHOTS, "shared-quiz-list.png"), fullPage: true });
+
+  // ---- What the editor says before anything is edited ----
+  await page.goto(`${BASE}/teacher/classes/${period1}/quizzes/${shared}`, { waitUntil: "networkidle" });
+  const reach = (await page.locator(".bar-reach").innerText()).trim();
+  check("the editor says how far an edit reaches before it is made", reach.startsWith("Used in 2 classes"), `"${reach}" (expect Used in 2 classes…)`);
+  await page.screenshot({ path: join(SHOTS, "shared-quiz-reach.png") });
+  const spareId = spareCard.href.match(/\/quizzes\/([^/?#]+)/)[1];
+  await page.goto(`${BASE}/teacher/classes/${period1}/quizzes/${spareId}`, { waitUntil: "networkidle" });
+  const spareReach = (await page.locator(".bar-reach").innerText()).trim();
+  check("a quiz no class uses says so in its editor", spareReach === "Not used by a class yet", `"${spareReach}"`);
+
+  // ---- The edit, made from Period 1 ----
+  await page.goto(`${BASE}/teacher/classes/${period1}/quizzes/${shared}`, { waitUntil: "networkidle" });
+  await page.locator("input.bar-title").fill("Sixes fixed in Period 1");
+  await page.locator("input.sheet-operand").nth(0).fill("6");
+  await page.locator("input.sheet-operand").nth(1).fill("6");
+  await page.locator("button.editor-save").click();
+  await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
+
+  // ---- The payoff: Period 2 has the edit, without being touched ----
+  const otherPath = await page.goto(`${BASE}/teacher/classes/${period2}/progressions/${path2}`, { waitUntil: "networkidle" });
+  const otherPathText = (await page.locator(".progression-step-list").innerText()).replace(/\s*\n+\s*/g, " | ");
+  check("the other class's path opens", otherPath.status() === 200, `status ${otherPath.status()}`);
+  check("the other class's path shows the edited quiz", otherPathText.includes("Sixes fixed in Period 1"), otherPathText.slice(0, 160));
+  check("and no longer shows the version she started with", !otherPathText.includes("Multiply by 6"), otherPathText.slice(0, 160));
+  await page.screenshot({ path: join(SHOTS, "shared-quiz-other-class.png"), fullPage: true });
+  const editedCard = await quizCard(page, period2, "Sixes fixed in Period 1");
+  check("and the quizzes page in that class agrees", editedCard.tags.includes("Period 2 sixes"), editedCard.tags);
+
+  // ---- What the edit must not reach ----
+  await page.goto(`${BASE}/teacher/classes/${period1}/students/${adaId}`, { waitUntil: "networkidle" });
+  const attemptHref = await page.locator("a.teacher-attempt-row").first().getAttribute("href");
+  await page.goto(`${BASE}${attemptHref}`, { waitUntil: "networkidle" });
+  const reviewed = (await page.locator(".problem-review-list").innerText()).replace(/\s+/g, " ");
+  check("the recorded attempt still shows the questions she was given", reviewed.includes("3 × 4") && !reviewed.includes("6 × 6"), reviewed.slice(0, 140));
+
+  await ada.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  await ada.locator(".history-list a").first().click();
+  await ada.waitForSelector(".student-answer-list", { timeout: 15000 });
+  const herReview = (await ada.locator(".student-answer-list").innerText()).replace(/\s+/g, " ");
+  check("and the student reviewing it sees her original questions", herReview.includes("3 × 4") && !herReview.includes("6 × 6"), herReview.slice(0, 140));
+  await ada.screenshot({ path: join(SHOTS, "shared-quiz-student-review.png"), fullPage: true });
+  const placeAfter = await studentPlace(ada);
+  check("her place on her path has not moved", placeAfter === placeBefore && placeAfter !== "no place shown", `${placeBefore} -> ${placeAfter}`);
+
+  // ---- A path in one class adding a quiz built in the other ----
+  await page.goto(`${BASE}/teacher/classes/${period2}/progressions/new`, { waitUntil: "networkidle" });
+  const offered = await page.getByRole("button", { name: /Spare sevens drill/ }).count();
+  check("a new path is offered a quiz built in another class", offered > 0, `${offered} offered`);
+  await page.locator('input[placeholder="Untitled path"]').fill("Period 2 spares");
+  await page.getByRole("button", { name: /Spare sevens drill/ }).first().click();
+  await page.getByRole("button", { name: "Save progression" }).click();
+  await page.waitForTimeout(2500);
+  const spareNow = await quizCard(page, period2, "Spare sevens drill");
+  check("and adding it tags the quiz with that class and path", spareNow.tags.includes("Period 2 spares") && spareNow.tags.includes("Period 2 Sharing"), spareNow.tags);
+
+  log(`\nshots in ${SHOTS}`);
+  await b.close();
+}
+
+// --- Deleting a class -----------------------------------------------------
+//
+// Deleting a class used to take its quizzes with it, because they belonged to
+// the class. They are the teacher's now, so the class's path, students and
+// attempts go and her quizzes stay — including one she renamed, which she must
+// still be able to open, edit, and add to a path in the class she kept.
+
+async function classDelete() {
+  const b = await browser();
+  const { page } = await signUpTeacher(b, "Tidying Teacher");
+  const gone = await createClass(page, "Autumn Period 1", "multiplication");
+  const kept = await createClass(page, "Autumn Period 2", "multiplication");
+
+  // The first quiz on the doomed class's ready-made path, renamed so it can be
+  // told apart from the other class's own copy of it.
+  await page.goto(`${BASE}/teacher/classes/${gone}/progressions`, { waitUntil: "networkidle" });
+  const pathId = (await page.locator("a.progression-card-link").first().getAttribute("href")).match(/\/progressions\/([^/?#]+)/)[1];
+  await page.goto(`${BASE}/teacher/classes/${gone}/progressions/${pathId}`, { waitUntil: "networkidle" });
+  const quizId = (await page.locator("a.step-quiz-link").first().getAttribute("href")).match(/\/quizzes\/([^/?#]+)/)[1];
+  await page.goto(`${BASE}/teacher/classes/${gone}/quizzes/${quizId}`, { waitUntil: "networkidle" });
+  await page.locator("input.bar-title").fill("Renamed before the class went");
+  await page.locator("button.editor-save").click();
+  await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
+
+  // A student in the doomed class, who sits the renamed quiz. A ready-made
+  // path waits for the teacher, so the attempt has to be released.
+  const code = await teacherClassCode(page, gone);
+  const sam = await joinAsStudent(b, code, "Sam Leaving");
+  await page.goto(`${BASE}/teacher/classes/${gone}`, { waitUntil: "networkidle" });
+  const samId = (await page.locator("a.student-detail-link", { hasText: "Sam Leaving" }).first().getAttribute("href")).match(/\/students\/([^/?#]+)/)[1];
+  const assigned = await page.request.post(`${BASE}/api/enrollments/bulk`, { data: { students: [samId], progressions: [pathId] } });
+  if (!assigned.ok()) throw new Error(`could not assign: ${assigned.status()} ${await assigned.text()}`);
+  await page.goto(`${BASE}/teacher/classes/${gone}/progressions`, { waitUntil: "networkidle" });
+  const releaseButton = page.getByRole("button", { name: /Release \d+/ });
+  if (await releaseButton.count()) { await releaseButton.first().click(); await page.waitForTimeout(2500); }
+
+  await sam.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  await sam.locator("a.start-quiz").first().click();
+  await sam.waitForSelector(".quiz-answer", { timeout: 15000 });
+  const boxes = sam.locator(".quiz-answer");
+  const boxCount = await boxes.count();
+  for (let index = 0; index < boxCount; index++) await boxes.nth(index).fill("4");
+  await sam.locator("button.hand-in").click();
+  await sam.waitForSelector(".quiz-results", { timeout: 20000 });
+
+  // ---- Delete the class ----
+  const removed = await page.request.delete(`${BASE}/api/classes/${gone}`);
+  check("the class is deleted", removed.ok(), `status ${removed.status()}`);
+
+  const ids = await classIds(page);
+  const home = (await page.locator("body").innerText()).replace(/\s*\n+\s*/g, " | ");
+  check("the deleted class is gone from the home page", !ids.includes(gone) && !home.includes("Autumn Period 1"), home.slice(0, 160));
+  check("the class she kept is still there", ids.includes(kept) && home.includes("Autumn Period 2"), home.slice(0, 160));
+  const deadPath = await page.goto(`${BASE}/teacher/classes/${gone}/progressions/${pathId}`, { waitUntil: "networkidle" });
+  check("the deleted class's path is gone with it", deadPath.status() === 404, `status ${deadPath.status()}`);
+  const keptQuizzes = await page.goto(`${BASE}/teacher/classes/${kept}/quizzes`, { waitUntil: "networkidle" });
+  check("the class she kept still opens", keptQuizzes.status() === 200, `status ${keptQuizzes.status()}`);
+
+  // ---- The quiz outlives the class ----
+  const survivor = await page.goto(`${BASE}/teacher/classes/${kept}/quizzes/${quizId}`, { waitUntil: "networkidle" });
+  check("a quiz from the deleted class survives it", survivor.status() === 200, `status ${survivor.status()}`);
+  const survivorTitle = await page.locator("input.bar-title").inputValue();
+  check("and still carries the rename she gave it", survivorTitle === "Renamed before the class went", `"${survivorTitle}"`);
+  await page.locator("input.bar-title").fill("Renamed again afterwards");
+  await page.locator("button.editor-save").click();
+  await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
+  await page.goto(`${BASE}/teacher/classes/${kept}/quizzes/${quizId}`, { waitUntil: "networkidle" });
+  check("and is still editable", (await page.locator("input.bar-title").inputValue()) === "Renamed again afterwards", "renamed a second time");
+
+  // ---- And can be put to work in the class that is left ----
+  await page.goto(`${BASE}/teacher/classes/${kept}/progressions/new`, { waitUntil: "networkidle" });
+  await page.locator('input[placeholder="Untitled path"]').fill("Autumn rescue path");
+  await page.getByRole("button", { name: /Renamed again afterwards/ }).first().click();
+  await page.getByRole("button", { name: "Save progression" }).click();
+  await page.waitForTimeout(2500);
+  const rescued = await quizCard(page, kept, "Renamed again afterwards");
+  check("and can be added to a path in the class she kept", rescued.tags.includes("Autumn rescue path"), rescued.tags);
+  await page.screenshot({ path: join(SHOTS, "class-delete-survivor.png"), fullPage: true });
+
+  log(`\nshots in ${SHOTS}`);
+  await b.close();
+}
+
 async function smoke() {
   const fx = existsSync(FIXTURE) ? fixture() : await seed();
   const b = await browser();
@@ -684,6 +912,10 @@ async function smoke() {
   await studentRecords();
   log("\n-- time limits --");
   await timeLimits();
+  log("\n-- one quiz, two classes --");
+  await crossClass();
+  log("\n-- deleting a class --");
+  await classDelete();
   summarise();
 }
 
@@ -717,10 +949,12 @@ else if (cmd === "ownership") { await ownership(); summarise(); }
 else if (cmd === "quiz-lifecycle") { await quizLifecycle(); summarise(); }
 else if (cmd === "student-records") { await studentRecords(); summarise(); }
 else if (cmd === "time-limits") { await timeLimits(); summarise(); }
+else if (cmd === "cross-class") { await crossClass(); summarise(); }
+else if (cmd === "class-delete") { await classDelete(); summarise(); }
 else if (cmd === "release") await release();
 else if (cmd === "shot") await shot(args[0] ?? "/", args[1]);
 else if (cmd === "student-shot") await shot(args[0] ?? "quiz", args[1] ?? "student", true);
 else {
-  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | release | shot <path> [name] | student-shot <path|quiz> [name]");
+  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | cross-class | class-delete | release | shot <path> [name] | student-shot <path|quiz> [name]");
   process.exit(1);
 }

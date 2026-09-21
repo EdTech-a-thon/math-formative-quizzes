@@ -9,7 +9,7 @@
   import { formatTimeLimit, resolveTimeLimitSeconds } from "$lib/timeLimit";
   import type { Problem } from "$lib/quizProblems";
 
-  type Membership = { id: string; name: string; operation: string; icon: string; shade: string };
+  type Membership = { id: string; name: string; operation: string; icon: string; shade: string; className: string; thisClass: boolean };
   type Quiz = { id: string; data: { title: string; problems?: Problem[]; timeLimitSeconds?: number; timeLimitMinutes?: number; shade?: ShadeId; icon?: string }; progressions: Membership[] };
   type Usage = Record<string, { progressions: number; attempts: number }>;
   export let data: { quizzes: Quiz[]; usage: Usage };
@@ -49,7 +49,7 @@
   });
   $: emptyNote =
     filter === "loose"
-      ? "Every quiz in this class is already in a progression."
+      ? "Every one of your quizzes is already in a progression."
       : "This progression has no quizzes yet.";
 
   async function deleteQuiz(event: MouseEvent, quiz: Quiz) {
@@ -71,7 +71,7 @@
 
 <ImportDropTarget classId={String($page.params.id)} bind:open={importOpen}>
 <section class="workspace-page">
-  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Ordered by progression membership, in the order students work through them. Quizzes in no progression sit at the bottom.</p></div><div class="workspace-heading-actions"><ImportButton bind:open={importOpen} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></div></header>
+  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Every quiz you have made. A quiz is shared, so each tag below shows the progressions and classes using it — and editing it changes it for all of them.</p></div><div class="workspace-heading-actions"><ImportButton bind:open={importOpen} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></div></header>
   {#if error}<p class="message error">{error}</p>{/if}
 
   {#if data.quizzes.length}
@@ -79,7 +79,7 @@
       <button type="button" class="filter-pill" class:on={filter === "all"} aria-pressed={filter === "all"} on:click={() => (filter = "all")}>All <span class="pill-count">{data.quizzes.length}</span></button>
       {#each progressionOptions as option (option.id)}
         {@const value = `progression:${option.id}`}
-        <button type="button" class={`filter-pill ${shadeClass(option.shade, option.operation)}`} class:on={filter === value} aria-pressed={filter === value} on:click={() => (filter = value)}><i><IconGlyph name={option.icon} fallback="route" size={13} /></i> {option.name} <span class="pill-count">{option.count}</span></button>
+        <button type="button" class={`filter-pill ${shadeClass(option.shade, option.operation)}`} class:on={filter === value} aria-pressed={filter === value} on:click={() => (filter = value)}><i><IconGlyph name={option.icon} fallback="route" size={13} /></i> {option.name}{option.thisClass ? "" : ` · ${option.className}`} <span class="pill-count">{option.count}</span></button>
       {/each}
       {#if looseCount}
         <button type="button" class="filter-pill" class:on={filter === "loose"} aria-pressed={filter === "loose"} on:click={() => (filter = "loose")}>No progression <span class="pill-count">{looseCount}</span></button>
@@ -95,7 +95,7 @@
             <p>{(quiz.data.problems ?? []).length} questions{formatTimeLimit(resolveTimeLimitSeconds(quiz.data)) ? ` · ${formatTimeLimit(resolveTimeLimitSeconds(quiz.data))}` : " · no time limit"}</p>
             <div class="card-memberships">
               {#each quiz.progressions as progression}
-                <span class={`membership-tag ${shadeClass(progression.shade, progression.operation)}`}><IconGlyph name={progression.icon} fallback="route" size={11} /> {progression.name}</span>
+                <span class={`membership-tag ${shadeClass(progression.shade, progression.operation)}`}><IconGlyph name={progression.icon} fallback="route" size={11} /> {progression.name} <em>{progression.className}</em></span>
               {:else}
                 <span class="membership-tag none">Not in a progression</span>
               {/each}

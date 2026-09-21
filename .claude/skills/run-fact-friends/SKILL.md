@@ -77,7 +77,7 @@ editor filed a quiz in the library instead of handing it back to the draft.
 Screenshots land in `.claude/skills/run-fact-friends/shots/`. **Open them** —
 `smoke` passing its printed checks does not mean the page looks right.
 
-`smoke` ends with four named scenarios, each of which prints `PASS`/`FAIL` per
+`smoke` ends with six named scenarios, each of which prints `PASS`/`FAIL` per
 check and a count at the end. `time-limits` is the other one worth knowing: a
 quiz's limit is stored in seconds, but quizzes saved before that carry whole
 minutes, and two copies of the resolver read the two fields — one in the app,
@@ -88,6 +88,18 @@ ordinary use: it signs up a **second** teacher and asserts she sees none of the
 first teacher's quizzes and gets a 404 opening one by id, while the same id
 opens fine for its owner.
 
+`cross-class` is the one the sharing work exists for. A quiz belongs to the
+teacher, so one quiz record sits in the learning paths of two of her classes:
+it edits the quiz from the first class and asserts the second class's path
+shows the edited version, that the tags name both paths and both classes, and
+that the editor said "Used in 2 classes" *before* the edit was made. The other
+half is what must not move — a student's finished attempt still shows the
+questions she was actually given, and her place on her path is where she left
+it. `class-delete` deletes a class and asserts its path and students go while
+her quizzes stay: a quiz she renamed in the deleted class still opens, still
+carries the rename, is still editable, and can be added to a path in the class
+she kept.
+
 Other commands:
 
 ```bash
@@ -95,6 +107,8 @@ node .claude/skills/run-fact-friends/driver.mjs ownership        # two-teacher a
 node .claude/skills/run-fact-friends/driver.mjs quiz-lifecycle   # create, edit, export, delete
 node .claude/skills/run-fact-friends/driver.mjs student-records  # places and attempt history
 node .claude/skills/run-fact-friends/driver.mjs time-limits      # seconds-based time limits
+node .claude/skills/run-fact-friends/driver.mjs cross-class      # one quiz used by two classes
+node .claude/skills/run-fact-friends/driver.mjs class-delete     # a deleted class leaves the quizzes
 node .claude/skills/run-fact-friends/driver.mjs shot /teacher/home home
 node .claude/skills/run-fact-friends/driver.mjs student-shot quiz student-quiz
 node .claude/skills/run-fact-friends/driver.mjs release

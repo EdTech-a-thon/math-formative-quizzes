@@ -20,6 +20,16 @@
 
   export let classId: string;
   export let quiz: { id: string; data: Partial<QuizData> } | null = null;
+  // How far a change here reaches: the classes whose learning paths use this
+  // quiz. A quiz being written for the first time has no reach yet.
+  export let reach: { classes: string[]; paths: number } | null = null;
+
+  $: reachText =
+    !reach || !reach.classes.length
+      ? "Not used by a class yet"
+      : reach.classes.length === 1
+        ? `Used in 1 class · ${reach.classes[0]}`
+        : `Used in ${reach.classes.length} classes · changes reach all of them`;
 
   const editing = Boolean(quiz?.id);
   let title = quiz?.data?.title ?? "";
@@ -430,6 +440,11 @@
     <div class="bar-title-row">
       <IconPicker {shade} name={icon} fallback="clipboard-list" compact title="Quiz icon and colour" onChange={(next) => { icon = next.name; shade = next.shade; }} />
       <input class="bar-title" class:invalid={titleInvalid} bind:this={titleInput} bind:value={title} placeholder="Untitled quiz" aria-label="Quiz name" aria-invalid={titleInvalid} spellcheck="false" />
+      {#if editing}
+        <span class="bar-reach" class:shared={(reach?.classes.length ?? 0) > 1} title={reach?.classes.length ? `Used by: ${reach.classes.join(", ")}` : "No class is using this quiz yet"}>
+          <Icon name="users" size={13} /> {reachText}
+        </span>
+      {/if}
     </div>
 
     <div class="bar-history">

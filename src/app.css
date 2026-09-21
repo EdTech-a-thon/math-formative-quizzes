@@ -1121,6 +1121,8 @@ button span {
 .card-memberships { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
 .membership-tag { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 3px 9px; background: var(--operation-soft, #f1edff); color: var(--operation, #6748d1); font-size: .69rem; font-weight: 800; }
 .membership-tag.none { border: 1px dashed #ded7e6; background: transparent; color: #a29aae; }
+.membership-tag em { font-style: normal; font-weight: 700; opacity: .72; }
+.membership-tag em::before { content: "· "; }
 
 /* ---- Live progression preview (drag to reorder the steps) ---- */
 .path-head { display: grid; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid #f0ebf4; }
@@ -1343,6 +1345,8 @@ a.history-row:hover .history-name strong { color: #5439bb; }
 .bar-title:hover { background: #faf8fd; }
 .bar-title:focus { outline: 0; border-color: #e4dcf0; background: #f8f5ff; box-shadow: none; }
 .bar-title.invalid { border-color: #e0708a; background: #fff4f6; }
+.bar-reach { display: inline-flex; align-items: center; gap: 5px; flex: none; border-radius: 999px; padding: 4px 10px; background: #f3effa; color: #7c748c; font-size: .7rem; font-weight: 800; white-space: nowrap; }
+.bar-reach.shared { background: #efe7ff; color: #6748d1; }
 
 .bar-settings { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
 .stepper-compact { padding: 3px; border-radius: 11px; }
