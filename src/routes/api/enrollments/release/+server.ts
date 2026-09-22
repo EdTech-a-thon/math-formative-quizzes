@@ -5,7 +5,7 @@ type Items = { items?: { id: string }[] };
 
 export async function POST({ request, cookies }) {
   const body = await request.json();
-  if (!body.progression) return json({ message: "Choose a progression to release." }, { status: 400 });
+  if (!body.progression) return json({ message: "Choose a learning path to release." }, { status: 400 });
 
   let released = 0;
   try {

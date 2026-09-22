@@ -16,7 +16,7 @@ export async function POST({ request, cookies }) {
   const students = idList(body.students, body.student);
   const progressions = idList(body.progressions, body.progression);
   if (!progressions.length || !students.length)
-    return json({ message: "Pick at least one student and one progression." }, { status: 400 });
+    return json({ message: "Pick at least one student and one learning path." }, { status: 400 });
 
   let assigned = 0;
   let skipped = 0;
@@ -26,21 +26,21 @@ export async function POST({ request, cookies }) {
       const progressionRecord = await teacherPocketBaseRequest<{ selfPaced?: boolean }>(
         cookies,
         `/api/collections/progressions/records/${progression}?fields=selfPaced`,
-        { errorMessage: "We could not find one of those progressions.", preferErrorMessage: true },
+        { errorMessage: "We could not find one of those learning paths.", preferErrorMessage: true },
       );
 
       // Start each new student on this progression's first step.
       const steps = await teacherPocketBaseRequest<Items<{ id: string }>>(
         cookies,
         `/api/collections/progression_steps/records?perPage=1&sort=position&filter=progression%3D%22${progression}%22`,
-        { errorMessage: "We could not read this progression's steps." },
+        { errorMessage: "We could not read this learning path's steps." },
       );
       const firstStep = steps.items?.[0]?.id;
 
       const existing = await teacherPocketBaseRequest<Items<{ student: string }>>(
         cookies,
         `/api/collections/progression_enrollments/records?perPage=1000&fields=student&filter=progression%3D%22${progression}%22`,
-        { errorMessage: "We could not read this progression's assignments." },
+        { errorMessage: "We could not read this learning path's assignments." },
       );
       const alreadyOn = new Set((existing.items ?? []).map((item) => item.student));
 

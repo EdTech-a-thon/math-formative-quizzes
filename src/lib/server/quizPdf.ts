@@ -169,7 +169,7 @@ export async function renderQuizPdf(quiz: QuizRecord): Promise<Uint8Array> {
 export async function renderProgressionPdf(progression: ProgressionRecord): Promise<Uint8Array> {
   const { pdf, fonts } = await startDocument();
   pdf.setTitle(progression.name);
-  pdf.setSubject("Fact Friends progression");
+  pdf.setSubject("Fact Friends learning path");
 
   // Cover: what the path is, and every step in the order learners meet them.
   const total = progression.quizzes.reduce((sum, quiz) => sum + quiz.problems.length, 0);

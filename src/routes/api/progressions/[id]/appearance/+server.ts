@@ -13,12 +13,12 @@ export async function PATCH({ request, cookies, params }) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(appearanceOf(await request.json())),
-        errorMessage: "We could not update this progression.",
+        errorMessage: "We could not update this learning path.",
       },
     );
     return json(result);
   } catch (caught) {
-    const failure = pocketBaseError(caught, "We could not update this progression.");
+    const failure = pocketBaseError(caught, "We could not update this learning path.");
     return json({ message: failure.message }, { status: failure.status });
   }
 }

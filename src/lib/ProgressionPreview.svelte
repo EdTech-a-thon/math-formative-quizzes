@@ -45,7 +45,7 @@
   }
 </script>
 
-<aside class={`qp path-preview ${shadeClass(shade)}`} aria-label="Progression preview">
+<aside class={`qp path-preview ${shadeClass(shade)}`} aria-label="Learning path preview">
   <div class="qp-frame-label"><span><Icon name="circle-dot" size={12} /></span> Live path preview</div>
 
   <div class="qp-phone">

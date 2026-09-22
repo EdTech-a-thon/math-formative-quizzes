@@ -38,13 +38,13 @@ async function readSource(authorization: string, progressionId: string) {
     authorization,
     `/api/collections/progressions/records/${progressionId}`,
     {},
-    "We could not open one of the practice paths you chose.",
+    "We could not open one of the learning paths you chose.",
   );
   const steps = await request<{ items: SourceStep[] }>(
     authorization,
     `/api/collections/progression_steps/records?perPage=500&sort=position&filter=${encodeURIComponent(`progression="${progressionId}"`)}`,
     {},
-    "We could not read the quizzes in one of the practice paths you chose.",
+    "We could not read the quizzes in one of the learning paths you chose.",
   );
   return { progression, steps: steps.items };
 }
@@ -76,7 +76,7 @@ export async function copyProgressionToClass(
         shade: progression.shade ?? "",
       }),
     },
-    "We could not add one of the practice paths you chose.",
+    "We could not add one of the learning paths you chose.",
   );
 
   for (const [index, step] of steps.entries()) {
@@ -88,7 +88,7 @@ export async function copyProgressionToClass(
         // step.quiz is the existing quiz's id, kept as it is on purpose.
         body: JSON.stringify({ progression: copy.id, quiz: step.quiz, position: index + 1 }),
       },
-      "A practice path was added, but one of its quizzes could not be included.",
+      "A learning path was added, but one of its quizzes could not be included.",
     );
   }
 

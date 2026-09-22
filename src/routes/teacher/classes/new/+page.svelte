@@ -71,7 +71,7 @@
   <a class="brand" href="/teacher/home"><span class="brand-mark">+</span><span>Fact Friends</span></a>
   <section class="class-setup" aria-labelledby="setup-title">
     <a class="back-link" href="/teacher/home"><Icon name="arrow-left" size={14} /> Back to teacher desk</a>
-    <p class="eyebrow">NEW CLASS</p><h1 id="setup-title">Set up your class</h1><p class="intro">Name your class, choose a starting practice path, and decide how learners will join. After setup, you can assign paths to students from your class roster.</p>
+    <p class="eyebrow">NEW CLASS</p><h1 id="setup-title">Set up your class</h1><p class="intro">Name your class, choose a starting learning path, and decide how learners will join. After setup, you can assign paths to students from your class roster.</p>
 
     <section class="setup-section"><h2>Class details</h2><label for="class-name">Class name</label><input id="class-name" bind:value={name} required /><p class="code-note">A unique six-digit class code will be created when you finish setup.</p></section>
 

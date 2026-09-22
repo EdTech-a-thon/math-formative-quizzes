@@ -60,7 +60,7 @@ export async function saveProgression(authorization: string, owner: PathOwner, p
         ...appearanceOf(progression),
       }),
     },
-    "We could not save a practice path.",
+    "We could not save a learning path.",
   );
   onSaved?.progression?.();
 
@@ -72,7 +72,7 @@ export async function saveProgression(authorization: string, owner: PathOwner, p
         method: "POST",
         body: JSON.stringify({ progression: saved.id, quiz: quizId, position: index + 1 }),
       },
-      "A practice path was saved, but one of its quizzes could not be added.",
+      "A learning path was saved, but one of its quizzes could not be added.",
     );
   }
   return quizIds.length;

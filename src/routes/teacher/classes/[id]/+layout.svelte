@@ -32,7 +32,7 @@
     <nav aria-label="Class pages">
       <a class:active={current === base} href={base}><span><Icon name="users" size={17} /></span> Roster</a>
       <a class:active={current.startsWith(`${base}/quizzes`)} href={`${base}/quizzes`}><span><Icon name="clipboard-list" size={17} /></span> Quizzes</a>
-      <a class:active={current.startsWith(`${base}/progressions`)} href={`${base}/progressions`}><span><Icon name="route" size={17} /></span> Progressions</a>
+      <a class:active={current.startsWith(`${base}/progressions`)} href={`${base}/progressions`}><span><Icon name="route" size={17} /></span> Learning paths</a>
     </nav>
     <button class="sidebar-help" type="button" aria-label="Help" aria-haspopup="dialog" on:click={() => showingHelp = true}><Icon name="circle-question-mark" size={22} /></button>
   </aside>

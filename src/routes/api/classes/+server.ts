@@ -31,7 +31,7 @@ export async function POST({ request, cookies }) {
   if (signupMode === "closed" && !studentNames.length)
     return json({ message: "Add at least one student or import a roster." }, { status: 400 });
   if (selectedPaths.some((path) => !isStarterPath(path)))
-    return json({ message: "Choose one of the four ready-made practice paths." }, { status: 400 });
+    return json({ message: "Choose one of the four ready-made learning paths." }, { status: 400 });
 
   const teacher = await teacherPocketBaseRequest<{ record: { id: string } }>(
     cookies,

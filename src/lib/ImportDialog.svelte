@@ -48,7 +48,7 @@
       ? "Nothing selected"
       : singleQuiz
         ? `${describe(chosenQuizzes[0].count, "question", "questions")} ready to add`
-        : `${[describe(chosenQuizzes.length, "quiz", "quizzes"), chosenPaths.length ? describe(chosenPaths.length, "progression", "progressions") : ""]
+        : `${[describe(chosenQuizzes.length, "quiz", "quizzes"), chosenPaths.length ? describe(chosenPaths.length, "learning path", "learning paths") : ""]
             .filter(Boolean)
             .join(" and ")} selected`;
 
@@ -229,7 +229,7 @@
         return;
       }
       const parts = [describe(result.quizzes, "quiz", "quizzes")];
-      if (result.progressions) parts.push(describe(result.progressions, "progression", "progressions"));
+      if (result.progressions) parts.push(describe(result.progressions, "learning path", "learning paths"));
       pushToast("success", `Imported ${parts.join(" and ")}.`);
       await invalidateAll();
       onClose();
@@ -274,7 +274,7 @@
         <button type="button" class="ghost-btn" disabled={reading} on:click={() => fileInput.click()}>
           {reading ? "Reading…" : "Choose a file"}
         </button>
-        <small>{singleQuiz ? "One quiz goes in at a time — from a progression, pick a step. Pasting works too." : "Drop several at once, or paste a copied quiz."}</small>
+        <small>{singleQuiz ? "One quiz goes in at a time — from a learning path, pick a step. Pasting works too." : "Drop several at once, or paste a copied quiz."}</small>
       </div>
     {/if}
 
@@ -292,7 +292,7 @@
         {#each staged as item (item.id)}
           <div class="import-item">
             <div class="import-item-head">
-              <span class="import-kind">{item.kind === "progression" ? "Progression" : "Quiz"}</span>
+              <span class="import-kind">{item.kind === "progression" ? "Learning path" : "Quiz"}</span>
               <strong>{item.name}</strong>
               <small>from {item.source}</small>
               <button type="button" class="import-drop-item" aria-label={`Remove ${item.name}`} on:click={() => removeStaged(item.id)}><Icon name="x" size={13} /></button>
@@ -301,7 +301,7 @@
             {#if item.kind === "progression" && !singleQuiz}
               <label class="import-check import-path-check">
                 <input type="checkbox" checked={item.keepProgression} on:change={() => togglePath(item.id)} />
-                <span>Build the progression itself{item.keepProgression ? "" : " — its quizzes will come in on their own"}</span>
+                <span>Build the learning path itself{item.keepProgression ? "" : " — its quizzes will come in on their own"}</span>
               </label>
             {:else if item.kind === "progression"}
               <p class="import-choose">Choose the step to take questions from</p>

@@ -10,7 +10,7 @@ export async function load({ cookies, params }) {
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=500&sort=position&expand=quiz`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=2000&fields=progression,status,released`, { headers }),
   ]);
-  if (!quizzesResponse.ok || !progressionsResponse.ok || !stepsResponse.ok) error(500, "We could not load progressions.");
+  if (!quizzesResponse.ok || !progressionsResponse.ok || !stepsResponse.ok) error(500, "We could not load learning paths.");
   const quizzes = await quizzesResponse.json();
   const progressions = await progressionsResponse.json();
   const steps = await stepsResponse.json();

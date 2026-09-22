@@ -15,7 +15,7 @@ export async function POST({ request, cookies }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ class: body.class, name: body.name.trim(), description: String(body.description || "").trim(), passPercentage: Number(body.passPercentage) || 80, oneAtATime: body.oneAtATime === true, showAnswers: body.showAnswers === true, selfPaced: body.selfPaced === true, ...appearanceOf(body) }),
-        errorMessage: "We could not save this progression.",
+        errorMessage: "We could not save this learning path.",
       },
     );
 
@@ -27,14 +27,14 @@ export async function POST({ request, cookies }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ progression: progression.id, quiz, position: index + 1 }),
-          errorMessage: "The progression was saved, but a step could not be added.",
+          errorMessage: "The learning path was saved, but a step could not be added.",
           preferErrorMessage: true,
         },
       );
     }
     return json(progression);
   } catch (caught) {
-    const failure = pocketBaseError(caught, "We could not save this progression.");
+    const failure = pocketBaseError(caught, "We could not save this learning path.");
     return json({ message: failure.message }, { status: failure.status });
   }
 }

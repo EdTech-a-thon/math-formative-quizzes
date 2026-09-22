@@ -29,7 +29,7 @@
 
   $: matches = items.filter((item) => `${item.name} ${item.detail ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()));
   $: allMatchesChosen = matches.length > 0 && matches.every((item) => chosen.has(item.id));
-  $: noun = kind === "student" ? "student" : "progression";
+  $: noun = kind === "student" ? "student" : "learning path";
 
   function toggle(id: string) {
     if (chosen.has(id)) chosen.delete(id);

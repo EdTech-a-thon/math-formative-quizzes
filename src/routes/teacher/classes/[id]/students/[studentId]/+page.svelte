@@ -79,7 +79,7 @@
       picking = false;
       message = assignmentSummary(result.assigned, result.skipped);
     } catch (caught) {
-      dialogError = caught instanceof Error ? caught.message : "We could not assign these progressions.";
+      dialogError = caught instanceof Error ? caught.message : "We could not assign these learning paths.";
     } finally {
       dialogBusy = false;
     }
@@ -150,7 +150,7 @@
       <div class="student-detail-heading-actions">
         <!-- Quizzes set on their own are counted apart from the learning paths,
              so neither is described as the other. -->
-        <span>{pathCount} {pathCount === 1 ? "progression" : "progressions"}{oneOffCount ? ` · ${oneOffCount} ${oneOffCount === 1 ? "quiz" : "quizzes"} on ${oneOffCount === 1 ? "its" : "their"} own` : ""}</span>
+        <span>{pathCount} {pathCount === 1 ? "learning path" : "learning paths"}{oneOffCount ? ` · ${oneOffCount} ${oneOffCount === 1 ? "quiz" : "quizzes"} on ${oneOffCount === 1 ? "its" : "their"} own` : ""}</span>
         {#if data.progressions.length}<button type="button" class="assign-open" on:click={() => (picking = true)}><Icon name="plus" size={15} /> Assign</button>{/if}
       </div>
     </div>
@@ -180,7 +180,7 @@
         {/each}
       </div>
     {:else}
-      <p class="student-detail-empty">No progressions have been assigned to this student.</p>
+      <p class="student-detail-empty">No learning paths have been assigned to this student.</p>
     {/if}
 
   </section>
@@ -207,7 +207,7 @@
 
 {#if picking}
   <AssignDialog
-    title={`Assign progressions to ${data.student.name}`}
+    title={`Assign learning paths to ${data.student.name}`}
     subtitle="Pick as many as you like. They start at the first quiz in each one."
     kind="progression"
     items={available}

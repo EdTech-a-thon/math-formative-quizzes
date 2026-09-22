@@ -24,7 +24,7 @@ export async function PATCH({ cookies, params }) {
       `/api/collections/progression_enrollments/records/${params.id}?fields=status,released`,
       { errorMessage: "We could not find this assignment." },
     );
-    if (current.status === "completed") return json({ message: "This progression is already complete." }, { status: 400 });
+    if (current.status === "completed") return json({ message: "This learning path is already complete." }, { status: 400 });
     if (current.released) return json({ released: true });
 
     await teacherPocketBaseRequest(

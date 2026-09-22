@@ -58,8 +58,8 @@
   });
   $: emptyNote =
     filter === "loose"
-      ? "Every one of your quizzes is already in a progression."
-      : "This progression has no quizzes yet.";
+      ? "Every one of your quizzes is already in a learning path."
+      : "This learning path has no quizzes yet.";
 
   // Giving one quiz to students on its own, with no sequence of quizzes around
   // it. She sets the passing score and when they may start before it goes out;
@@ -163,19 +163,19 @@
 
 <ImportDropTarget classId={String($page.params.id)} bind:open={importOpen}>
 <section class="workspace-page">
-  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Every quiz you have made. A quiz is shared, so each tag below shows the progressions and classes using it — and editing it changes it for all of them.</p></div><div class="workspace-heading-actions"><ImportButton bind:open={importOpen} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></div></header>
+  <header class="workspace-heading"><div><p class="eyebrow">QUIZ LIBRARY</p><h1>Quizzes</h1><p>Every quiz you have made. A quiz is shared, so each tag below shows the learning paths and classes using it — and editing it changes it for all of them.</p></div><div class="workspace-heading-actions"><ImportButton bind:open={importOpen} /><a class="primary-action" href={`${base}/new`}><Icon name="plus" size={15} /> New quiz</a></div></header>
   {#if error}<p class="message error">{error}</p>{/if}
   {#if message}<p class="message success">{message}</p>{/if}
 
   {#if data.quizzes.length}
-    <div class="picker-filters" role="group" aria-label="Show quizzes in a progression">
+    <div class="picker-filters" role="group" aria-label="Show quizzes in a learning path">
       <button type="button" class="filter-pill" class:on={filter === "all"} aria-pressed={filter === "all"} on:click={() => (filter = "all")}>All <span class="pill-count">{data.quizzes.length}</span></button>
       {#each progressionOptions as option (option.id)}
         {@const value = `progression:${option.id}`}
         <button type="button" class={`filter-pill ${shadeClass(option.shade, option.operation)}`} class:on={filter === value} aria-pressed={filter === value} on:click={() => (filter = value)}><i><IconGlyph name={option.icon} fallback="route" size={13} /></i> {option.name}{option.thisClass ? "" : ` · ${option.className}`} <span class="pill-count">{option.count}</span></button>
       {/each}
       {#if looseCount}
-        <button type="button" class="filter-pill" class:on={filter === "loose"} aria-pressed={filter === "loose"} on:click={() => (filter = "loose")}>No progression <span class="pill-count">{looseCount}</span></button>
+        <button type="button" class="filter-pill" class:on={filter === "loose"} aria-pressed={filter === "loose"} on:click={() => (filter = "loose")}>No learning path <span class="pill-count">{looseCount}</span></button>
       {/if}
     </div>
 
@@ -191,7 +191,7 @@
                 <span class={`membership-tag ${shadeClass(progression.shade, progression.operation)}`}><IconGlyph name={progression.icon} fallback="route" size={11} /> {progression.name} <em>{progression.className}</em></span>
               {/each}
               {#if !quiz.progressions.length && !data.onItsOwn[quiz.id]}
-                <span class="membership-tag none">Not in a progression</span>
+                <span class="membership-tag none">Not in a learning path</span>
               {/if}
               <!-- Who she gave this quiz to on its own, in this class: the ones
                    who still owe it to her, and the ones who have finished. -->
@@ -221,7 +221,7 @@
       {/each}
     </div>
   {:else}
-    <section class="library-list"><a class="empty-workspace empty-link" href={`${base}/new`}><span><Icon name="clipboard-list" size={22} /></span><h2>No quizzes yet</h2><p>Start with a quiz, then add it to a progression whenever you are ready.</p></a></section>
+    <section class="library-list"><a class="empty-workspace empty-link" href={`${base}/new`}><span><Icon name="clipboard-list" size={22} /></span><h2>No quizzes yet</h2><p>Start with a quiz, then add it to a learning path whenever you are ready.</p></a></section>
   {/if}
 </section>
 

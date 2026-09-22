@@ -87,7 +87,7 @@
 {#if dragging}
   <div class="import-page-overlay" aria-hidden="true">
     <strong>{singleQuiz ? "Drop to add questions" : "Drop to import"}</strong>
-    <span>Quiz or progression PDF</span>
+    <span>Quiz or learning path PDF</span>
   </div>
 {/if}
 

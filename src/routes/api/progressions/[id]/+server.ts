@@ -18,14 +18,14 @@ export async function PATCH({ request, cookies, params }) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: body.name.trim(), description: String(body.description || "").trim(), passPercentage: Number(body.passPercentage) || 80, oneAtATime: body.oneAtATime === true, showAnswers: body.showAnswers === true, selfPaced: body.selfPaced === true, ...appearanceOf(body) }),
-        errorMessage: "We could not save this progression.",
+        errorMessage: "We could not save this learning path.",
       },
     );
 
     const steps = await teacherPocketBaseRequest<Items<Step>>(
       cookies,
       `/api/collections/progression_steps/records?perPage=500&filter=${encodeURIComponent(`progression="${params.id}"`)}`,
-      { errorMessage: "The progression was saved, but its steps could not be read.", preferErrorMessage: true },
+      { errorMessage: "The learning path was saved, but its steps could not be read.", preferErrorMessage: true },
     );
     const existing = steps.items;
 
@@ -44,7 +44,7 @@ export async function PATCH({ request, cookies, params }) {
       await teacherPocketBaseRequest(
         cookies,
         `/api/collections/progression_steps/records/${step.id}`,
-        { method: "DELETE", errorMessage: "The progression was saved, but a removed step could not be deleted.", preferErrorMessage: true },
+        { method: "DELETE", errorMessage: "The learning path was saved, but a removed step could not be deleted.", preferErrorMessage: true },
       );
     }
 
@@ -60,7 +60,7 @@ export async function PATCH({ request, cookies, params }) {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ position: parked + index + 1 }),
-          errorMessage: "The progression was saved, but its steps could not be reordered.",
+          errorMessage: "The learning path was saved, but its steps could not be reordered.",
           preferErrorMessage: true,
         },
       );
@@ -75,7 +75,7 @@ export async function PATCH({ request, cookies, params }) {
           method: step ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(step ? { position: index + 1 } : { progression: params.id, quiz, position: index + 1 }),
-          errorMessage: "The progression was saved, but a step could not be updated.",
+          errorMessage: "The learning path was saved, but a step could not be updated.",
           preferErrorMessage: true,
         },
       );
@@ -88,7 +88,7 @@ export async function PATCH({ request, cookies, params }) {
       const enrollments = await teacherPocketBaseRequest<Items<{ id: string }>>(
         cookies,
         `/api/collections/progression_enrollments/records?perPage=2000&fields=id&filter=${filter}`,
-        { errorMessage: "The progression was saved, but waiting students could not be released.", preferErrorMessage: true },
+        { errorMessage: "The learning path was saved, but waiting students could not be released.", preferErrorMessage: true },
       );
       for (const enrollment of enrollments.items) {
         await teacherPocketBaseRequest(
@@ -98,7 +98,7 @@ export async function PATCH({ request, cookies, params }) {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ released: true }),
-            errorMessage: "The progression was saved, but some waiting students could not be released.",
+            errorMessage: "The learning path was saved, but some waiting students could not be released.",
             preferErrorMessage: true,
           },
         );
@@ -107,7 +107,7 @@ export async function PATCH({ request, cookies, params }) {
 
     return json(progression);
   } catch (caught) {
-    const failure = pocketBaseError(caught, "We could not save this progression.");
+    const failure = pocketBaseError(caught, "We could not save this learning path.");
     return json({ message: failure.message }, { status: failure.status });
   }
 }

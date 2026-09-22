@@ -8,7 +8,7 @@
 //                              progression, student, released attempt.
 //                              Writes .claude/skills/run-fact-friends/.fixture.json
 //   smoke                      seed, then walk both import paths, sit a quiz,
-//                              and run the eleven scenarios below.
+//                              and run the twelve scenarios below.
 //   ownership                  A second teacher sees none of the first
 //                              teacher's quizzes and cannot open one by id.
 //   quiz-lifecycle             Create, edit, export and delete one quiz.
@@ -36,6 +36,8 @@
 //   copy-for-class             A separate copy of a shared quiz for one class,
 //                              leaving the original and a student mid-path
 //                              undisturbed.
+//   no-jargon                  Walks teacher and student pages and checks the
+//                              rendered text for "progression"/"practice path".
 //   release                    Release another attempt for the seeded student.
 //   shot <path> [name]         Screenshot any page signed in as the teacher.
 //   student-shot <path|quiz> [name]
@@ -143,7 +145,7 @@ async function seed() {
   await page.goto(`${BASE}/teacher/classes/${classId}/progressions/new`, { waitUntil: "networkidle" });
   await page.locator('input[placeholder="Untitled path"]').fill("Driver path");
   await page.getByRole("button", { name: /Imported sevens drill/ }).click();
-  await page.getByRole("button", { name: "Save progression" }).click();
+  await page.getByRole("button", { name: "Save learning path" }).click();
   await page.waitForTimeout(2500);
 
   await ctx.storageState({ path: STATE });
@@ -164,7 +166,7 @@ async function seed() {
   await page.getByRole("button", { name: /Select all/ }).click();
   await page.waitForTimeout(300);
   await page.locator("input[type=checkbox]").last().check().catch(() => {});
-  await page.getByRole("button", { name: /Assign \d+ progression/ }).click();
+  await page.getByRole("button", { name: /Assign \d+ learning path/ }).click();
   await page.waitForTimeout(2500);
 
   await page.goto(`${BASE}/teacher/classes/${classId}/progressions`, { waitUntil: "networkidle" });
@@ -775,7 +777,7 @@ async function crossClass() {
   const named = ["Period 1 sixes", "Period 1 Sharing", "Period 2 sixes", "Period 2 Sharing"];
   check("its tags name both paths and both classes using it", named.every((text) => sharedCard.tags.includes(text)), sharedCard.tags);
   const spareCard = await quizCard(page, period2, "Spare sevens drill");
-  check("a quiz no path uses is still listed", spareCard.tags.includes("Not in a progression"), spareCard.tags);
+  check("a quiz no path uses is still listed", spareCard.tags.includes("Not in a learning path"), spareCard.tags);
   await page.screenshot({ path: join(SHOTS, "shared-quiz-list.png"), fullPage: true });
 
   // ---- What the editor says before anything is edited ----
@@ -828,7 +830,7 @@ async function crossClass() {
   check("a new path is offered a quiz built in another class", offered > 0, `${offered} offered`);
   await page.locator('input[placeholder="Untitled path"]').fill("Period 2 spares");
   await page.getByRole("button", { name: /Spare sevens drill/ }).first().click();
-  await page.getByRole("button", { name: "Save progression" }).click();
+  await page.getByRole("button", { name: "Save learning path" }).click();
   await page.waitForTimeout(2500);
   const spareNow = await quizCard(page, period2, "Spare sevens drill");
   check("and adding it tags the quiz with that class and path", spareNow.tags.includes("Period 2 spares") && spareNow.tags.includes("Period 2 Sharing"), spareNow.tags);
@@ -910,7 +912,7 @@ async function classDelete() {
   await page.goto(`${BASE}/teacher/classes/${kept}/progressions/new`, { waitUntil: "networkidle" });
   await page.locator('input[placeholder="Untitled path"]').fill("Autumn rescue path");
   await page.getByRole("button", { name: /Renamed again afterwards/ }).first().click();
-  await page.getByRole("button", { name: "Save progression" }).click();
+  await page.getByRole("button", { name: "Save learning path" }).click();
   await page.waitForTimeout(2500);
   const rescued = await quizCard(page, kept, "Renamed again afterwards");
   check("and can be added to a path in the class she kept", rescued.tags.includes("Autumn rescue path"), rescued.tags);
@@ -1219,7 +1221,7 @@ async function assignOneOff() {
   const oneOffOnPage = (await page.locator(".student-progression-card", { hasText: "Multiply by 6 alone" }).innerText()).replace(/\s*\n+\s*/g, " | ");
   check("a student's page shows their one-off quizzes alongside their learning paths", onHisPage.includes("Threes ladder") && onHisPage.includes("Multiply by 6 alone") && !/STEP/.test(oneOffOnPage), `${onHisPage.join(", ")} — one-off card: "${oneOffOnPage}"`);
   const counted = (await page.locator(".student-detail-heading-actions span").first().innerText()).trim();
-  check("and counts the one-off apart from her learning paths rather than as one", counted === "1 progression · 1 quiz on its own", `"${counted}"`);
+  check("and counts the one-off apart from her learning paths rather than as one", counted === "1 learning path · 1 quiz on its own", `"${counted}"`);
   await page.screenshot({ path: join(SHOTS, "assign-one-off-student-page.png"), fullPage: true });
 
   // ---- Pacing is a real choice, not a default she cannot escape ------------
@@ -1578,6 +1580,84 @@ async function copyForClass() {
   await b.close();
 }
 
+// --- No leftover jargon (#21) -----------------------------------------------
+//
+// "Progression" used to leak into a page heading, an eyebrow, and error and
+// confirm-prompt text, while the very same object was called a "learning
+// path" one line away. This walks every teacher and student page that used to
+// carry one of the rejected words and reads the page the same way `shot`
+// does, checking it for a case-insensitive match.
+
+const REJECTED_WORDS = /progression|practice path|progression path/i;
+
+async function assertClean(page, label) {
+  const text = await page.locator("body").innerText();
+  const match = text.match(REJECTED_WORDS);
+  check(`${label} carries none of the rejected words`, !match, match ? `found "${match[0]}" on ${label}` : "clean");
+}
+
+async function noForbiddenWords() {
+  const fx = existsSync(FIXTURE) ? fixture() : await seed();
+  const b = await browser();
+  const page = await teacherPage(b);
+
+  // ---- Teacher pages ----
+  await page.goto(`${BASE}/teacher/classes/${fx.classId}`, { waitUntil: "networkidle" });
+  await assertClean(page, "class overview");
+
+  // The roster's per-student Assign button opens the same picker the ticket
+  // renamed.
+  const assignAdd = page.locator("button.assign-add").first();
+  if (await assignAdd.count()) {
+    await assignAdd.click();
+    await page.waitForSelector(".assign-dialog");
+    await assertClean(page, "the roster's assign dialog");
+  }
+
+  await page.goto(`${BASE}/teacher/classes/${fx.classId}/progressions`, { waitUntil: "networkidle" });
+  await assertClean(page, "the learning paths list");
+
+  // By this point in `smoke`, the seeded student has already handed in her one
+  // released attempt, so the student pages below need a fresh one released
+  // before they have anything to show.
+  const releaseButton = page.getByRole("button", { name: /Release \d+/ });
+  if (await releaseButton.count()) { await releaseButton.first().click(); await page.waitForTimeout(1500); }
+
+  const pathHref = await page.locator("a.progression-card-link").first().getAttribute("href");
+  if (pathHref) {
+    await page.goto(`${BASE}${pathHref}`, { waitUntil: "networkidle" });
+    await assertClean(page, "a learning path's detail page");
+  }
+
+  await page.goto(`${BASE}/teacher/classes/${fx.classId}/quizzes`, { waitUntil: "networkidle" });
+  await assertClean(page, "the quizzes list");
+
+  // "Assign on its own" opens the same picker component, pointed at a quiz
+  // instead of a learning path.
+  const giveButton = page.locator("button.assign-on-its-own").first();
+  if (await giveButton.count()) {
+    await giveButton.click();
+    await page.waitForSelector(".assign-dialog");
+    await assertClean(page, "the assign-on-its-own dialog");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+  }
+
+  const quizHref = await page.locator("a.library-card").first().getAttribute("href");
+  if (quizHref) {
+    await page.goto(`${BASE}${quizHref}`, { waitUntil: "networkidle" });
+    await assertClean(page, "the quiz editor");
+  }
+
+  // ---- Student pages ----
+  const s = await studentQuiz(b, fx);
+  await assertClean(s, "the student's quiz screen");
+  await s.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  await assertClean(s, "the student's home screen");
+
+  await b.close();
+}
+
 async function smoke() {
   const fx = existsSync(FIXTURE) ? fixture() : await seed();
   const b = await browser();
@@ -1679,6 +1759,8 @@ async function smoke() {
   await removeVsDelete();
   log("\n-- make a separate copy of a quiz for one class --");
   await copyForClass();
+  log("\n-- no leftover jargon --");
+  await noForbiddenWords();
   summarise();
 }
 
@@ -1720,10 +1802,11 @@ else if (cmd === "assign-one-off") { await assignOneOff(); summarise(); }
 else if (cmd === "reuse-path") { await reusePath(); summarise(); }
 else if (cmd === "remove-vs-delete") { await removeVsDelete(); summarise(); }
 else if (cmd === "copy-for-class") { await copyForClass(); summarise(); }
+else if (cmd === "no-jargon") { await noForbiddenWords(); summarise(); }
 else if (cmd === "release") await release();
 else if (cmd === "shot") await shot(args[0] ?? "/", args[1]);
 else if (cmd === "student-shot") await shot(args[0] ?? "quiz", args[1] ?? "student", true);
 else {
-  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | pdf-exports | cross-class | class-delete | send-to-step | assign-one-off | reuse-path | remove-vs-delete | copy-for-class | release | shot <path> [name] | student-shot <path|quiz> [name]");
+  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | pdf-exports | cross-class | class-delete | send-to-step | assign-one-off | reuse-path | remove-vs-delete | copy-for-class | no-jargon | release | shot <path> [name] | student-shot <path|quiz> [name]");
   process.exit(1);
 }

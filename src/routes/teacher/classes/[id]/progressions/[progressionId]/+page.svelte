@@ -139,17 +139,17 @@
 <svelte:head><title>{data.progression.name} · Fact Friends</title></svelte:head>
 
 <section class="workspace-page progression-overview">
-  <a class="overview-back" href={base}><Icon name="arrow-left" size={14} /> Progressions</a>
+  <a class="overview-back" href={base}><Icon name="arrow-left" size={14} /> Learning paths</a>
   <header class={`progression-overview-header ${shadeClass(data.progression.shade)}`}>
     <div class="overview-title-icon"><IconGlyph name={data.progression.icon || "route"} size={27} fallback="route" /></div>
     <div class="overview-title">
-      <p class="eyebrow">PROGRESSION</p>
+      <p class="eyebrow">LEARNING PATH</p>
       <h1>{data.progression.name}</h1>
       <p>{data.progression.description || `${data.steps.length} quizzes in this learning path.`}</p>
       <div class="overview-facts"><span>{data.progression.passPercentage}% to pass</span><span>{data.steps.length} quizzes</span><span>{data.enrollments.length} students</span><span>{data.progression.oneAtATime ? "one question at a time" : "all questions at once"}</span><span>{data.progression.showAnswers ? "answers shown" : "answers hidden"}</span><span>{data.progression.selfPaced ? "self-paced" : "teacher released"}</span></div>
     </div>
     <div class="overview-actions">
-      <a class="ghost-btn" href={`${base}/${data.progression.id}/edit`}><Icon name="pencil" size={14} /> Edit progression</a>
+      <a class="ghost-btn" href={`${base}/${data.progression.id}/edit`}><Icon name="pencil" size={14} /> Edit learning path</a>
       <a class="ghost-btn" href={`/api/progressions/${data.progression.id}/pdf`} title="Export this path and all its quizzes as one PDF"><Icon name="upload" size={14} /> Export</a>
       {#if !data.progression.selfPaced}
         <button class="primary-action" type="button" disabled={!waitingCount || Boolean(releasing)} on:click={releaseAll}>

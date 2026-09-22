@@ -57,7 +57,7 @@ export async function load({ cookies, params }) {
       id: enrollment.id,
       progressionId: enrollment.progression,
       currentStep: enrollment.expand?.currentStep?.id ?? "",
-      progressionName: enrollment.expand?.progression?.name ?? "Progression",
+      progressionName: enrollment.expand?.progression?.name ?? "Learning path",
       icon: enrollment.expand?.progression?.icon ?? null,
       shade: enrollment.expand?.progression?.shade ?? null,
       operation: enrollment.expand?.progression?.operation ?? "",
