@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { invalidateAll } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { page } from "$app/stores";
   import Icon from "$lib/Icon.svelte";
   import IconGlyph from "$lib/IconGlyph.svelte";
@@ -20,6 +20,30 @@
   $: studentsAt = (stepId: string) => activeEnrollments.filter((enrollment) => enrollment.currentStep === stepId);
 
   let releasing = "";
+  let deleting = false;
+
+  // Says exactly what goes and what stays before anything is removed.
+  function deleteWarning() {
+    const lines = [`Delete "${data.progression.name}"? This cannot be undone.`];
+    const students = data.enrollments.length;
+    if (students) lines.push(`${students} ${students === 1 ? "student is" : "students are"} on this path. Their place on it and their attempt history for it will be deleted.`);
+    lines.push("The quizzes stay in your quiz library.");
+    return lines.join("\n\n");
+  }
+
+  async function deletePath() {
+    if (!confirm(deleteWarning())) return;
+    deleting = true;
+    error = "";
+    try {
+      const response = await fetch(`/api/progressions/${data.progression.id}`, { method: "DELETE" });
+      if (!response.ok) { const result = await response.json().catch(() => ({})); throw new Error(result.message); }
+      await goto(base);
+    } catch (caught) {
+      error = caught instanceof Error ? caught.message : "We could not delete this learning path.";
+      deleting = false;
+    }
+  }
   let error = "";
   let message = "";
 
@@ -220,6 +244,10 @@
   {#if completed.length}
     <section class="progression-completed" id="completed"><h2><Icon name="check" size={17} /> Completed</h2><div class="completed-student-links">{#each completed as student}<a href={`/teacher/classes/${$page.params.id}/students/${student.studentId}`}>{student.studentName}</a>{/each}</div></section>
   {/if}
+  <footer class="overview-delete">
+    <p>Done with this learning path? Deleting it removes students' progress on it. The quizzes stay in your quiz library.</p>
+    <button class="ghost-btn danger" type="button" disabled={deleting} on:click={deletePath}>{deleting ? "Deleting…" : "Delete learning path"}</button>
+  </footer>
 </section>
 
 {#if picking}

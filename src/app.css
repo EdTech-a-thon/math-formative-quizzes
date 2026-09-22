@@ -737,6 +737,9 @@ button span {
 .overview-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; }
 .overview-actions .ghost-btn { display: inline-flex; align-items: center; gap: 5px; padding: 10px 12px; text-decoration: none; }
 .overview-actions .primary-action { display: inline-flex; align-items: center; gap: 6px; }
+.overview-delete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 36px; border-top: 1px solid #e9e4df; padding-top: 18px; }
+.overview-delete p { margin: 0; color: #77728c; font-size: .85rem; }
+.overview-delete .ghost-btn { padding: 10px 12px; }
 /* The shared assignment picker (src/lib/AssignDialog.svelte). Same dialog for
    picking students and for picking progressions. */
 .assign-dialog-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(38, 30, 56, .42); backdrop-filter: blur(2px); }

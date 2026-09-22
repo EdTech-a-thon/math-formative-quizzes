@@ -111,3 +111,19 @@ export async function PATCH({ request, cookies, params }) {
     return json({ message: failure.message }, { status: failure.status });
   }
 }
+
+// Deleting a learning path takes its steps and every student's place on it
+// with it (and so their attempt history on it), but never a quiz: quizzes
+// belong to the teacher's library and may be used by other paths.
+export async function DELETE({ cookies, params }) {
+  try {
+    await teacherPocketBaseRequest(cookies, `/api/collections/progressions/records/${params.id}`, {
+      method: "DELETE",
+      errorMessage: "We could not delete this learning path.",
+    });
+    return json({ ok: true });
+  } catch (caught) {
+    const failure = pocketBaseError(caught, "We could not delete this learning path.");
+    return json({ message: failure.message }, { status: failure.status });
+  }
+}
