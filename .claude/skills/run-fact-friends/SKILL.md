@@ -77,7 +77,7 @@ editor filed a quiz in the library instead of handing it back to the draft.
 Screenshots land in `.claude/skills/run-fact-friends/shots/`. **Open them** —
 `smoke` passing its printed checks does not mean the page looks right.
 
-`smoke` ends with seven named scenarios, each of which prints `PASS`/`FAIL` per
+`smoke` ends with nine named scenarios, each of which prints `PASS`/`FAIL` per
 check and a count at the end. `time-limits` is the other one worth knowing: a
 quiz's limit is stored in seconds, but quizzes saved before that carry whole
 minutes, and two copies of the resolver read the two fields — one in the app,
@@ -100,6 +100,26 @@ her quizzes stay: a quiz she renamed in the deleted class still opens, still
 carries the rename, is still editable, and can be added to a path in the class
 she kept.
 
+`reuse-path` is the one that stops the duplicates coming back. Creating a class
+used to mint a fresh path *and* a fresh set of quizzes, so a teacher with four
+classes had four copies of every quiz. It builds a class from a ready-made path,
+tunes a path of its own, then starts a third class from that path and asserts
+the new class's steps point at the *same quiz records* — proved twice over, by
+editing a quiz from the new class and finding the old class changed, and by the
+teacher's quiz count not moving. It also covers the labels and order setup
+offers, the settings that come across, and the pacing on the setup screen
+beating the pacing the path carried. One caveat it states out loud: nothing in
+this database stores when a record last changed, so "most recently edited first"
+is really "most recently added first" — re-editing an old path does not float it
+back to the top.
+
+`pdf-exports` fetches the real PDFs over HTTP and pulls the pdfcx record back
+out of them with the app's own `extractRecord`, which is the same source the
+glyphs are drawn from, so it needs no PDF text layer. It checks that a
+seconds-based limit round-trips and prints the way the app prints it, and that
+importing a file with no time key at all lands on a sensible default rather than
+an untimed quiz.
+
 `send-to-step` builds its own class from scratch, because it needs students in
 three different states at once. A teacher-released four-quiz ladder, one student
 on its first quiz and two not on the path at all: all three are sent to the
@@ -117,9 +137,11 @@ node .claude/skills/run-fact-friends/driver.mjs ownership        # two-teacher a
 node .claude/skills/run-fact-friends/driver.mjs quiz-lifecycle   # create, edit, export, delete
 node .claude/skills/run-fact-friends/driver.mjs student-records  # places and attempt history
 node .claude/skills/run-fact-friends/driver.mjs time-limits      # seconds-based time limits
+node .claude/skills/run-fact-friends/driver.mjs pdf-exports      # exported PDFs carry the limit
 node .claude/skills/run-fact-friends/driver.mjs cross-class      # one quiz used by two classes
 node .claude/skills/run-fact-friends/driver.mjs class-delete     # a deleted class leaves the quizzes
 node .claude/skills/run-fact-friends/driver.mjs send-to-step     # students sent straight to one quiz
+node .claude/skills/run-fact-friends/driver.mjs reuse-path       # a new class from a path she already has
 node .claude/skills/run-fact-friends/driver.mjs shot /teacher/home home
 node .claude/skills/run-fact-friends/driver.mjs student-shot quiz student-quiz
 node .claude/skills/run-fact-friends/driver.mjs release

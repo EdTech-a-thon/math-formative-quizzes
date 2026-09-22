@@ -1,4 +1,5 @@
 import { json } from "@sveltejs/kit";
+import { copyProgressionToClass } from "$lib/server/copyProgression";
 import { saveProgression } from "$lib/server/saveProgression";
 import { isStarterPath, starterProgression } from "$lib/server/starterPaths";
 import { teacherAuthorization, teacherPocketBaseRequest } from "$lib/server/pocketbase";
@@ -18,7 +19,12 @@ export async function POST({ request, cookies }) {
     .map((student: { name?: unknown }) => String(student?.name ?? "").trim())
     .filter(Boolean);
   const selectedPaths: unknown[] = Array.isArray(body.starterPaths) ? body.starterPaths : [];
-  // Pacing chosen during setup applies to every ready-made path.
+  // Paths the teacher already has, reused rather than rebuilt. Their steps point
+  // at the quizzes she has already tuned instead of making her a fresh copy.
+  const reusedPaths: string[] = (Array.isArray(body.existingPaths) ? body.existingPaths : [])
+    .map((id: unknown) => String(id ?? "").trim())
+    .filter(Boolean);
+  // Pacing chosen during setup applies to every path this class starts with.
   const selfPaced = body.selfPaced === true;
 
   if (!name) return json({ message: "Add a class name." }, { status: 400 });
@@ -79,6 +85,9 @@ export async function POST({ request, cookies }) {
           { ...starterProgression(path), selfPaced },
         );
       }
+    }
+    for (const progressionId of new Set(reusedPaths)) {
+      await copyProgressionToClass(authorization, progressionId, { classId: classRoom.id, selfPaced });
     }
   } catch (caught) {
     return json({

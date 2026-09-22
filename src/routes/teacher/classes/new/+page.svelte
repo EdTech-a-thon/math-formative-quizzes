@@ -1,8 +1,10 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import Icon from "$lib/Icon.svelte";
+  import IconGlyph from "$lib/IconGlyph.svelte";
 
-  export let data: { defaultClassName: string };
+  type ExistingPath = { id: string; name: string; className: string; quizCount: number };
+  export let data: { defaultClassName: string; existingPaths: ExistingPath[] };
 
   let name = data.defaultClassName;
   let signupMode: "open" | "closed" = "open";
@@ -14,6 +16,9 @@
     { key: "division", title: "Division", detail: "Divide with 1–12 · 12 short quizzes" },
   ];
   let selectedPaths = new Set<string>(["multiplication"]);
+  // Paths she already built, offered so a new class can use the quizzes she has
+  // already tuned instead of getting a fresh copy of every one.
+  let reusedPaths = new Set<string>();
   // Whether the ready-made paths open each attempt automatically or wait for a
   // teacher release. Asked here so nobody has to edit every path afterwards.
   let selfPaced = false;
@@ -26,6 +31,13 @@
     if (next.has(key)) next.delete(key);
     else next.add(key);
     selectedPaths = next;
+  }
+
+  function toggleExistingPath(id: string) {
+    const next = new Set(reusedPaths);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    reusedPaths = next;
   }
 
   function addStudents(names: string[]) {
@@ -44,7 +56,7 @@
     error = "";
     pending = true;
     try {
-      const response = await fetch("/api/classes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, signupMode, students: signupMode === "closed" ? students : [], starterPaths: [...selectedPaths], selfPaced }) });
+      const response = await fetch("/api/classes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, signupMode, students: signupMode === "closed" ? students : [], starterPaths: [...selectedPaths], existingPaths: [...reusedPaths], selfPaced }) });
       const result = await response.json();
       if (result.classRoom?.id) createdClassId = result.classRoom.id;
       if (!response.ok) throw new Error(result.message);
@@ -65,7 +77,11 @@
 
     <section class="setup-section"><h2>Choose ready-made practice</h2><p class="section-help">Select as many math-fact paths as your class needs. You can also build your own quizzes later.</p><div class="starter-path-grid">{#each starterPaths as path}<button type="button" class={`starter-path op-${path.key}`} class:chosen={selectedPaths.has(path.key)} aria-pressed={selectedPaths.has(path.key)} on:click={() => togglePath(path.key)}><span class="starter-path-symbol">{path.key === "addition" ? "+" : path.key === "subtraction" ? "−" : path.key === "multiplication" ? "×" : "÷"}</span><span><strong>{path.title}</strong><small>{path.detail}</small></span><span class="starter-path-check" aria-hidden="true">{selectedPaths.has(path.key) ? "✓" : ""}</span></button>{/each}</div></section>
 
-    {#if selectedPaths.size}
+    {#if data.existingPaths.length}
+      <section class="setup-section"><h2>Use practice you already built</h2><p class="section-help">Pick a path from one of your other classes and this class will use the very same quizzes.</p><p class="share-note">These quizzes are shared between your classes. If you change one later, the change shows up in every class using it.</p><div class="starter-path-grid">{#each data.existingPaths as path (path.id)}<button type="button" class="starter-path reuse-path" class:chosen={reusedPaths.has(path.id)} aria-pressed={reusedPaths.has(path.id)} on:click={() => toggleExistingPath(path.id)}><span class="starter-path-symbol"><IconGlyph name="route" fallback="route" size={20} /></span><span><strong>{path.name}</strong><small>From {path.className} · {path.quizCount === 1 ? "1 quiz" : `${path.quizCount} quizzes`}</small></span><span class="starter-path-check" aria-hidden="true">{reusedPaths.has(path.id) ? "✓" : ""}</span></button>{/each}</div></section>
+    {/if}
+
+    {#if selectedPaths.size || reusedPaths.size}
       <section class="setup-section"><h2>How will quizzes open?</h2><p class="section-help">Applies to every path you picked above. You can change this later in each path's settings.</p><div class="mode-grid"><button type="button" class:chosen={!selfPaced} aria-pressed={!selfPaced} on:click={() => selfPaced = false}><strong>Teacher releases</strong><small>Each attempt waits until you release it, so you decide when learners move on.</small></button><button type="button" class:chosen={selfPaced} aria-pressed={selfPaced} on:click={() => selfPaced = true}><strong>Students continue</strong><small>Each retry or next quiz opens automatically as soon as a learner finishes.</small></button></div></section>
     {/if}
 

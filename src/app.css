@@ -564,6 +564,11 @@ button span {
 .starter-path strong, .starter-path small { display: block; }
 .starter-path small { margin-top: 3px; color: #77728c; font-size: .73rem; line-height: 1.3; }
 .starter-path-check { display: grid; width: 20px; height: 20px; flex: 0 0 auto; place-items: center; margin-left: auto; border: 1px solid var(--operation); border-radius: 50%; color: var(--operation); font-size: .78rem; }
+/* Paths she already built, offered beside the ready-made ones. They belong to
+   no one operation, so they borrow the app's own accent instead of an
+   operation colour. */
+.reuse-path { --operation: #6748d1; --operation-soft: #f0ecff; }
+.share-note { margin: 11px 0 0; border: 1px solid #ded5f5; border-radius: 11px; padding: 11px 13px; background: #f7f4ff; color: #4d399b; font-size: .85rem; line-height: 1.5; }
 .setup-page .message a { color: inherit; font-weight: 900; }
 .class-next-step { display: flex; align-items: flex-start; gap: 13px; margin: 0 0 22px; border: 1px solid #ded5f5; border-radius: 13px; padding: 15px; background: #f7f4ff; }
 .class-next-step-icon { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: #eee9ff; color: #6748d1; }
