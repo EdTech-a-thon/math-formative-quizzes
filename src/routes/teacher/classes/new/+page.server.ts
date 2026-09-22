@@ -18,7 +18,9 @@ export async function load({ locals, cookies }) {
     // even a created or updated one — so the row order is the only account of
     // recency there is. It puts the path she built most recently at the top;
     // re-editing an older path does not move it back up.
-    globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=500&sort=${encodeURIComponent("-@rowid")}`, { headers }),
+    // Quizzes she has given out on their own are hidden single-quiz paths, and
+    // are never practice a new class should be started from.
+    globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=500&sort=${encodeURIComponent("-@rowid")}&filter=${encodeURIComponent("standalone != true")}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=500&fields=progression`, { headers }),
   ]);
   const classes = classesResponse.ok ? await classesResponse.json() : { items: [], totalItems: 0 };

@@ -11,7 +11,9 @@ export async function load({ cookies, params }) {
   const [response, stepsResponse, progressionsResponse, classesResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/quizzes/records/${params.quizId}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=500&filter=${encodeURIComponent(`quiz="${params.quizId}"`)}`, { headers }),
-    globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=500`, { headers }),
+    // How far an edit to this quiz reaches is counted in learning paths, so the
+    // hidden single-quiz paths behind "assign on its own" are left out.
+    globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=500&filter=${encodeURIComponent("standalone != true")}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/classes/records?perPage=500`, { headers }),
   ]);
   if (response.status === 404) error(404, "Quiz not found.");

@@ -30,8 +30,11 @@ export async function load({ cookies, params }) {
     counts[enrollment.progression] = (counts[enrollment.progression] ?? 0) + 1;
   }
 
+  // A quiz given to students on its own is stored as a hidden learning path
+  // holding only that quiz, so it is kept out of the list of paths — otherwise
+  // this page grows a card for every quiz she has ever handed out.
   const classProgressions = progressions.items
-    .filter((progression: { class: string }) => progression.class === params.id)
+    .filter((progression: { class: string; standalone?: boolean }) => progression.class === params.id && progression.standalone !== true)
     .map((progression: { id: string }) => ({
       ...progression,
       studentCount: studentCount[progression.id] ?? 0,

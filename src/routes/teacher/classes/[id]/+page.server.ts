@@ -9,12 +9,16 @@ export async function load({ locals, cookies, params }) {
 
   const headers = { Authorization: teacherAuthorization(cookies) };
   const classFilter = encodeURIComponent(`class="${params.id}"`);
+  // A quiz given to students on its own is stored as a hidden single-quiz
+  // learning path, so every list of learning paths has to leave those out or
+  // the teacher gets one per quiz she has handed out.
+  const pathFilter = encodeURIComponent(`class="${params.id}" && standalone != true`);
   const nestedFilter = (path: string) => encodeURIComponent(`${path}.class="${params.id}"`);
 
   const [classResponse, studentsResponse, progressionsResponse, enrollmentsResponse, stepsResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/classes/records/${params.id}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/students/records?perPage=500&sort=name&filter=${classFilter}`, { headers }),
-    globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=200&sort=name&filter=${classFilter}`, { headers }),
+    globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=200&sort=name&filter=${pathFilter}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=1000&expand=progression,currentStep&filter=${nestedFilter("student")}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=2000&filter=${nestedFilter("progression")}`, { headers }),
   ]);
@@ -45,7 +49,7 @@ export async function load({ locals, cookies, params }) {
     progression: string;
     status: string;
     released?: boolean;
-    expand?: { progression?: { name: string; operation: Operation; shade?: string; icon?: string }; currentStep?: { position: number } };
+    expand?: { progression?: { name: string; operation: Operation; shade?: string; icon?: string; standalone?: boolean }; currentStep?: { position: number; quiz?: string } };
   };
   const enrollments = (enrollmentItems as EnrollmentRecord[]).map((enrollment) => ({
     id: enrollment.id,
@@ -57,6 +61,11 @@ export async function load({ locals, cookies, params }) {
     icon: enrollment.expand?.progression?.icon || "",
     position: enrollment.expand?.currentStep?.position ?? 1,
     totalSteps: stepCount[enrollment.progression] ?? 0,
+    // A quiz she gave out on its own still belongs on the roster beside this
+    // student's paths — it is work they owe her. It just is not a path, so the
+    // chip points at the quiz and says nothing about steps.
+    standalone: enrollment.expand?.progression?.standalone === true,
+    quizId: enrollment.expand?.currentStep?.quiz ?? "",
     status: enrollment.status,
     released: Boolean((enrollment as EnrollmentRecord & { released?: boolean }).released),
   }));

@@ -46,7 +46,10 @@ export async function POST({ request, cookies, params, locals }) {
     // keeps pointing at it, exactly as it should.
     const progressions = await teacherPocketBaseRequest<Items<Progression>>(
       cookies,
-      `/api/collections/progressions/records?perPage=1&filter=${encodeURIComponent(`class="${classId}"`)}`,
+      // A hidden single-quiz path from "assign on its own" is not the class's
+      // learning path, and picking one here would leave the real path pointing
+      // at the original quiz with nothing to say why.
+      `/api/collections/progressions/records?perPage=1&filter=${encodeURIComponent(`class="${classId}" && standalone != true`)}`,
       { errorMessage: "The copy was made, but this class's path could not be found.", preferErrorMessage: true },
     );
     const progressionId = progressions.items[0]?.id;

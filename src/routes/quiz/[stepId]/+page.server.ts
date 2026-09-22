@@ -8,6 +8,9 @@ type QuizStep = {
   progressionName: string;
   position: number;
   totalSteps: number;
+  // A quiz set on its own is a path of one behind the scenes, and the student's
+  // screen must never let that show.
+  standalone: boolean;
   passPercentage: number;
   allowIncompleteAnswers: boolean;
   // Both set on the progression, so every step of a path is sat the same way.
@@ -34,6 +37,7 @@ const finishedSheet = {
   progressionName: "",
   position: 0,
   totalSteps: 0,
+  standalone: false,
   passPercentage: 0,
   allowIncompleteAnswers: true,
   oneAtATime: false,
@@ -123,6 +127,7 @@ export const actions = {
       progressionName: step.progressionName,
       position: step.position,
       totalSteps: step.totalSteps,
+      standalone: step.standalone,
     };
   },
 };

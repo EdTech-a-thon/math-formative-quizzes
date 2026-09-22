@@ -9,13 +9,14 @@
     progressionName: string;
     position: number;
     totalSteps: number;
+    standalone: boolean;
     allowIncompleteAnswers: boolean;
     oneAtATime: boolean;
     extraTimeMinutes: number;
     timerStorageKey: string;
   };
   type Missed = { top: number; bottom: number; symbol: string; answer: string; correctAnswer: number };
-  export let form: { finished?: boolean; timedOut?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; missed?: Missed[]; error?: string } | null = null;
+  export let form: { finished?: boolean; timedOut?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; standalone?: boolean; missed?: Missed[]; error?: string } | null = null;
 
   // Exactly the questions the teacher arranged, in their order.
   $: problems = data.quiz.problems;
@@ -144,7 +145,9 @@
           {/each}
         </section>
       {/if}
-      {#if form.finishedProgression}
+      {#if form.finishedProgression && form.standalone}
+        <p class="results-note">You passed {form.progressionName}. That is this one done!</p>
+      {:else if form.finishedProgression}
         <p class="results-note">You finished {form.progressionName}. Every step is done!</p>
       {:else if form.leveledUp}
         <p class="results-note">Next quiz: {form.nextQuizName}</p>
@@ -165,7 +168,9 @@
 
       <header class="quiz-head">
         <div>
-          <p class="eyebrow">{data.progressionName.toUpperCase()} · STEP {data.position} OF {data.totalSteps}</p>
+          <!-- A quiz set on its own is not a step of anything, so it is not
+               announced as one. -->
+          <p class="eyebrow">{data.standalone ? "YOUR PRACTICE" : `${data.progressionName.toUpperCase()} · STEP ${data.position} OF ${data.totalSteps}`}</p>
           <h1>{data.quiz.title}</h1>
         </div>
       </header>

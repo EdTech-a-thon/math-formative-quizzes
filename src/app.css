@@ -748,6 +748,16 @@ button span {
 .assign-dialog > header p { margin: 0; color: #81799a; font-size: .8rem; }
 .assign-dialog-close { display: grid; width: 32px; height: 32px; flex: 0 0 auto; margin: 0; padding: 0; place-items: center; border: 1px solid #e6dfed; border-radius: 9px; background: #fff; box-shadow: none; color: #756e80; }
 .assign-dialog-close:hover { transform: none; border-color: #c0b5d5; background: #f8f5fb; }
+/* What a picker settles about the work itself before it goes out, above the
+   list of who gets it — the passing score and pacing on a quiz given on its own. */
+.assign-settings { display: grid; gap: 8px; margin-top: 15px; }
+.assign-setting { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 13px; border: 1px solid #e6dfed; border-radius: 12px; background: #faf8fd; }
+.assign-setting strong { display: block; font-size: .84rem; }
+.assign-setting small { display: block; margin-top: 2px; color: #81799a; font-size: .74rem; }
+.assign-setting .stepper { flex: 0 0 auto; }
+.assign-pacing { display: flex; flex: 0 0 auto; gap: 6px; }
+.assign-pacing button { margin: 0; padding: 8px 11px; border: 1px solid #e0dbe8; border-radius: 10px; background: #fff; box-shadow: none; color: #756e80; font-size: .76rem; font-weight: 800; white-space: nowrap; }
+.assign-pacing button.on { border-color: #9c87e8; background: #eee9ff; color: #4d399b; }
 .assign-dialog-search { display: flex; align-items: center; gap: 8px; margin-top: 15px; padding: 0 12px; border: 1px solid #e0dbe8; border-radius: 11px; background: #fff; color: #a29aae; }
 .assign-dialog-search:focus-within { border-color: #9c87e8; box-shadow: 0 0 0 3px #eee9ff; }
 .assign-dialog-search input { flex: 1; min-width: 0; margin: 0; padding: 10px 0; border: 0; background: transparent; color: #4c465c; font-size: .88rem; outline: none; }
@@ -1130,6 +1140,9 @@ button span {
 .card-memberships { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
 .membership-tag { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 3px 9px; background: var(--operation-soft, #f1edff); color: var(--operation, #6748d1); font-size: .69rem; font-weight: 800; }
 .membership-tag.none { border: 1px dashed #ded7e6; background: transparent; color: #a29aae; }
+/* Who has a quiz that was given out on its own, rather than a path it sits in. */
+.membership-tag.given { background: #f4f1ec; color: #6c6478; }
+.membership-tag.given.finished { background: #e7f6ec; color: #2f7d4f; }
 .membership-tag em { font-style: normal; font-weight: 700; opacity: .72; }
 .membership-tag em::before { content: "· "; }
 

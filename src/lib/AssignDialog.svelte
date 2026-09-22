@@ -63,6 +63,10 @@
       <button type="button" class="assign-dialog-close" aria-label="Close" disabled={busy} on:click={onClose}><Icon name="x" size={18} /></button>
     </header>
 
+    <!-- Some pickers decide something about the work before it goes out, such
+         as the passing score on a quiz given on its own. -->
+    <slot name="settings" />
+
     <div class="assign-dialog-search">
       <Icon name="search" size={15} />
       <input use:focusOnOpen bind:value={search} placeholder={`Search ${noun}s…`} aria-label={`Search ${noun}s`} />

@@ -24,6 +24,9 @@
 //   send-to-step               Students sent straight to one quiz in a path,
 //                              forwards and backwards, and what that must not
 //                              disturb.
+//   assign-one-off             One quiz given to students on its own: it reaches
+//                              their home screens with no step line, and never
+//                              shows up in the teacher's learning paths.
 //   reuse-path                 A new class started from a path she already has,
 //                              reusing her quizzes instead of copying them.
 //   remove-vs-delete           Removing a quiz from one path leaves it alone
@@ -1107,6 +1110,139 @@ async function sendToStep() {
   await b.close();
 }
 
+// --- A quiz given to students on its own -----------------------------------
+//
+// A teacher whose class is not working through a sequence still wants to set
+// one drill. Behind the scenes that quiz becomes a learning path holding only
+// itself, which is what lets it travel the same step-and-enrollment pipeline
+// every other quiz travels. None of that is hers to see: the quiz must not
+// appear in her list of learning paths, and the student's screen must not call
+// it "step 1 of 1". Those two leaks are what this scenario watches for.
+
+// Open the picker that gives one quiz to students on its own.
+async function openGiveDialog(page, classId, quizTitle) {
+  await page.goto(`${BASE}/teacher/classes/${classId}/quizzes`, { waitUntil: "networkidle" });
+  await page.locator(".library-card", { hasText: quizTitle }).locator("button.assign-on-its-own").click();
+  await page.waitForSelector(".assign-dialog");
+}
+
+// One card on the student's home screen, flattened to a single line.
+async function cardText(student, title) {
+  await student.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  const card = student.locator("article.assigned-card", { hasText: title });
+  if (!(await card.count())) return "";
+  return (await card.first().innerText()).replace(/\s*\n+\s*/g, " | ").trim();
+}
+
+async function assignOneOff() {
+  const b = await browser();
+  const { page } = await signUpTeacher(b, "One-off Teacher");
+  const classId = await createEmptyClass(page, "Fractions Period 4");
+  const code = await teacherClassCode(page, classId);
+
+  // An ordinary two-quiz learning path in the same class, so "one-offs stay out
+  // of the paths list" has something real to stay out of, and the student's
+  // home screen carries an ordinary card to be compared against.
+  const warmUp = await makeQuiz(page, "Threes warm up", {});
+  const sprint = await makeQuiz(page, "Threes sprint", {});
+  const ladder = await makePath(page, classId, "Threes ladder", [warmUp, sprint], { passPercentage: 50 });
+
+  const sixes = await makeQuiz(page, "Multiply by 6 alone", {});
+  const nines = await makeQuiz(page, "Multiply by 9 alone", {});
+
+  const ada = await joinAsStudent(b, code, "Ada Oneoff");
+  const bo = await joinAsStudent(b, code, "Bo Oneoff");
+  const adaId = await studentId(page, classId, "Ada Oneoff");
+  const boId = await studentId(page, classId, "Bo Oneoff");
+  const onLadder = await page.request.post(`${BASE}/api/enrollments/bulk`, { data: { students: [adaId, boId], progressions: [ladder] } });
+  if (!onLadder.ok()) throw new Error(`could not assign the ladder: ${onLadder.status()} ${await onLadder.text()}`);
+
+  // ---- One quiz, two students, nothing built around it --------------------
+  await openGiveDialog(page, classId, "Multiply by 6 alone");
+  const score = (await page.locator(".assign-settings .stepper b").innerText()).replace(/\s+/g, "");
+  const pacing = (await page.locator(".assign-pacing button.on").innerText()).trim();
+  check("the dialog collects a passing score and pacing, already answered 80% and straight away", score === "80%" && pacing === "Straight away", `${score}, "${pacing}"`);
+  const wording = (await page.locator(".assign-dialog header, .assign-settings").allInnerTexts()).join(" | ").replace(/\s*\n+\s*/g, " | ");
+  check("and it says they may retry, never that this is a single sitting", /retry/i.test(wording) && !/(single sitting|one sitting|one attempt|one go|only once)/i.test(wording), `"${wording}"`);
+  await page.screenshot({ path: join(SHOTS, "assign-one-off-dialog.png") });
+
+  const label = await confirmSend(page, ["Ada Oneoff", "Bo Oneoff"]);
+  check("one action gives the quiz to both students, and the confirm says assign, not send", /^Assign 2 students$/.test(label), `"${label}"`);
+  const told = (await page.locator(".message.success").innerText()).trim();
+  check("the teacher is told it went out and that nobody is waiting on her", /Gave Multiply by 6 alone to 2 students\. They can all start it right away\./.test(told), `"${told}"`);
+
+  // ---- It reaches both home screens, startable with no release ------------
+  for (const [student, name] of [[ada, "Ada Oneoff"], [bo, "Bo Oneoff"]]) {
+    const seen = await offered(student, "Multiply by 6 alone");
+    check(`${name}'s home screen offers it and starts it with no release pressed`, seen.onScreen && seen.canStart, JSON.stringify(seen));
+  }
+
+  // ---- and it reads as ordinary waiting work, with no step line -----------
+  const oneOffCard = await cardText(ada, "Multiply by 6 alone");
+  const pathCard = await cardText(ada, "Threes warm up");
+  check("the one-off card carries no step line, where a quiz inside a path does", !/step \d+ of \d+/i.test(oneOffCard) && /step 1 of 2/i.test(pathCard), `one-off: "${oneOffCard}" · in a path: "${pathCard}"`);
+  await ada.screenshot({ path: join(SHOTS, "assign-one-off-student-home.png"), fullPage: true });
+
+  // ---- and it is nowhere in her learning paths ----------------------------
+  await page.goto(`${BASE}/teacher/classes/${classId}/progressions`, { waitUntil: "networkidle" });
+  const listedPaths = await page.locator("a.progression-card-link").count();
+  const pathsText = await page.locator("body").innerText();
+  check("the one-off stays out of the teacher's learning paths list", listedPaths === 1 && !pathsText.includes("Multiply by 6 alone"), `${listedPaths} listed, mentions the quiz: ${pathsText.includes("Multiply by 6 alone")}`);
+  await page.screenshot({ path: join(SHOTS, "assign-one-off-paths.png"), fullPage: true });
+
+  // ---- The two actions never read the same ---------------------------------
+  await page.goto(`${BASE}/teacher/classes/${classId}/quizzes`, { waitUntil: "networkidle" });
+  const assignLabel = (await page.locator("button.assign-on-its-own").first().innerText()).trim();
+  await page.goto(`${BASE}/teacher/classes/${classId}/progressions/${ladder}`, { waitUntil: "networkidle" });
+  const sendLabel = (await page.locator("button.step-send-button").first().innerText()).trim();
+  check("giving a quiz on its own and sending students to a step are worded differently", assignLabel !== sendLabel && /assign/i.test(assignLabel) && /send/i.test(sendLabel), `"${assignLabel}" vs "${sendLabel}"`);
+
+  // ---- Who still owes it to her, and who has finished ----------------------
+  await sitQuiz(ada, "Multiply by 6 alone", true);
+  const finishedNote = (await ada.locator(".quiz-results .results-note").innerText()).trim();
+  check("passing a one-off never congratulates her on finishing a sequence of steps", /That is this one done!/.test(finishedNote) && !/step/i.test(finishedNote), `"${finishedNote}"`);
+  await page.goto(`${BASE}/teacher/classes/${classId}/quizzes`, { waitUntil: "networkidle" });
+  const library = (await page.locator(".library-card", { hasText: "Multiply by 6 alone" }).innerText()).replace(/\s*\n+\s*/g, " | ");
+  check("the teacher sees who still has it outstanding and who has finished it", /Bo Oneoff still to do/.test(library) && /Ada Oneoff finished it/.test(library), `"${library}"`);
+  await page.screenshot({ path: join(SHOTS, "assign-one-off-quizzes.png"), fullPage: true });
+
+  // ---- A finished one-off is just another finished quiz --------------------
+  await ada.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  const history = (await ada.locator(".history-row .history-name strong").allInnerTexts()).map((title) => title.trim());
+  check("a finished one-off lands in the student's own history", history.includes("Multiply by 6 alone"), history.join(", ") || "empty");
+  const herAttempts = await attemptTitles(page, classId, adaId);
+  check("and in the attempt history her teacher reads", herAttempts.includes("Multiply by 6 alone"), herAttempts.join(", ") || "no attempts");
+
+  // ---- Her page shows one-offs beside her learning paths -------------------
+  await page.goto(`${BASE}/teacher/classes/${classId}/students/${boId}`, { waitUntil: "networkidle" });
+  const onHisPage = (await page.locator(".student-progression-card h3").allInnerTexts()).map((name) => name.trim());
+  const oneOffOnPage = (await page.locator(".student-progression-card", { hasText: "Multiply by 6 alone" }).innerText()).replace(/\s*\n+\s*/g, " | ");
+  check("a student's page shows their one-off quizzes alongside their learning paths", onHisPage.includes("Threes ladder") && onHisPage.includes("Multiply by 6 alone") && !/STEP/.test(oneOffOnPage), `${onHisPage.join(", ")} — one-off card: "${oneOffOnPage}"`);
+  const counted = (await page.locator(".student-detail-heading-actions span").first().innerText()).trim();
+  check("and counts the one-off apart from her learning paths rather than as one", counted === "1 progression · 1 quiz on its own", `"${counted}"`);
+  await page.screenshot({ path: join(SHOTS, "assign-one-off-student-page.png"), fullPage: true });
+
+  // ---- Pacing is a real choice, not a default she cannot escape ------------
+  await openGiveDialog(page, classId, "Multiply by 9 alone");
+  await page.locator(".assign-pacing button", { hasText: "When I release it" }).click();
+  await confirmSend(page, ["Bo Oneoff"]);
+  const heldTold = (await page.locator(".message.success").innerText()).trim();
+  const waiting = await offered(bo, "Multiply by 9 alone");
+  check("choosing to release it later leaves the student waiting instead", waiting.onScreen && !waiting.canStart && /Release it when you want them to start\./.test(heldTold), `${JSON.stringify(waiting)} — "${heldTold}"`);
+
+  // ---- Handing the same quiz out twice never doubles it up -----------------
+  await openGiveDialog(page, classId, "Multiply by 6 alone");
+  const beside = (await page.locator(".assign-dialog-row", { hasText: "Bo Oneoff" }).innerText()).replace(/\s*\n+\s*/g, " | ");
+  await confirmSend(page, ["Bo Oneoff"]);
+  const again = (await page.locator(".message.success").innerText()).trim();
+  await bo.goto(`${BASE}/home`, { waitUntil: "networkidle" });
+  const copies = await bo.locator("article.assigned-card", { hasText: "Multiply by 6 alone" }).count();
+  check("the picker says who already has it, and giving it again does not double it up", /already has this quiz/.test(beside) && copies === 1, `"${beside}" — ${copies} card(s), told "${again}"`);
+
+  log(`\nshots in ${SHOTS}`);
+  await b.close();
+}
+
 // --- Starting a class from a path she already has --------------------------
 //
 // The ticket this whole effort exists for: creating a class used to mint a
@@ -1535,6 +1671,8 @@ async function smoke() {
   await classDelete();
   log("\n-- sending students to a step --");
   await sendToStep();
+  log("\n-- a quiz given to students on its own --");
+  await assignOneOff();
   log("\n-- a class from a path she already has --");
   await reusePath();
   log("\n-- remove from a path vs. delete a quiz --");
@@ -1578,6 +1716,7 @@ else if (cmd === "pdf-exports") { await pdfExports(); summarise(); }
 else if (cmd === "cross-class") { await crossClass(); summarise(); }
 else if (cmd === "class-delete") { await classDelete(); summarise(); }
 else if (cmd === "send-to-step") { await sendToStep(); summarise(); }
+else if (cmd === "assign-one-off") { await assignOneOff(); summarise(); }
 else if (cmd === "reuse-path") { await reusePath(); summarise(); }
 else if (cmd === "remove-vs-delete") { await removeVsDelete(); summarise(); }
 else if (cmd === "copy-for-class") { await copyForClass(); summarise(); }
@@ -1585,6 +1724,6 @@ else if (cmd === "release") await release();
 else if (cmd === "shot") await shot(args[0] ?? "/", args[1]);
 else if (cmd === "student-shot") await shot(args[0] ?? "quiz", args[1] ?? "student", true);
 else {
-  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | pdf-exports | cross-class | class-delete | send-to-step | reuse-path | remove-vs-delete | copy-for-class | release | shot <path> [name] | student-shot <path|quiz> [name]");
+  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | pdf-exports | cross-class | class-delete | send-to-step | assign-one-off | reuse-path | remove-vs-delete | copy-for-class | release | shot <path> [name] | student-shot <path|quiz> [name]");
   process.exit(1);
 }

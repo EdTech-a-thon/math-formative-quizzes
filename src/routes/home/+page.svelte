@@ -4,7 +4,7 @@
   import { shadeClass } from "$lib/shades";
   import { formatTimeLimit } from "$lib/timeLimit";
 
-  type Assigned = { stepId: string; progressionName: string; position: number; totalSteps: number; title: string; icon: string; shade: string; questionCount: number; timeLimitSeconds: number; released: boolean };
+  type Assigned = { stepId: string; progressionName: string; position: number; totalSteps: number; standalone: boolean; title: string; icon: string; shade: string; questionCount: number; timeLimitSeconds: number; released: boolean };
   type Finished = { id: string; title: string; icon: string; shade: string; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string; canReview: boolean };
 
   export let data: { studentName: string; className: string; extraTimeMinutes: number; forYou: Assigned[]; history: Finished[] };
@@ -43,7 +43,11 @@
             <article class={`assigned-card ${shadeClass(assigned.shade)}`} class:attempt-waiting={!assigned.released}>
               <span class="assigned-symbol"><IconGlyph name={assigned.icon || null} fallback="clipboard-list" size={22} /></span>
               <h3>{assigned.title}</h3>
-              <p class="assigned-path">{assigned.progressionName} · step {assigned.position} of {assigned.totalSteps}</p>
+              <!-- A quiz set on its own has no sequence to place it in, so the
+                   card simply does not carry that line. -->
+              {#if !assigned.standalone}
+                <p class="assigned-path">{assigned.progressionName} · step {assigned.position} of {assigned.totalSteps}</p>
+              {/if}
               <p class="assigned-meta">{assigned.questionCount} questions{secondsFor(assigned) ? ` · ${formatTimeLimit(secondsFor(assigned))}` : ""}</p>
               {#if assigned.released}
                 <a class="start-quiz" href="/quiz/{assigned.stepId}">Start quiz <Icon name="arrow-right" size={16} /></a>

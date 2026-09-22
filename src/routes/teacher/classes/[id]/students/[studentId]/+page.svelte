@@ -7,7 +7,7 @@
   import { shadeClass, type ShadeId } from "$lib/shades";
   import { assignmentSummary } from "$lib/assignments";
 
-  type Enrollment = { id: string; progressionId: string; currentStep: string; progressionName: string; icon: string | null; shade: ShadeId | null; operation: string; position: number; totalSteps: number; currentQuiz: string; status: string; released: boolean };
+  type Enrollment = { id: string; progressionId: string; currentStep: string; progressionName: string; icon: string | null; shade: ShadeId | null; operation: string; position: number; totalSteps: number; standalone: boolean; quizId: string; currentQuiz: string; status: string; released: boolean };
   type Attempt = { id: string; title: string; position: number | null; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string };
   type Progression = { id: string; name: string; operation: string; shade: string; stepCount: number };
   export let data: { student: { id: string; name: string; loginName: string; extraTimeMinutes: number }; enrollments: Enrollment[]; attempts: Attempt[]; progressions: Progression[] };
@@ -15,6 +15,9 @@
   let busy = "";
   let error = "";
   let message = "";
+
+  $: oneOffCount = data.enrollments.filter((enrollment) => enrollment.standalone).length;
+  $: pathCount = data.enrollments.length - oneOffCount;
 
   // Accommodations follow the student, so they apply to every quiz this student
   // sits. Extra time is added on top of whatever time limit the quiz carries.
@@ -143,9 +146,11 @@
 
   <section aria-labelledby="current-progress-title">
     <div class="student-detail-section-heading">
-      <div><h2 id="current-progress-title">Current progress</h2><p>Where {data.student.name} is in each learning path.</p></div>
+      <div><h2 id="current-progress-title">Current progress</h2><p>What {data.student.name} is working on right now.</p></div>
       <div class="student-detail-heading-actions">
-        <span>{data.enrollments.length} {data.enrollments.length === 1 ? "progression" : "progressions"}</span>
+        <!-- Quizzes set on their own are counted apart from the learning paths,
+             so neither is described as the other. -->
+        <span>{pathCount} {pathCount === 1 ? "progression" : "progressions"}{oneOffCount ? ` · ${oneOffCount} ${oneOffCount === 1 ? "quiz" : "quizzes"} on ${oneOffCount === 1 ? "its" : "their"} own` : ""}</span>
         {#if data.progressions.length}<button type="button" class="assign-open" on:click={() => (picking = true)}><Icon name="plus" size={15} /> Assign</button>{/if}
       </div>
     </div>
@@ -153,10 +158,13 @@
       <div class="student-progression-grid">
         {#each data.enrollments as enrollment}
           <article class={`student-progression-card ${shadeClass(enrollment.shade, enrollment.operation)}`}>
-            <a class="student-progression-link" href={`/teacher/classes/${$page.params.id}/progressions/${enrollment.progressionId}#${enrollment.status === "completed" ? "completed" : `step-${enrollment.currentStep}`}`}>
-              <span class="student-progression-icon"><IconGlyph name={enrollment.icon} fallback="route" size={21} /></span>
-              <div class="student-progression-main"><h3>{enrollment.progressionName}</h3>{#if enrollment.status === "completed"}<p>All quizzes completed</p>{:else}<p>{enrollment.currentQuiz}</p>{/if}</div>
-              {#if enrollment.status !== "completed"}<span class="student-current-step"><small>STEP</small><strong>{enrollment.position}</strong><em>of {enrollment.totalSteps}</em></span>{/if}
+            <!-- A quiz given on its own sits here beside this student's
+                 learning paths, because it is work they owe her just the same.
+                 It opens the quiz itself, and has no step to count. -->
+            <a class="student-progression-link" href={enrollment.standalone ? `/teacher/classes/${$page.params.id}/quizzes/${enrollment.quizId}` : `/teacher/classes/${$page.params.id}/progressions/${enrollment.progressionId}#${enrollment.status === "completed" ? "completed" : `step-${enrollment.currentStep}`}`}>
+              <span class="student-progression-icon"><IconGlyph name={enrollment.icon} fallback={enrollment.standalone ? "clipboard-list" : "route"} size={21} /></span>
+              <div class="student-progression-main"><h3>{enrollment.progressionName}</h3>{#if enrollment.standalone}<p>{enrollment.status === "completed" ? "Finished" : "Set on its own"}</p>{:else if enrollment.status === "completed"}<p>All quizzes completed</p>{:else}<p>{enrollment.currentQuiz}</p>{/if}</div>
+              {#if enrollment.status !== "completed" && !enrollment.standalone}<span class="student-current-step"><small>STEP</small><strong>{enrollment.position}</strong><em>of {enrollment.totalSteps}</em></span>{/if}
             </a>
             {#if enrollment.status === "completed"}
               <span class="student-release-state completed"><Icon name="check" size={13} /> Completed</span>
