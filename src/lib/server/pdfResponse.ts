@@ -1,5 +1,3 @@
-export const pocketBaseUrl = "http://127.0.0.1:8090";
-
 // Turn a title into something safe to hand a filesystem, so the download lands
 // as "multiply-by-2.pdf" rather than anything with a slash in it.
 function fileNameFor(title: string): string {

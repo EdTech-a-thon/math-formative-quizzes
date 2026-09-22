@@ -16,7 +16,7 @@
   let selectedPaths = new Set<string>(["multiplication"]);
   // Whether the ready-made paths open each attempt automatically or wait for a
   // teacher release. Asked here so nobody has to edit every path afterwards.
-  let selfPaced = false;
+  let selfPaced = true;
   let error = "";
   let createdClassId = "";
   let pending = false;
@@ -59,11 +59,12 @@
   <a class="brand" href="/teacher/home"><span class="brand-mark">+</span><span>Fact Friends</span></a>
   <section class="class-setup" aria-labelledby="setup-title">
     <a class="back-link" href="/teacher/home"><Icon name="arrow-left" size={14} /> Back to teacher desk</a>
-    <p class="eyebrow">NEW CLASS</p><h1 id="setup-title">Set up your class</h1><p class="intro">Name your class, choose a starting practice path, and decide how learners will join. After setup, you can assign paths to students from your class roster.</p>
+    <p class="eyebrow">NEW CLASS</p><h1 id="setup-title">Set up your class</h1><p class="intro">Name your class, choose a starting learning path, and decide how learners will join. After setup, you can assign paths to students from your class roster.</p>
 
     <section class="setup-section"><h2>Class details</h2><label for="class-name">Class name</label><input id="class-name" bind:value={name} required /><p class="code-note">A unique six-digit class code will be created when you finish setup.</p></section>
 
-    <section class="setup-section"><h2>Choose ready-made practice</h2><p class="section-help">Select as many math-fact paths as your class needs. You can also build your own quizzes later.</p><div class="starter-path-grid">{#each starterPaths as path}<button type="button" class={`starter-path op-${path.key}`} class:chosen={selectedPaths.has(path.key)} aria-pressed={selectedPaths.has(path.key)} on:click={() => togglePath(path.key)}><span class="starter-path-symbol">{path.key === "addition" ? "+" : path.key === "subtraction" ? "−" : path.key === "multiplication" ? "×" : "÷"}</span><span><strong>{path.title}</strong><small>{path.detail}</small></span><span class="starter-path-check" aria-hidden="true">{selectedPaths.has(path.key) ? "✓" : ""}</span></button>{/each}</div></section>
+    <section class="setup-section"><h2>Choose ready-made practice</h2><p class="section-help">Select as many math-fact paths as your class needs. Each one uses the ready-made quizzes already in your quiz library. You can also build your own quizzes later.</p><div class="starter-path-grid">{#each starterPaths as path}<button type="button" class={`starter-path op-${path.key}`} class:chosen={selectedPaths.has(path.key)} aria-pressed={selectedPaths.has(path.key)} on:click={() => togglePath(path.key)}><span class="starter-path-symbol">{path.key === "addition" ? "+" : path.key === "subtraction" ? "−" : path.key === "multiplication" ? "×" : "÷"}</span><span><strong>{path.title}</strong><small>{path.detail}</small></span><span class="starter-path-check" aria-hidden="true">{selectedPaths.has(path.key) ? "✓" : ""}</span></button>{/each}</div></section>
+
 
     {#if selectedPaths.size}
       <section class="setup-section"><h2>How will quizzes open?</h2><p class="section-help">Applies to every path you picked above. You can change this later in each path's settings.</p><div class="mode-grid"><button type="button" class:chosen={!selfPaced} aria-pressed={!selfPaced} on:click={() => selfPaced = false}><strong>Teacher releases</strong><small>Each attempt waits until you release it, so you decide when learners move on.</small></button><button type="button" class:chosen={selfPaced} aria-pressed={selfPaced} on:click={() => selfPaced = true}><strong>Students continue</strong><small>Each retry or next quiz opens automatically as soon as a learner finishes.</small></button></div></section>

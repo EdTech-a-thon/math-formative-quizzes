@@ -10,7 +10,7 @@
   type Operation = "multiplication" | "division" | "addition" | "subtraction";
   type Student = { id: string; name: string; loginName: string; accommodations?: { extraTimeMinutes?: number } };
   type Progression = { id: string; name: string; operation: Operation; shade: string; stepCount: number };
-  type Enrollment = { id: string; student: string; progression: string; name: string; operation: Operation; shade: string; icon: string; position: number; totalSteps: number; status: string; released: boolean };
+  type Enrollment = { id: string; student: string; progression: string; name: string; operation: Operation; shade: string; icon: string; position: number; totalSteps: number; standalone: boolean; quizId: string; status: string; released: boolean };
 
   export let data: {
     classRoom: { id: string; name: string; classCode: string };
@@ -69,8 +69,8 @@
       operation: progression.operation,
     }));
   $: assignTitle = assignTo.length === 1
-    ? `Assign progressions to ${data.students.find((student) => student.id === assignTo[0])?.name ?? "this student"}`
-    : `Assign progressions to ${assignTo.length} students`;
+    ? `Assign learning paths to ${data.students.find((student) => student.id === assignTo[0])?.name ?? "this student"}`
+    : `Assign learning paths to ${assignTo.length} students`;
 
   async function confirmAssign(progressionIds: string[]) {
     dialogBusy = true;
@@ -145,7 +145,7 @@
   {#if error}<p class="message error">{error}</p>{/if}
 
   {#if data.progressions.length && !data.enrollments.length}
-    <aside class="class-next-step"><span class="class-next-step-icon"><Icon name="route" size={19} /></span><div><strong>Your practice paths are ready.</strong><p>{data.students.length ? "Select a student below and choose Assign to give them a path. Then release their first quiz when you're ready." : "Share the class code with learners. Once they join, assign them a practice path and release their first quiz."}</p></div></aside>
+    <aside class="class-next-step"><span class="class-next-step-icon"><Icon name="route" size={19} /></span><div><strong>Your learning paths are ready.</strong><p>{data.students.length ? "Select a student below and choose Assign to give them a path. Then release their first quiz when you're ready." : "Share the class code with learners. Once they join, assign them a learning path and release their first quiz."}</p></div></aside>
   {/if}
 
   {#if data.students.length}
@@ -158,19 +158,19 @@
     {/if}
     {#if bulkMessage}<p class="message success">{bulkMessage}</p>{/if}
     <section class="roster-table" aria-label={`${data.classRoom.name} students`}>
-      <div class="roster-table-heading roster-assign-heading"><span class="select-cell"><input type="checkbox" aria-label="Select all students" checked={allSelected} use:setIndeterminate on:change={toggleSelectAll} /></span><span>Student</span><span>Assigned progressions</span></div>
+      <div class="roster-table-heading roster-assign-heading"><span class="select-cell"><input type="checkbox" aria-label="Select all students" checked={allSelected} use:setIndeterminate on:change={toggleSelectAll} /></span><span>Student</span><span>Assigned learning paths</span></div>
       {#each data.students as student}
         <article class="roster-student roster-assign-row" class:row-selected={selected.has(student.id)}>
           <span class="select-cell"><input type="checkbox" aria-label={`Select ${student.name}`} checked={selected.has(student.id)} on:change={() => toggleStudent(student.id)} /></span>
           <a class="roster-student-name student-detail-link" href={`/teacher/classes/${data.classRoom.id}/students/${student.id}`}><span class="student-avatar">{student.name[0]}</span><div><strong>{student.name}</strong><small>{student.loginName}</small></div>{#if extraTimeFor(student)}<span class="accommodation-pill" title={`${extraTimeFor(student)} extra ${extraTimeFor(student) === 1 ? "minute" : "minutes"} on every quiz`}><Icon name="plus" size={11} /><Icon name="clock" size={14} /></span>{/if}</a>
           <div class="assign-cell">
             {#each enrollmentsFor(student.id) as enrollment}
-              <span class={`assign-chip ${shadeClass(enrollment.shade, enrollment.operation)}`}><a class="assign-chip-link" href={`/teacher/classes/${data.classRoom.id}/progressions/${enrollment.progression}`}><IconGlyph name={enrollment.icon || null} fallback="route" size={15} /><b>{enrollment.name}</b><small>step {enrollment.position}/{enrollment.totalSteps}</small></a>{#if enrollment.status === "active"}{#if enrollment.released}<span class="attempt-ready"><Icon name="check" size={11} /> Ready</span>{:else}<button type="button" class="attempt-release" disabled={busy} on:click={() => release(enrollment.id)}><Icon name="unlock" size={12} /> Release</button>{/if}{/if}<button type="button" class="assign-remove" aria-label={`Remove ${enrollment.name}`} disabled={busy} on:click={() => unassign(enrollment.id)}><Icon name="x" size={13} /></button></span>
+              <span class={`assign-chip ${shadeClass(enrollment.shade, enrollment.operation)}`}><a class="assign-chip-link" href={enrollment.standalone ? `/teacher/classes/${data.classRoom.id}/quizzes/${enrollment.quizId}` : `/teacher/classes/${data.classRoom.id}/progressions/${enrollment.progression}`}><IconGlyph name={enrollment.icon || null} fallback={enrollment.standalone ? "clipboard-list" : "route"} size={15} /><b>{enrollment.name}</b><small>{enrollment.standalone ? "on its own" : `step ${enrollment.position}/${enrollment.totalSteps}`}</small></a>{#if enrollment.status === "active"}{#if enrollment.released}<span class="attempt-ready"><Icon name="check" size={11} /> Ready</span>{:else}<button type="button" class="attempt-release" disabled={busy} on:click={() => release(enrollment.id)}><Icon name="unlock" size={12} /> Release</button>{/if}{/if}<button type="button" class="assign-remove" aria-label={`Remove ${enrollment.name}`} disabled={busy} on:click={() => unassign(enrollment.id)}><Icon name="x" size={13} /></button></span>
             {/each}
             {#if data.progressions.length}
               <button type="button" class="assign-add" disabled={busy} on:click={() => { assignedWholeSelection = false; assignTo = [student.id]; }}><Icon name="plus" size={14} /> Assign</button>
             {:else}
-              <span class="assign-empty">No progressions to assign yet</span>
+              <span class="assign-empty">No learning paths to assign yet</span>
             {/if}
           </div>
         </article>
@@ -193,7 +193,7 @@
 {#if assignTo.length}
   <AssignDialog
     title={assignTitle}
-    subtitle="Pick as many progressions as you like. Anyone already on one keeps their progress."
+    subtitle="Pick as many learning paths as you like. Anyone already on one keeps their progress."
     kind="progression"
     items={assignChoices}
     busy={dialogBusy}

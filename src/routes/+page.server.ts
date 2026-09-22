@@ -1,6 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl } from "$lib/server/pocketbase";
 
 function sanitize(code: unknown) {
   return String(code ?? "").replace(/\D/g, "").slice(0, 6);

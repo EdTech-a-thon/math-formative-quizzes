@@ -45,7 +45,7 @@
   }
 </script>
 
-<aside class={`qp path-preview ${shadeClass(shade)}`} aria-label="Progression preview">
+<aside class={`qp path-preview ${shadeClass(shade)}`} aria-label="Learning path preview">
   <div class="qp-frame-label"><span><Icon name="circle-dot" size={12} /></span> Live path preview</div>
 
   <div class="qp-phone">
@@ -83,7 +83,13 @@
                 aria-label={`Move ${step.title} — step ${index + 1} of ${steps.length}. Use the up and down arrow keys.`}
                 on:keydown={(event) => nudge(index, event)}
               ><Icon name="grip-vertical" size={15} /></button>
-              <button type="button" class="path-remove" aria-label={`Remove ${step.title} from the path`} on:click={() => onRemove(step.id)}><Icon name="x" size={13} /></button>
+              <button
+                type="button"
+                class="path-remove"
+                aria-label={`Remove ${step.title} from this path`}
+                title="Take this quiz off this path only — the quiz itself stays, and no other class is affected"
+                on:click={() => onRemove(step.id)}
+              ><Icon name="x" size={13} /></button>
             </li>
           {/each}
         </ol>

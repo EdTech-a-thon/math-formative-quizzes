@@ -1,4 +1,5 @@
-import { error, json } from "@sveltejs/kit";
+import { json } from "@sveltejs/kit";
+import { teacherAuthorization } from "$lib/server/pocketbase";
 import { readEnvelope } from "$lib/server/exportRecord";
 import { FAILURE_MESSAGES, NOT_OURS } from "$lib/server/importMessages";
 import { recordFromUpload } from "$lib/server/importSource";
@@ -10,7 +11,7 @@ const MAX_BYTES = 20 * 1024 * 1024;
 // any of it exists, and the quiz editor uses it to lift questions into the quiz
 // being written.
 export async function POST({ request, cookies }) {
-  if (!cookies.get("teacher_session")) error(401, "Please sign in again.");
+  teacherAuthorization(cookies);
 
   const form = await request.formData();
   const file = form.get("file");

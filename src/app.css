@@ -505,6 +505,9 @@ button span {
   color: #77728c;
   font-size: 0.88rem;
 }
+.section-help + .mode-grid {
+  margin-top: 18px;
+}
 .operation-grid,
 .mode-grid {
   display: grid;
@@ -734,6 +737,9 @@ button span {
 .overview-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; }
 .overview-actions .ghost-btn { display: inline-flex; align-items: center; gap: 5px; padding: 10px 12px; text-decoration: none; }
 .overview-actions .primary-action { display: inline-flex; align-items: center; gap: 6px; }
+.overview-delete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 36px; border-top: 1px solid #e9e4df; padding-top: 18px; }
+.overview-delete p { margin: 0; color: #77728c; font-size: .85rem; }
+.overview-delete .ghost-btn { padding: 10px 12px; }
 /* The shared assignment picker (src/lib/AssignDialog.svelte). Same dialog for
    picking students and for picking progressions. */
 .assign-dialog-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(38, 30, 56, .42); backdrop-filter: blur(2px); }
@@ -743,6 +749,13 @@ button span {
 .assign-dialog > header p { margin: 0; color: #81799a; font-size: .8rem; }
 .assign-dialog-close { display: grid; width: 32px; height: 32px; flex: 0 0 auto; margin: 0; padding: 0; place-items: center; border: 1px solid #e6dfed; border-radius: 9px; background: #fff; box-shadow: none; color: #756e80; }
 .assign-dialog-close:hover { transform: none; border-color: #c0b5d5; background: #f8f5fb; }
+/* What a picker settles about the work itself before it goes out, above the
+   list of who gets it — the passing score and pacing on a quiz given on its own. */
+.assign-settings { display: grid; gap: 8px; margin-top: 15px; }
+.assign-setting { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 13px; border: 1px solid #e6dfed; border-radius: 12px; background: #faf8fd; }
+.assign-setting strong { display: block; font-size: .84rem; }
+.assign-setting small { display: block; margin-top: 2px; color: #81799a; font-size: .74rem; }
+.assign-setting .stepper { flex: 0 0 auto; }
 .assign-dialog-search { display: flex; align-items: center; gap: 8px; margin-top: 15px; padding: 0 12px; border: 1px solid #e0dbe8; border-radius: 11px; background: #fff; color: #a29aae; }
 .assign-dialog-search:focus-within { border-color: #9c87e8; box-shadow: 0 0 0 3px #eee9ff; }
 .assign-dialog-search input { flex: 1; min-width: 0; margin: 0; padding: 10px 0; border: 0; background: transparent; color: #4c465c; font-size: .88rem; outline: none; }
@@ -791,7 +804,11 @@ button span {
 .step-detail-content > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid #eee9e5; }
 .step-detail-content > header h3 { margin: 0 0 2px; font-family: Fraunces, Georgia, serif; font-size: 1.04rem; }
 .step-detail-content > header p { margin: 0; color: #8a8292; font-size: .7rem; }
-.step-detail-content > header > span { color: #81799a; font-size: .72rem; font-weight: 900; }
+.step-header-side { display: flex; flex: 0 0 auto; align-items: center; gap: 10px; }
+.step-header-side > span { color: #81799a; font-size: .72rem; font-weight: 900; white-space: nowrap; }
+/* Sending students straight to this quiz, from the quiz itself. */
+.step-send-button { display: inline-flex; align-items: center; gap: 4px; width: auto; margin: 0; padding: 6px 9px; border: 1px solid #cfc3f3; border-radius: 8px; background: #f7f4ff; box-shadow: none; color: #5439bb; font-size: .7rem; font-weight: 900; white-space: nowrap; }
+.step-send-button:hover { border-color: #7456e8; transform: none; }
 /* The quiz's name opens the quiz itself, so a path is a way into its quizzes. */
 .step-quiz-link { min-width: 0; color: inherit; text-decoration: none; }
 .step-quiz-link:hover h3 { color: #5439bb; text-decoration: underline; }
@@ -1121,6 +1138,11 @@ button span {
 .card-memberships { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
 .membership-tag { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 3px 9px; background: var(--operation-soft, #f1edff); color: var(--operation, #6748d1); font-size: .69rem; font-weight: 800; }
 .membership-tag.none { border: 1px dashed #ded7e6; background: transparent; color: #a29aae; }
+/* Who has a quiz that was given out on its own, rather than a path it sits in. */
+.membership-tag.given { background: #f4f1ec; color: #6c6478; }
+.membership-tag.given.finished { background: #e7f6ec; color: #2f7d4f; }
+.membership-tag em { font-style: normal; font-weight: 700; opacity: .72; }
+.membership-tag em::before { content: "· "; }
 
 /* ---- Live progression preview (drag to reorder the steps) ---- */
 .path-head { display: grid; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid #f0ebf4; }
@@ -1343,11 +1365,13 @@ a.history-row:hover .history-name strong { color: #5439bb; }
 .bar-title:hover { background: #faf8fd; }
 .bar-title:focus { outline: 0; border-color: #e4dcf0; background: #f8f5ff; box-shadow: none; }
 .bar-title.invalid { border-color: #e0708a; background: #fff4f6; }
+.bar-reach { display: inline-flex; align-items: center; gap: 5px; flex: none; border-radius: 999px; padding: 4px 10px; background: #f3effa; color: #7c748c; font-size: .7rem; font-weight: 800; white-space: nowrap; }
+.bar-reach.shared { background: #efe7ff; color: #6748d1; }
 
 .bar-settings { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
 .stepper-compact { padding: 3px; border-radius: 11px; }
 .stepper-compact button { width: 26px; height: 26px; border-radius: 8px; }
-.stepper-compact b { min-width: 52px; font-size: .95rem; }
+.stepper-compact b { min-width: 66px; font-size: .95rem; }
 .bar-toggle { display: inline-flex; align-items: center; gap: 7px; width: auto; margin: 0; padding: 8px 12px; border: 1px solid #e0dbe8; border-radius: 11px; background: #fff; box-shadow: none; color: #6b6479; font-size: .8rem; font-weight: 800; }
 .bar-toggle:hover { transform: none; border-color: var(--operation, #6748d1); color: #4d399b; }
 .bar-toggle.on { border-color: var(--operation, #6748d1); background: var(--operation-soft, #eee9ff); color: var(--operation, #6748d1); }

@@ -9,6 +9,6 @@
   export let data: { quizzes: Quiz[]; progression: Progression };
 </script>
 
-<svelte:head><title>Edit progression · Fact Friends</title></svelte:head>
+<svelte:head><title>Edit learning path · Fact Friends</title></svelte:head>
 
 <ProgressionEditor classId={String($page.params.id)} quizzes={data.quizzes} progression={data.progression} />

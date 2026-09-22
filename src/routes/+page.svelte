@@ -29,7 +29,7 @@
   </section>
 
   <section class="landing-how" id="how-it-works" aria-labelledby="how-title"><div class="landing-section-inner"><p class="eyebrow">A SIMPLE START</p><h2 id="how-title">How it works</h2><div class="landing-steps">
-    <article><span>1</span><h3>Choose a practice path</h3><p>Pick ready-made math facts or make your own quizzes for the class.</p></article>
+    <article><span>1</span><h3>Choose a learning path</h3><p>Pick ready-made math facts or make your own quizzes for the class.</p></article>
     <article><span>2</span><h3>Invite your students</h3><p>Share a class code, then assign each learner the practice they need.</p></article>
     <article><span>3</span><h3>See their progress</h3><p>Follow quiz scores and decide when to release the next attempt.</p></article>
   </div></div></section>

@@ -27,7 +27,8 @@
   // Whether a finished quiz hands the student their wrong answers back to study.
   let showAnswers = progression?.showAnswers === true;
   // Self-paced paths make each retry or next step available automatically.
-  let selfPaced = progression?.selfPaced === true;
+  // A brand-new path lets students work through it at their own pace.
+  let selfPaced = progression ? progression.selfPaced === true : true;
   let quizIds: string[] = progression?.quizIds ?? []; // Chosen quizzes, in the order learners will work through them.
   let icon: string | null = progression?.icon || null;
   let shade: ShadeId | null = progression?.shade || null;
@@ -44,7 +45,7 @@
     // Closing the tab can only be warned about by the browser's own dialog,
     // which cancelling a "leave" navigation asks for.
     if (navigation.type === "leave") { navigation.cancel(); return; }
-    if (!confirm("You have unsaved changes to this progression. Leave without saving?")) navigation.cancel();
+    if (!confirm("You have unsaved changes to this learning path. Leave without saving?")) navigation.cancel();
   });
 
   // The preview's step list: the chosen quizzes, flattened, in path order.
@@ -82,7 +83,7 @@
       if (!response.ok) throw new Error(result.message);
       await goto(returnPath);
     } catch (caught) {
-      error = caught instanceof Error ? caught.message : "We could not save this progression.";
+      error = caught instanceof Error ? caught.message : "We could not save this learning path.";
       saving = false;
     }
   }
@@ -90,11 +91,11 @@
 
 <div class="editor-screen editor-screen-plain">
   <header class="editor-bar">
-    <a class="editor-back" href={returnPath}><Icon name="arrow-left" size={14} /> {editing ? "Progression details" : "Progressions"}</a>
-    <span class="editor-crumb">{editing ? "Editing progression" : "New progression"}</span>
+    <a class="editor-back" href={returnPath}><Icon name="arrow-left" size={14} /> {editing ? "Learning path details" : "Learning paths"}</a>
+    <span class="editor-crumb">{editing ? "Editing learning path" : "New learning path"}</span>
     <div class="editor-bar-actions">
       <a class="editor-cancel" href={returnPath}>Cancel</a>
-      <button class="editor-save" type="button" disabled={saving} on:click={save}>{saving ? "Saving…" : editing ? "Save changes" : "Save progression"}</button>
+      <button class="editor-save" type="button" disabled={saving} on:click={save}>{saving ? "Saving…" : editing ? "Save changes" : "Save learning path"}</button>
     </div>
   </header>
 
@@ -104,7 +105,7 @@
         <p class="doc-eyebrow">Learning path</p>
         <div class={`doc-title-row ${shadeClass(shade)}`}>
           <IconPicker {shade} name={icon} fallback="route" title="Path icon and colour" defaultShadeLabel="House purple" onChange={(next) => { icon = next.name; shade = next.shade; }} />
-          <input class="doc-title" bind:value={name} placeholder="Untitled path" aria-label="Progression name" spellcheck="false" />
+          <input class="doc-title" bind:value={name} placeholder="Untitled path" aria-label="Learning path name" spellcheck="false" />
         </div>
         <input class="doc-inline-input doc-subtitle" bind:value={description} placeholder="Add an optional description…" maxlength="200" />
 
@@ -176,7 +177,7 @@
               <p class="quiz-search-empty">No quizzes match “{quizSearch.trim()}”.</p>
             {/if}
           {:else}
-            <p class="editor-note">Create at least one quiz in the Quiz library before building a progression.</p>
+            <p class="editor-note">Create at least one quiz in the Quiz library before building a learning path.</p>
           {/if}
         </section>
 

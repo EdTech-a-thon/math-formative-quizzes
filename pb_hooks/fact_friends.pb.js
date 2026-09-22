@@ -114,7 +114,9 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
         icon: details.icon || "",
         shade: details.shade || "",
         questionCount: (details.problems || []).length,
-        timeLimitMinutes: details.timeLimitMinutes || 0,
+        // Quizzes saved before the limit became seconds still carry minutes,
+        // so the resolver is what makes the two read the same.
+        timeLimitSeconds: require(`${__hooks}/time_limit.js`).resolveTimeLimitSeconds(details),
       };
     } catch (_) {
       return null;
@@ -159,12 +161,16 @@ routerAdd("POST", "/api/fact-friends/student-home", (e) => {
       progressionName: progression.getString("name"),
       position: position,
       totalSteps: steps.length,
+      // A quiz the teacher gave out on its own is a path of one behind the
+      // scenes. The student is never told that: their screen leaves the
+      // "step 1 of 1" line off entirely.
+      standalone: progression.getBool("standalone"),
       quizId: quiz.quizId,
       title: quiz.title,
       icon: quiz.icon,
       shade: quiz.shade,
       questionCount: quiz.questionCount,
-      timeLimitMinutes: quiz.timeLimitMinutes,
+      timeLimitSeconds: quiz.timeLimitSeconds,
       released: enrollment.getBool("released"),
     });
   }
@@ -235,6 +241,9 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
     extraTimeMinutes: accommodations.extraTimeMinutes,
     position: found.position,
     totalSteps: found.steps.length,
+    // A quiz given out on its own: there is no sequence to place it in, so the
+    // screen says nothing about steps.
+    standalone: found.progression.getBool("standalone"),
     passPercentage: found.progression.getInt("passPercentage"),
     allowIncompleteAnswers: allowIncompleteAnswers,
     // The path decides whether its steps arrive one question at a time. Paths
@@ -247,7 +256,7 @@ routerAdd("POST", "/api/fact-friends/quiz-step", (e) => {
       // The stored questions, in the order the teacher arranged them. Marking
       // reads this same list back, so it is the one source of truth.
       problems: details.problems || [],
-      timeLimitMinutes: details.timeLimitMinutes || 0,
+      timeLimitSeconds: require(`${__hooks}/time_limit.js`).resolveTimeLimitSeconds(details),
       showScore: details.showScore !== false,
       passMessage: details.passMessage || "Great work! You finished this quiz.",
     },

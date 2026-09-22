@@ -5,17 +5,18 @@
   import { symbolFor, type Problem } from "$lib/quizProblems";
 
   export let data: {
-    quiz: { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string };
+    quiz: { title: string; problems: Problem[]; timeLimitSeconds: number; showScore: boolean; passMessage: string };
     progressionName: string;
     position: number;
     totalSteps: number;
+    standalone: boolean;
     allowIncompleteAnswers: boolean;
     oneAtATime: boolean;
     extraTimeMinutes: number;
     timerStorageKey: string;
   };
   type Missed = { top: number; bottom: number; symbol: string; answer: string; correctAnswer: number };
-  export let form: { finished?: boolean; timedOut?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; missed?: Missed[]; error?: string } | null = null;
+  export let form: { finished?: boolean; timedOut?: boolean; correct?: number; total?: number; percentage?: number; passed?: boolean; leveledUp?: boolean; finishedProgression?: boolean; nextQuizName?: string; showScore?: boolean; passMessage?: string; progressionName?: string; position?: number; totalSteps?: number; standalone?: boolean; missed?: Missed[]; error?: string } | null = null;
 
   // Exactly the questions the teacher arranged, in their order.
   $: problems = data.quiz.problems;
@@ -56,8 +57,9 @@
   }
 
   // A quiz with no time limit stays untimed, even for a student with extra time.
-  const minutesAllowed = data.quiz.timeLimitMinutes ? data.quiz.timeLimitMinutes + data.extraTimeMinutes : 0;
-  let secondsLeft = minutesAllowed * 60;
+  // The accommodation is still set in whole minutes, so it converts on the way in.
+  const secondsAllowed = data.quiz.timeLimitSeconds ? data.quiz.timeLimitSeconds + data.extraTimeMinutes * 60 : 0;
+  let secondsLeft = secondsAllowed;
   let handingIn = false;
   let sheet: HTMLFormElement;
   let timeoutSubmit: HTMLButtonElement;
@@ -143,7 +145,9 @@
           {/each}
         </section>
       {/if}
-      {#if form.finishedProgression}
+      {#if form.finishedProgression && form.standalone}
+        <p class="results-note">You passed {form.progressionName}. That is this one done!</p>
+      {:else if form.finishedProgression}
         <p class="results-note">You finished {form.progressionName}. Every step is done!</p>
       {:else if form.leveledUp}
         <p class="results-note">Next quiz: {form.nextQuizName}</p>
@@ -164,7 +168,9 @@
 
       <header class="quiz-head">
         <div>
-          <p class="eyebrow">{data.progressionName.toUpperCase()} · STEP {data.position} OF {data.totalSteps}</p>
+          <!-- A quiz set on its own is not a step of anything, so it is not
+               announced as one. -->
+          <p class="eyebrow">{data.standalone ? "YOUR PRACTICE" : `${data.progressionName.toUpperCase()} · STEP ${data.position} OF ${data.totalSteps}`}</p>
           <h1>{data.quiz.title}</h1>
         </div>
       </header>
@@ -197,7 +203,7 @@
       <footer class="quiz-foot">
         <div class="quiz-foot-inner">
           <div class="quiz-foot-status">
-            {#if minutesAllowed}
+            {#if secondsAllowed}
               <span class="quiz-clock" class:low={secondsLeft <= 15}><Icon name="clock" size={16} /> {clock}</span>
             {/if}
             <span class="quiz-progress">

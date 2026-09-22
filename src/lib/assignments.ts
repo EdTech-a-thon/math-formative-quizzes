@@ -5,3 +5,19 @@ export function assignmentSummary(assigned: number, skipped: number) {
   const made = `${assigned} new ${assigned === 1 ? "assignment" : "assignments"}`;
   return skipped ? `Added ${made}. ${skipped} ${skipped === 1 ? "was" : "were"} already in place.` : `Added ${made}.`;
 }
+
+// Sending students to a step tells the teacher how many she just moved, and
+// that she does not need to release them afterwards.
+export function sendToStepSummary(moved: number, quizTitle: string) {
+  const students = `${moved} ${moved === 1 ? "student" : "students"}`;
+  return `Moved ${students} to ${quizTitle}. ${moved === 1 ? "They can" : "They can all"} start it right away.`;
+}
+
+// Giving a quiz out on its own. It is always ready to start straight away.
+export function oneOffSummary(assigned: number, skipped: number, quizTitle: string) {
+  const already = skipped ? ` ${skipped} already had it.` : "";
+  if (!assigned) return `Everyone you picked already has ${quizTitle}.`;
+  const students = `${assigned} ${assigned === 1 ? "student" : "students"}`;
+  const next = `${assigned === 1 ? "They can" : "They can all"} start it right away.`;
+  return `Gave ${quizTitle} to ${students}. ${next}${already}`;
+}

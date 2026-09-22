@@ -9,18 +9,34 @@
   import { shadeClass, type ShadeId } from "$lib/shades";
   import { pushToast } from "$lib/toasts";
   import { makeProblem, operations, problemProblem, readProblems, symbolFor, type Operation, type Problem } from "$lib/quizProblems";
+  import { formatTimeLimit, resolveTimeLimitSeconds, stepTimeLimitSeconds, timeLimitLabel } from "$lib/timeLimit";
 
-  type QuizData = { title: string; problems: Problem[]; timeLimitMinutes: number; showScore: boolean; passMessage: string; icon: string | null; shade: ShadeId | null };
+  // `timeLimitMinutes` is what quizzes saved before the limit became seconds
+  // carry. Saving rewrites the whole settings object, so a quiz converts itself
+  // the first time anyone saves it.
+  type QuizData = { title: string; problems: Problem[]; timeLimitSeconds: number; timeLimitMinutes?: number; showScore: boolean; passMessage: string; icon: string | null; shade: ShadeId | null };
+
+  const DEFAULT_TIME_LIMIT_SECONDS = 120;
 
   export let classId: string;
   export let quiz: { id: string; data: Partial<QuizData> } | null = null;
+  // How far a change here reaches: the classes whose learning paths use this
+  // quiz. A quiz being written for the first time has no reach yet.
+  export let reach: { classes: string[]; paths: number; usedByCurrentClass: boolean } | null = null;
+
+  $: reachText =
+    !reach || !reach.classes.length
+      ? "Not used by a class yet"
+      : reach.classes.length === 1
+        ? `Used in 1 class · ${reach.classes[0]}`
+        : `Used in ${reach.classes.length} classes · changes reach all of them`;
 
   const editing = Boolean(quiz?.id);
   let title = quiz?.data?.title ?? "";
   // The quiz is simply this list. Nothing generates it on the fly any more, so
   // the order here is exactly the order a student sits.
   let problems: Problem[] = readProblems(quiz?.data?.problems);
-  let timeLimitMinutes = quiz?.data?.timeLimitMinutes ?? 2;
+  let timeLimitSeconds = quiz ? resolveTimeLimitSeconds(quiz.data) : DEFAULT_TIME_LIMIT_SECONDS;
   let showScore = quiz?.data?.showScore ?? true;
   let passMessage = quiz?.data?.passMessage ?? "Great work! You finished this quiz.";
   let icon: string | null = quiz?.data?.icon ?? null;
@@ -46,8 +62,8 @@
   $: faults = new Map(problems.map((item) => [item.id, problemProblem(item.op, item.top, item.bottom)]).filter(([, note]) => note) as [string, string][]);
 
   const snapshot = (values: unknown[]) => JSON.stringify(values);
-  const savedState = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
-  $: state = snapshot([title, problems, timeLimitMinutes, showScore, passMessage, icon, shade]);
+  const savedState = snapshot([title, problems, timeLimitSeconds, showScore, passMessage, icon, shade]);
+  $: state = snapshot([title, problems, timeLimitSeconds, showScore, passMessage, icon, shade]);
   $: dirty = !saving && state !== savedState;
   beforeNavigate((navigation) => {
     if (!dirty) return;
@@ -88,7 +104,7 @@
     const [nextTitle, nextProblems, nextTime, nextScore, nextMessage, nextIcon, nextShade] = JSON.parse(json);
     title = nextTitle;
     problems = nextProblems;
-    timeLimitMinutes = nextTime;
+    timeLimitSeconds = nextTime;
     showScore = nextScore;
     passMessage = nextMessage;
     icon = nextIcon;
@@ -340,9 +356,12 @@
     problems = next;
     selected = new Set();
   }
-  function stepTime(delta: number) {
-    timeLimitMinutes = Math.min(60, Math.max(1, timeLimitMinutes + delta));
+  // 15-second steps up to five minutes, one-minute steps above it, and zero
+  // for a quiz that should not be timed at all.
+  function stepTime(direction: number) {
+    timeLimitSeconds = stepTimeLimitSeconds(timeLimitSeconds, direction);
   }
+  $: timeLimitText = timeLimitLabel(timeLimitSeconds);
   // Exporting supersedes printing: the PDF is the same worksheet and carries the
   // quiz's data, so it can be imported back. A quiz has to exist to be exported.
   function exportPdf() {
@@ -356,7 +375,7 @@
 
   function quizMarkdown(): string {
     const heading = title.trim() || "Untitled quiz";
-    const details = `${problems.length} question${problems.length === 1 ? "" : "s"} · ${timeLimitMinutes} minute${timeLimitMinutes === 1 ? "" : "s"}`;
+    const details = `${problems.length} question${problems.length === 1 ? "" : "s"}${timeLimitSeconds ? ` · ${formatTimeLimit(timeLimitSeconds)}` : ""}`;
     const questions = problems.map((problem, index) => `${index + 1}. ${problem.top} ${symbolFor(problem.op)} ${problem.bottom} = ____`);
     return [`# ${heading}`, "", details, "", ...questions].join("\n");
   }
@@ -392,11 +411,11 @@
     if (problems.length > 150) { error = "Keep the quiz to 150 questions or fewer."; return; }
     if (faults.size) { error = `Fix the highlighted question${faults.size === 1 ? "" : "s"}: ${[...faults.values()][0]}`; return; }
     saving = true; error = "";
-    const data = { title: title.trim(), problems, timeLimitMinutes, showScore, passMessage: passMessage.trim(), icon, shade };
+    const data = { title: title.trim(), problems, timeLimitSeconds, showScore, passMessage: passMessage.trim(), icon, shade };
     try {
       const response = editing
         ? await fetch(`/api/quizzes/${quiz?.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data }) })
-        : await fetch("/api/quizzes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ class: classId, data }) });
+        : await fetch("/api/quizzes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message);
       clearTimeout(draftTimer);
@@ -405,6 +424,33 @@
     } catch (caught) {
       error = caught instanceof Error ? caught.message : "We could not save this quiz.";
       saving = false;
+    }
+  }
+
+  // The escape hatch for a shared quiz: a plain, independent copy, with only
+  // this class's path repointed at it. Every other class using the original
+  // keeps using the original, and a later edit to either quiz never reaches
+  // the other.
+  let copying = false;
+  async function copyForClass() {
+    if (!quiz?.id) return;
+    if (dirty) { pushToast("error", "Save your changes first.", "The copy is made from what is saved, so save before copying."); return; }
+    if (!confirm(`Make a separate copy of "${title.trim() || "this quiz"}" for this class? This class's path will use the copy from now on; every other class keeps using the original.`)) return;
+    copying = true;
+    try {
+      const response = await fetch(`/api/quizzes/${quiz.id}/copy-for-class`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classId }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+      pushToast("success", "Made a separate copy for this class.", "Other classes still use the original quiz.");
+      forgetDraft();
+      await goto(`/teacher/classes/${classId}/quizzes/${result.id}`);
+    } catch (caught) {
+      pushToast("error", caught instanceof Error ? caught.message : "We could not make a copy of this quiz.");
+      copying = false;
     }
   }
 </script>
@@ -421,6 +467,16 @@
     <div class="bar-title-row">
       <IconPicker {shade} name={icon} fallback="clipboard-list" compact title="Quiz icon and colour" onChange={(next) => { icon = next.name; shade = next.shade; }} />
       <input class="bar-title" class:invalid={titleInvalid} bind:this={titleInput} bind:value={title} placeholder="Untitled quiz" aria-label="Quiz name" aria-invalid={titleInvalid} spellcheck="false" />
+      {#if editing}
+        <span class="bar-reach" class:shared={(reach?.classes.length ?? 0) > 1} title={reach?.classes.length ? `Used by: ${reach.classes.join(", ")}` : "No class is using this quiz yet"}>
+          <Icon name="users" size={13} /> {reachText}
+        </span>
+        {#if reach?.usedByCurrentClass}
+          <button type="button" class="editor-ghost bar-copy-button" disabled={copying} title="Make a plain copy of this quiz just for this class, without changing it for anyone else" on:click={copyForClass}>
+            <Icon name="copy" size={14} /> {copying ? "Copying…" : "Make a copy for this class"}
+          </button>
+        {/if}
+      {/if}
     </div>
 
     <div class="bar-history">
@@ -434,7 +490,7 @@
     <div class="bar-settings">
       <div class="stepper stepper-compact" title="Time limit">
         <button type="button" on:click={() => stepTime(-1)} aria-label="Less time"><Icon name="minus" size={15} /></button>
-        <b>{timeLimitMinutes}<small>min</small></b>
+        <b>{timeLimitText}</b>
         <button type="button" on:click={() => stepTime(1)} aria-label="More time"><Icon name="plus" size={15} /></button>
       </div>
 
@@ -503,7 +559,7 @@
         {/if}
         <div class="sheet-head">
           <p class="doc-eyebrow">Quiz</p>
-          <p class="doc-summary">{problems.length} question{problems.length === 1 ? "" : "s"} · {timeLimitMinutes} min · {showScore ? "score shown" : "score hidden"} at the end</p>
+          <p class="doc-summary">{problems.length} question{problems.length === 1 ? "" : "s"} · {timeLimitText} · {showScore ? "score shown" : "score hidden"} at the end</p>
         </div>
         {#if titleInvalid}<p class="doc-title-error" role="alert">Give your quiz a name up in the bar before saving.</p>{/if}
 
@@ -607,7 +663,7 @@
   <div class="print-sheet">
     <div class="print-head">
       <h1>{title.trim() || "Untitled quiz"}</h1>
-      <div class="print-meta"><span>Name: ____________________</span><span>Date: ____________</span><span>{timeLimitMinutes} min · {problems.length} questions</span></div>
+      <div class="print-meta"><span>Name: ____________________</span><span>Date: ____________</span><span>{timeLimitText} · {problems.length} questions</span></div>
     </div>
     <ol class="print-grid">
       {#each problems as problem, index (problem.id)}
