@@ -27,7 +27,8 @@
   // Whether a finished quiz hands the student their wrong answers back to study.
   let showAnswers = progression?.showAnswers === true;
   // Self-paced paths make each retry or next step available automatically.
-  let selfPaced = progression?.selfPaced === true;
+  // A brand-new path lets students work through it at their own pace.
+  let selfPaced = progression ? progression.selfPaced === true : true;
   let quizIds: string[] = progression?.quizIds ?? []; // Chosen quizzes, in the order learners will work through them.
   let icon: string | null = progression?.icon || null;
   let shade: ShadeId | null = progression?.shade || null;

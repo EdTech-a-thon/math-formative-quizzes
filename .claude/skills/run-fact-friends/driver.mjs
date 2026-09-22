@@ -27,8 +27,8 @@
 //   assign-one-off             One quiz given to students on its own: it reaches
 //                              their home screens with no step line, and never
 //                              shows up in the teacher's learning paths.
-//   reuse-path                 A new class started from a path she already has,
-//                              reusing her quizzes instead of copying them.
+//   starter-library            Ready-made quizzes sit in her library, and every
+//                              class on a ready-made path reuses them.
 //   remove-vs-delete           Removing a quiz from one path leaves it alone
 //                              everywhere else; deleting a quiz warns with its
 //                              real reach, cancels cleanly, and cascades on
@@ -1245,54 +1245,22 @@ async function assignOneOff() {
   await b.close();
 }
 
-// --- Starting a class from a path she already has --------------------------
+// --- Ready-made quizzes live in her library --------------------------------
 //
-// The ticket this whole effort exists for: creating a class used to mint a
-// fresh learning path *and* a fresh set of quizzes, so a teacher with four
-// classes had four copies of every quiz. Setup now offers the paths she
-// already has, and picking one builds a new path for the new class whose steps
-// point at the quizzes she already tuned. The load-bearing assertion is not
-// that a field holds an id — it is that editing a quiz from the *new* class
-// changes what the *old* class shows, which only happens if nothing was
+// Every teacher's library starts with one copy of each ready-made quiz, and a
+// class started on a ready-made path reuses those copies instead of minting a
+// fresh set, so four classes never mean four copies of every quiz. The
+// load-bearing assertion is that editing a ready-made quiz from one class
+// changes what a class started later shows, which only happens if nothing was
 // copied.
 
-// The paths setup offers her, in the order it offers them, with the label each
-// one carries.
-async function offeredPaths(page) {
-  await page.goto(`${BASE}/teacher/classes/new`, { waitUntil: "networkidle" });
-  return page.locator("button.reuse-path").evaluateAll((buttons) =>
-    buttons.map((button) => ({
-      name: button.querySelector("strong").textContent.trim(),
-      label: button.querySelector("small").textContent.trim(),
-    })),
-  );
-}
-
-// A class built from one of her own paths. The four ready-made paths are
-// unticked first, so anything the new class ends up with came from the path she
-// picked. Pacing is answered on this screen on purpose: it has to beat whatever
-// the old path carried.
-async function createClassFromPath(page, className, pathName, selfPaced) {
-  const before = new Set(await classIds(page));
-  await page.goto(`${BASE}/teacher/classes/new`, { waitUntil: "networkidle" });
-  await page.fill("#class-name", className);
-  for (const key of ["addition", "subtraction", "multiplication", "division"]) {
-    const starter = page.locator(`button.starter-path.op-${key}`);
-    if ((await starter.getAttribute("aria-pressed")) === "true") await starter.click();
-  }
-  await page.locator("button.reuse-path", { hasText: pathName }).first().click();
-  await page.locator(".mode-grid button", { hasText: selfPaced ? "Students continue" : "Teacher releases" }).first().click();
-  await page.screenshot({ path: join(SHOTS, "reuse-path-setup.png"), fullPage: true });
-  await page.locator("button.create-class").click();
-  await page.waitForURL((u) => !u.pathname.endsWith("/classes/new"), { timeout: 60000 });
-  return (await classIds(page)).find((id) => !before.has(id));
-}
-
-// The only learning path in a class, as the teacher reaches it.
-async function onlyPathId(page, classId) {
+// The quiz records a class's only learning path points at, in order.
+async function onlyPathQuizIds(page, classId) {
   await page.goto(`${BASE}/teacher/classes/${classId}/progressions`, { waitUntil: "networkidle" });
   const href = await page.locator("a.progression-card-link").first().getAttribute("href");
-  return href.match(/\/progressions\/([^/?#]+)/)[1];
+  await page.goto(`${BASE}${href}`, { waitUntil: "networkidle" });
+  const hrefs = await page.locator("a.step-quiz-link").evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+  return { quizIds: hrefs.map((h) => h.match(/\/quizzes\/([^/?#]+)/)[1]), facts: await page.locator(".overview-facts").innerText() };
 }
 
 // What a path's own page says about it: its heading and settings, the quizzes
@@ -1308,92 +1276,37 @@ async function pathOverview(page, classId, pathId) {
   };
 }
 
-// Saving a path through the app's own route, which is also what bumps the
-// "last edited" the setup screen orders by. PATCH rewrites every setting, so
-// everything that should survive has to be sent again.
-async function editPath(page, pathId, data) {
-  const response = await page.request.patch(`${BASE}/api/progressions/${pathId}`, { data });
-  if (!response.ok()) throw new Error(`could not edit path: ${response.status()} ${await response.text()}`);
-}
-
-async function reusePath() {
+async function starterLibrary() {
   const b = await browser();
-  const { page } = await signUpTeacher(b, "Reusing Teacher");
+  const { page } = await signUpTeacher(b, "Library Teacher");
 
-  // ---- Her very first class, from a ready-made path ------------------------
-  const period1 = await createClass(page, "Autumn Period 1", "multiplication");
-  const readyMadePath = await onlyPathId(page, period1);
-  const readyMade = await pathOverview(page, period1, readyMadePath);
-  const firstQuizzes = await listedQuizzes(page, period1);
-  check("a teacher's very first class still arrives from a ready-made path", readyMade.quizIds.length > 0 && firstQuizzes.ids.length >= readyMade.quizIds.length, `${readyMade.quizIds.length} steps, ${firstQuizzes.ids.length} quizzes`);
-
-  // ---- A path of her own, tuned the way she likes it -----------------------
-  const sixes = await makeQuiz(page, "Multiply by 6 practice", {});
-  const sevens = await makeQuiz(page, "Multiply by 7 practice", {});
-  const settings = { passPercentage: 65, oneAtATime: true, showAnswers: true, selfPaced: true, description: "Built by hand in Period 1." };
-  const tunedPath = await makePath(page, period1, "Sixes and sevens ladder", [sixes, sevens], settings);
-
-  // A second class with a path of its own, so the ordering below has something
-  // to be wrong about.
-  const period2 = await createEmptyClass(page, "Autumn Period 2");
-  await makePath(page, period2, "Doubles warm up", [await makeQuiz(page, "Doubling drill", {})]);
-
-  // She goes back and renames the first one. Nothing in this database records
-  // when a record last changed, so this does *not* float it back to the top —
-  // see the ordering check below.
-  await editPath(page, tunedPath, { name: "Sixes and sevens, tuned", quizIds: [sixes, sevens], ...settings });
-
-  // ---- What setup offers her ----------------------------------------------
-  const offered = await offeredPaths(page);
-  const names = offered.map((path) => path.name);
-  check("setup offers the learning paths she already has", names.includes("Sixes and sevens, tuned") && names.includes("Doubles warm up"), names.join(", ") || "none offered");
-  check("the four ready-made paths are still offered beside them", (await page.locator("button.starter-path.op-multiplication").count()) === 1 && (await page.locator("button.starter-path:not(.reuse-path)").count()) === 4);
-  check("each offered path is labelled with the class it comes from", offered.length === 3 && offered.every((path) => /^From Autumn Period [12] · /.test(path.label)), offered.map((path) => `${path.name} (${path.label})`).join(" | "));
-  check("the path she built most recently is offered first", names[0] === "Doubles warm up", `${names.join(", ")} — newest first; renaming "Sixes and sevens" did not move it, because no record here stores when it last changed`);
-
-  // ---- The new class, built from her tuned path ----------------------------
-  const quizzesBefore = (await listedQuizzes(page, period1)).ids;
-  // Her path is self-paced; the setup screen says teacher-released, and the
-  // answer she just gave has to win.
-  const period3 = await createClassFromPath(page, "Autumn Period 3", "Sixes and sevens, tuned", false);
-  check("the class is created from a path she already had", Boolean(period3), period3 ?? "no new class");
-  const newPathId = await onlyPathId(page, period3);
-  const newPath = await pathOverview(page, period3, newPathId);
-  await page.screenshot({ path: join(SHOTS, "reuse-path-new-class.png"), fullPage: true });
-
-  // The assertion the whole ticket turns on, stated twice: the same quiz
-  // records, and no new ones anywhere.
-  check("the new class's path points at the very same quiz records", JSON.stringify(newPath.quizIds) === JSON.stringify([sixes, sevens]), `${newPath.quizIds.join(", ")} (expect ${sixes}, ${sevens})`);
-  const quizzesAfter = (await listedQuizzes(page, period3)).ids;
-  check("reusing a path creates no new quizzes at all", quizzesAfter.length === quizzesBefore.length, `${quizzesBefore.length} before, ${quizzesAfter.length} after`);
-  check("and the new class is a class of its own, not the old one", period3 !== period1 && newPathId !== tunedPath, `${newPathId} vs ${tunedPath}`);
-
-  // ---- What came across with it -------------------------------------------
-  check("the path's name comes across", newPath.heading.includes("Sixes and sevens, tuned"), newPath.heading.slice(0, 120));
-  check("its description comes across", newPath.heading.includes("Built by hand in Period 1."), newPath.heading.slice(0, 160));
-  check("its passing score comes across", newPath.facts.includes("65% to pass"), newPath.facts);
-  check("one question at a time comes across", newPath.facts.includes("one question at a time"), newPath.facts);
-  check("showing answers comes across", newPath.facts.includes("answers shown"), newPath.facts);
-  check("the pacing she chose on the setup screen beats the pacing the old path had", newPath.facts.includes("teacher released"), `${newPath.facts} (the old path was self-paced)`);
-
-  // ---- Setup says so, once -------------------------------------------------
   await page.goto(`${BASE}/teacher/classes/new`, { waitUntil: "networkidle" });
-  const notes = await page.locator(".share-note").allInnerTexts();
-  check("setup tells her once that these quizzes are shared", notes.length === 1 && /shared/.test(notes[0]) && /every class using it/.test(notes[0]), notes.join(" || ") || "no note");
+  check("setup no longer offers paths from her other classes", (await page.locator("button.reuse-path").count()) === 0);
+  const pacing = await page.locator(".mode-grid button[aria-pressed=true]").first().innerText();
+  check("setup defaults to students continuing on their own", /Students continue/.test(pacing), pacing.split("\n")[0]);
+  await page.screenshot({ path: join(SHOTS, "starter-library-setup.png"), fullPage: true });
 
-  // ---- The payoff: an edit made in the new class reaches the old one -------
-  await page.goto(`${BASE}/teacher/classes/${period3}/quizzes/${sixes}`, { waitUntil: "networkidle" });
-  await page.locator("input.bar-title").fill("Sixes fixed from Period 3");
+  const period1 = await createClass(page, "Library Period 1", "multiplication");
+  const library = (await listedQuizzes(page, period1)).ids;
+  // 13 + 13 + 13 + 12 ready-made quizzes, and nothing else.
+  check("a new teacher's library holds every ready-made quiz", library.length === 51, `${library.length} quizzes`);
+  const first = await onlyPathQuizIds(page, period1);
+  check("the class's path uses quizzes already in her library", first.quizIds.length === 13 && first.quizIds.every((id) => library.includes(id)), `${first.quizIds.length} steps`);
+  check("and it is self-paced by default", /self.paced|students continue/i.test(first.facts), first.facts.replace(/\s+/g, " "));
+
+  // She tunes one ready-made quiz, then starts another class on the same path.
+  await page.goto(`${BASE}/teacher/classes/${period1}/quizzes/${first.quizIds[2]}`, { waitUntil: "networkidle" });
+  await page.locator("input.bar-title").fill("Threes, tuned in Period 1");
   await page.locator("button.editor-save").click();
   await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
 
-  const oldPathNow = await pathOverview(page, period1, tunedPath);
-  check("the old class's path shows the edit made in the new class", oldPathNow.steps.includes("Sixes fixed from Period 3"), oldPathNow.steps.slice(0, 160));
-  check("and no longer shows the title it had before", !oldPathNow.steps.includes("Multiply by 6 practice"), oldPathNow.steps.slice(0, 160));
-  check("because both classes are reading one quiz record", JSON.stringify(oldPathNow.quizIds) === JSON.stringify(newPath.quizIds), `${oldPathNow.quizIds.join(", ")} vs ${newPath.quizIds.join(", ")}`);
-  const finalQuizzes = (await listedQuizzes(page, period1)).ids;
-  check("and the edit made no extra copy either", finalQuizzes.length === quizzesBefore.length, `${quizzesBefore.length} before, ${finalQuizzes.length} after`);
-  await page.screenshot({ path: join(SHOTS, "reuse-path-old-class.png"), fullPage: true });
+  const period2 = await createClass(page, "Library Period 2", "multiplication");
+  const second = await onlyPathQuizIds(page, period2);
+  check("a second class on the same path points at the very same quizzes", JSON.stringify(second.quizIds) === JSON.stringify(first.quizIds));
+  check("starting it created no new quizzes", (await listedQuizzes(page, period2)).ids.length === 51);
+  await page.goto(`${BASE}/teacher/classes/${period2}/quizzes/${second.quizIds[2]}`, { waitUntil: "networkidle" });
+  const title = await page.locator("input.bar-title").inputValue();
+  check("and it carries her edit", title === "Threes, tuned in Period 1", title);
 
   log(`\nshots in ${SHOTS}`);
   await b.close();
@@ -1754,7 +1667,7 @@ async function smoke() {
   log("\n-- a quiz given to students on its own --");
   await assignOneOff();
   log("\n-- a class from a path she already has --");
-  await reusePath();
+  await starterLibrary();
   log("\n-- remove from a path vs. delete a quiz --");
   await removeVsDelete();
   log("\n-- make a separate copy of a quiz for one class --");
@@ -1799,7 +1712,7 @@ else if (cmd === "cross-class") { await crossClass(); summarise(); }
 else if (cmd === "class-delete") { await classDelete(); summarise(); }
 else if (cmd === "send-to-step") { await sendToStep(); summarise(); }
 else if (cmd === "assign-one-off") { await assignOneOff(); summarise(); }
-else if (cmd === "reuse-path") { await reusePath(); summarise(); }
+else if (cmd === "starter-library") { await starterLibrary(); summarise(); }
 else if (cmd === "remove-vs-delete") { await removeVsDelete(); summarise(); }
 else if (cmd === "copy-for-class") { await copyForClass(); summarise(); }
 else if (cmd === "no-jargon") { await noForbiddenWords(); summarise(); }
@@ -1807,6 +1720,6 @@ else if (cmd === "release") await release();
 else if (cmd === "shot") await shot(args[0] ?? "/", args[1]);
 else if (cmd === "student-shot") await shot(args[0] ?? "quiz", args[1] ?? "student", true);
 else {
-  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | pdf-exports | cross-class | class-delete | send-to-step | assign-one-off | reuse-path | remove-vs-delete | copy-for-class | no-jargon | release | shot <path> [name] | student-shot <path|quiz> [name]");
+  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | pdf-exports | cross-class | class-delete | send-to-step | assign-one-off | starter-library | remove-vs-delete | copy-for-class | no-jargon | release | shot <path> [name] | student-shot <path|quiz> [name]");
   process.exit(1);
 }

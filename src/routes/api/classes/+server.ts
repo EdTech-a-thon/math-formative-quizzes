@@ -1,7 +1,6 @@
 import { json } from "@sveltejs/kit";
-import { copyProgressionToClass } from "$lib/server/copyProgression";
-import { saveProgression } from "$lib/server/saveProgression";
-import { isStarterPath, starterProgression } from "$lib/server/starterPaths";
+import { savePathOfQuizzes } from "$lib/server/saveProgression";
+import { isStarterPath, starterProgression, starterQuizIds } from "$lib/server/starterPaths";
 import { teacherAuthorization, teacherPocketBaseRequest } from "$lib/server/pocketbase";
 
 function loginName(name: string) {
@@ -19,11 +18,6 @@ export async function POST({ request, cookies }) {
     .map((student: { name?: unknown }) => String(student?.name ?? "").trim())
     .filter(Boolean);
   const selectedPaths: unknown[] = Array.isArray(body.starterPaths) ? body.starterPaths : [];
-  // Paths the teacher already has, reused rather than rebuilt. Their steps point
-  // at the quizzes she has already tuned instead of making her a fresh copy.
-  const reusedPaths: string[] = (Array.isArray(body.existingPaths) ? body.existingPaths : [])
-    .map((id: unknown) => String(id ?? "").trim())
-    .filter(Boolean);
   // Pacing chosen during setup applies to every path this class starts with.
   const selfPaced = body.selfPaced === true;
 
@@ -79,15 +73,11 @@ export async function POST({ request, cookies }) {
     const authorization = teacherAuthorization(cookies);
     for (const path of new Set(selectedPaths)) {
       if (isStarterPath(path)) {
-        await saveProgression(
-          authorization,
-          { teacherId: teacher.record.id, classId: classRoom.id },
-          { ...starterProgression(path), selfPaced },
-        );
+        // Built from the ready-made quizzes already in her library, so every
+        // class on this path shares them rather than getting its own copies.
+        const quizIds = await starterQuizIds(authorization, teacher.record.id, path);
+        await savePathOfQuizzes(authorization, classRoom.id, { ...starterProgression(path), selfPaced }, quizIds);
       }
-    }
-    for (const progressionId of new Set(reusedPaths)) {
-      await copyProgressionToClass(authorization, progressionId, { classId: classRoom.id, selfPaced });
     }
   } catch (caught) {
     return json({

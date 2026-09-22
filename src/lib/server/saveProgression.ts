@@ -14,7 +14,9 @@ function request<T>(authorization: string, path: string, init: RequestInit, erro
 // classes, so saving a path needs both owners.
 export type PathOwner = { teacherId: string; classId: string };
 
-async function saveQuiz(authorization: string, teacherId: string, quiz: QuizRecord): Promise<string> {
+// `starter` marks one of the ready-made quizzes in her library; see
+// $lib/server/starterPaths.
+async function saveQuiz(authorization: string, teacherId: string, quiz: QuizRecord, starter = ""): Promise<string> {
   const saved = await request<{ id: string }>(
     authorization,
     "/api/collections/quizzes/records",
@@ -22,6 +24,7 @@ async function saveQuiz(authorization: string, teacherId: string, quiz: QuizReco
       method: "POST",
       body: JSON.stringify({
         teacher: teacherId,
+        starter,
         data: {
           title: quiz.title,
           problems: quiz.problems,
@@ -43,14 +46,21 @@ export async function saveProgression(authorization: string, owner: PathOwner, p
     quizIds.push(await saveQuiz(authorization, owner.teacherId, quiz));
     onSaved?.quiz?.();
   }
+  await savePathOfQuizzes(authorization, owner.classId, progression, quizIds);
+  onSaved?.progression?.();
+  return quizIds.length;
+}
 
+// A path whose quizzes are already in her library: only the path and its steps
+// are written, pointing at those quizzes in the order given.
+export async function savePathOfQuizzes(authorization: string, classId: string, progression: Omit<ProgressionRecord, "quizzes">, quizIds: string[]) {
   const saved = await request<{ id: string }>(
     authorization,
     "/api/collections/progressions/records",
     {
       method: "POST",
       body: JSON.stringify({
-        class: owner.classId,
+        class: classId,
         name: progression.name,
         description: progression.description,
         passPercentage: progression.passPercentage,
@@ -62,7 +72,6 @@ export async function saveProgression(authorization: string, owner: PathOwner, p
     },
     "We could not save a learning path.",
   );
-  onSaved?.progression?.();
 
   for (const [index, quizId] of quizIds.entries()) {
     await request(
@@ -75,7 +84,6 @@ export async function saveProgression(authorization: string, owner: PathOwner, p
       "A learning path was saved, but one of its quizzes could not be added.",
     );
   }
-  return quizIds.length;
 }
 
 export { saveQuiz };

@@ -30,6 +30,9 @@ quizzes gets what she asked for and none of that.
 - Teachers who already have duplicate quizzes keep them. Merging them means
   repointing `progression_steps.quiz` and `quiz_attempts.quiz` and picking a
   survivor among copies that differ — deliberately deferred, not designed.
-- Class setup offers the teacher's existing paths alongside the ready-made ones.
-  Picking one builds a new path for the class whose steps point at the existing
-  quiz records. This is what stops duplicates coming back.
+- Every teacher's library holds one copy of each ready-made quiz, marked by
+  `quizzes.starter` ("multiplication:3"). Picking a ready-made path during
+  class setup builds a new path whose steps point at those library quizzes,
+  edits included. This is what stops duplicates coming back. (An earlier
+  version instead offered her existing paths from other classes at setup;
+  teachers found that choice confusing, so it was removed.)

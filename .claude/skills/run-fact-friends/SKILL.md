@@ -100,18 +100,13 @@ her quizzes stay: a quiz she renamed in the deleted class still opens, still
 carries the rename, is still editable, and can be added to a path in the class
 she kept.
 
-`reuse-path` is the one that stops the duplicates coming back. Creating a class
-used to mint a fresh path *and* a fresh set of quizzes, so a teacher with four
-classes had four copies of every quiz. It builds a class from a ready-made path,
-tunes a path of its own, then starts a third class from that path and asserts
-the new class's steps point at the *same quiz records* — proved twice over, by
-editing a quiz from the new class and finding the old class changed, and by the
-teacher's quiz count not moving. It also covers the labels and order setup
-offers, the settings that come across, and the pacing on the setup screen
-beating the pacing the path carried. One caveat it states out loud: nothing in
-this database stores when a record last changed, so "most recently edited first"
-is really "most recently added first" — re-editing an old path does not float it
-back to the top.
+`starter-library` is the one that stops the duplicates coming back. Every
+teacher's library starts with all 51 ready-made quizzes (marked by
+`quizzes.starter`, e.g. `multiplication:3`), and a class started on a
+ready-made path reuses them. It signs up a teacher, checks the library holds
+exactly 51 quizzes and setup defaults to self-paced, tunes one ready-made quiz,
+then starts a second class on the same path and asserts its steps point at the
+*same quiz records*, the count did not move, and the edit came along.
 
 `pdf-exports` fetches the real PDFs over HTTP and pulls the pdfcx record back
 out of them with the app's own `extractRecord`, which is the same source the
@@ -165,7 +160,7 @@ node .claude/skills/run-fact-friends/driver.mjs pdf-exports      # exported PDFs
 node .claude/skills/run-fact-friends/driver.mjs cross-class      # one quiz used by two classes
 node .claude/skills/run-fact-friends/driver.mjs class-delete     # a deleted class leaves the quizzes
 node .claude/skills/run-fact-friends/driver.mjs send-to-step     # students sent straight to one quiz
-node .claude/skills/run-fact-friends/driver.mjs reuse-path       # a new class from a path she already has
+node .claude/skills/run-fact-friends/driver.mjs starter-library  # ready-made quizzes shared by every class
 node .claude/skills/run-fact-friends/driver.mjs remove-vs-delete # remove-from-path vs. delete, and the delete warning
 node .claude/skills/run-fact-friends/driver.mjs copy-for-class   # a separate copy of a shared quiz for one class
 node .claude/skills/run-fact-friends/driver.mjs shot /teacher/home home

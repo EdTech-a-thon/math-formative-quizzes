@@ -1,7 +1,8 @@
 import { json } from "@sveltejs/kit";
 import { pocketBaseRequest } from "$lib/server/pocketbase";
+import { fillEmptyStarterLibrary } from "$lib/server/starterPaths";
 
-type Authentication = { token: string };
+type Authentication = { token: string; record: { id: string } };
 
 export async function POST({ request, cookies }) {
   const { action, name, email, password } = await request.json();
@@ -30,6 +31,9 @@ export async function POST({ request, cookies }) {
       },
     );
     cookies.set("teacher_session", result.token, { path: "/", httpOnly: true, sameSite: "lax", secure: false, maxAge: 60 * 60 * 24 * 30 });
+    // Not worth failing a sign-in over: starting a class on a ready-made path
+    // adds any of its quizzes that are still missing.
+    await fillEmptyStarterLibrary(`Bearer ${result.token}`, result.record.id).catch(() => {});
     return json({ ok: true });
   } catch (caught) {
     return json({ message: caught instanceof Error ? caught.message : "We could not complete that request." }, { status: 400 });

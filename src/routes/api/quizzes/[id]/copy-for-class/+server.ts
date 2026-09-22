@@ -2,7 +2,6 @@ import { json } from "@sveltejs/kit";
 import { pocketBaseError, teacherPocketBaseRequest } from "$lib/server/pocketbase";
 
 type Quiz = { id: string; data: unknown };
-type Progression = { id: string; class: string };
 type Step = { id: string; quiz: string };
 type Items<T> = { items: T[] };
 
@@ -44,35 +43,27 @@ export async function POST({ request, cookies, params, locals }) {
     // place (an enrollment's currentStep points at a step, never a quiz) is
     // untouched, and every attempt already recorded against the original quiz
     // keeps pointing at it, exactly as it should.
-    const progressions = await teacherPocketBaseRequest<Items<Progression>>(
+    // Every one of the class's learning paths, not just its first: a class can
+    // run addition and multiplication side by side, and the quiz may sit in
+    // either. A hidden single-quiz path from "assign on its own" is not one of
+    // them, and stays pointing at the original.
+    const steps = await teacherPocketBaseRequest<Items<Step>>(
       cookies,
-      // A hidden single-quiz path from "assign on its own" is not the class's
-      // learning path, and picking one here would leave the real path pointing
-      // at the original quiz with nothing to say why.
-      `/api/collections/progressions/records?perPage=1&filter=${encodeURIComponent(`class="${classId}" && standalone != true`)}`,
-      { errorMessage: "The copy was made, but this class's path could not be found.", preferErrorMessage: true },
+      `/api/collections/progression_steps/records?perPage=500&filter=${encodeURIComponent(`progression.class="${classId}" && progression.standalone != true && quiz="${params.id}"`)}`,
+      { errorMessage: "The copy was made, but this class's path could not be updated.", preferErrorMessage: true },
     );
-    const progressionId = progressions.items[0]?.id;
-
-    if (progressionId) {
-      const steps = await teacherPocketBaseRequest<Items<Step>>(
+    for (const step of steps.items) {
+      await teacherPocketBaseRequest(
         cookies,
-        `/api/collections/progression_steps/records?perPage=500&filter=${encodeURIComponent(`progression="${progressionId}" && quiz="${params.id}"`)}`,
-        { errorMessage: "The copy was made, but this class's path could not be updated.", preferErrorMessage: true },
+        `/api/collections/progression_steps/records/${step.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quiz: copy.id }),
+          errorMessage: "The copy was made, but this class's path could not be updated.",
+          preferErrorMessage: true,
+        },
       );
-      for (const step of steps.items) {
-        await teacherPocketBaseRequest(
-          cookies,
-          `/api/collections/progression_steps/records/${step.id}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ quiz: copy.id }),
-            errorMessage: "The copy was made, but this class's path could not be updated.",
-            preferErrorMessage: true,
-          },
-        );
-      }
     }
 
     return json(copy);
