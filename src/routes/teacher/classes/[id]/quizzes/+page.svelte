@@ -52,14 +52,41 @@
       ? "Every one of your quizzes is already in a progression."
       : "This progression has no quizzes yet.";
 
+  // From inside a class, "delete" almost always means "I don't want this in my
+  // path" — that lighter action lives on the path editor instead (see
+  // ProgressionPreview's remove button) and never reaches this quiz record or
+  // any other class. This is the other, rarer action: destroying the quiz
+  // record itself, for every class that uses it. So the warning has to spell
+  // out exactly how far that reaches — every learning path it's in, every class
+  // those paths belong to, and every attempt a student has already sat against
+  // it — before it happens, since a delete can't be undone afterwards.
+  function deleteWarning(quiz: Quiz): string {
+    const title = quiz.data.title || "this quiz";
+    const attempts = data.usage[quiz.id]?.attempts ?? 0;
+    // Reusing the same membership tags the card itself is built from, rather
+    // than recomputing anything: quiz.progressions already names every learning
+    // path this quiz is in and the class each one belongs to.
+    const pathCount = quiz.progressions.length;
+    const classNames = [...new Set(quiz.progressions.map((membership) => membership.className))].sort((a, b) =>
+      a.localeCompare(b),
+    );
+
+    const lines = [`Delete "${title}"? This cannot be undone.`];
+    if (pathCount) {
+      const pathWord = pathCount === 1 ? "1 learning path" : `${pathCount} learning paths`;
+      const classWord = classNames.length === 1 ? `in ${classNames[0]}` : `across ${classNames.length} classes: ${classNames.join(", ")}`;
+      lines.push(`It is used in ${pathWord} ${classWord} — deleting it removes those steps too, from every one of those classes.`);
+    }
+    if (attempts) {
+      lines.push(`Students have ${attempts} recorded attempt${attempts === 1 ? "" : "s"} for this quiz. That history is deleted along with it.`);
+    }
+    return lines.join("\n\n");
+  }
+
   async function deleteQuiz(event: MouseEvent, quiz: Quiz) {
     event.preventDefault();
     event.stopPropagation();
-    const use = data.usage[quiz.id];
-    let warning = `Delete "${quiz.data.title}"? This cannot be undone.`;
-    if (use?.progressions) warning += `\n\nThis quiz is used in ${use.progressions} progression step${use.progressions === 1 ? "" : "s"}, which will also be removed.`;
-    if (use?.attempts) warning += `\n\nStudents have ${use.attempts} recorded attempt${use.attempts === 1 ? "" : "s"} for this quiz.`;
-    if (!confirm(warning)) return;
+    if (!confirm(deleteWarning(quiz))) return;
     deletingId = quiz.id; error = "";
     try {
       const response = await fetch(`/api/quizzes/${quiz.id}`, { method: "DELETE" });
@@ -103,7 +130,13 @@
           </div>
           <span class="library-edit-hint"><Icon name="pencil" size={14} /> Edit</span>
           <button type="button" class="ghost-btn" title="Export as PDF" on:click={(event) => exportQuiz(event, quiz.id)}><Icon name="upload" size={14} /> Export</button>
-          <button type="button" class="ghost-btn danger" disabled={deletingId === quiz.id} on:click={(event) => deleteQuiz(event, quiz)}>{deletingId === quiz.id ? "Deleting…" : "Delete"}</button>
+          <button
+            type="button"
+            class="ghost-btn danger"
+            disabled={deletingId === quiz.id}
+            title="Delete this quiz everywhere it's used — this cannot be undone"
+            on:click={(event) => deleteQuiz(event, quiz)}
+          >{deletingId === quiz.id ? "Deleting…" : "Delete quiz"}</button>
         </a>
       {:else}
         <p class="editor-note">{emptyNote}</p>

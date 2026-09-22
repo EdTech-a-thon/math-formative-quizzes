@@ -8,7 +8,7 @@
 //                              progression, student, released attempt.
 //                              Writes .claude/skills/run-fact-friends/.fixture.json
 //   smoke                      seed, then walk both import paths, sit a quiz,
-//                              and run the nine scenarios below.
+//                              and run the eleven scenarios below.
 //   ownership                  A second teacher sees none of the first
 //                              teacher's quizzes and cannot open one by id.
 //   quiz-lifecycle             Create, edit, export and delete one quiz.
@@ -26,6 +26,13 @@
 //                              disturb.
 //   reuse-path                 A new class started from a path she already has,
 //                              reusing her quizzes instead of copying them.
+//   remove-vs-delete           Removing a quiz from one path leaves it alone
+//                              everywhere else; deleting a quiz warns with its
+//                              real reach, cancels cleanly, and cascades on
+//                              confirm.
+//   copy-for-class             A separate copy of a shared quiz for one class,
+//                              leaving the original and a student mid-path
+//                              undisturbed.
 //   release                    Release another attempt for the seeded student.
 //   shot <path> [name]         Screenshot any page signed in as the teacher.
 //   student-shot <path|quiz> [name]
@@ -72,9 +79,12 @@ async function browser() {
 
 // Every page gets these: a confirm() that answers itself (releasing an
 // attempt goes through one), and loud reporting of anything the page throws.
-function watch(page, tag = "page") {
+// A scenario that needs to read a confirm's message, or dismiss one instead of
+// accepting it — the delete warning below is exactly that case — passes its
+// own onDialog instead of the default "always accept".
+function watch(page, tag = "page", onDialog = (d) => d.accept()) {
   page.on("pageerror", (e) => log(`!! ${tag} threw:`, e.message));
-  page.on("dialog", (d) => d.accept());
+  page.on("dialog", onDialog);
   page.on("console", (m) => { if (m.type() === "error") log(`!! ${tag} console:`, m.text()); });
   return page;
 }
@@ -214,10 +224,12 @@ function check(label, pass, detail = "") {
 }
 
 // Signs up a throwaway teacher in her own browser context, the same way `seed`
-// does, but without touching the shared fixture files.
-async function signUpTeacher(b, name) {
+// does, but without touching the shared fixture files. A scenario that needs to
+// read or dismiss a confirm() itself — rather than have it auto-accepted —
+// passes its own onDialog.
+async function signUpTeacher(b, name, onDialog) {
   const ctx = await b.newContext({ viewport: { width: 1400, height: 950 } });
-  const page = watch(await ctx.newPage(), name);
+  const page = onDialog ? watch(await ctx.newPage(), name, onDialog) : watch(await ctx.newPage(), name);
   const email = `t${Date.now()}x${Math.floor(Math.random() * 10000)}@example.org`;
   await page.goto(`${BASE}/teacher`, { waitUntil: "networkidle" });
   await page.locator(".tabs button", { hasText: "Create account" }).click();
@@ -1249,6 +1261,187 @@ async function reusePath() {
   await b.close();
 }
 
+// --- Remove from a path vs. delete a quiz (#25) ----------------------------
+//
+// From inside a class, "delete" almost always means "I don't want this in my
+// path" — the quiz survives, and every other class keeps it exactly as it
+// was. Deleting a quiz is the other, rarer action: it destroys the quiz
+// record itself, so every learning path in every class that used it loses
+// that step. The two have to read as obviously different things, and the
+// delete warning has to name what it is about to reach — the learning paths,
+// the classes, the recorded attempts — before it happens, since there is no
+// undo afterwards.
+//
+// confirm() is native, so there is nothing to screenshot; capturing its
+// message through a custom dialog handler (instead of the driver's usual
+// auto-accept) is the only way to check it says what it should, and to prove
+// dismissing it truly changes nothing before accepting one for real.
+
+async function removeVsDelete() {
+  const b = await browser();
+  let dialogMessage = "";
+  let dialogChoice = "accept";
+  const onDialog = async (dialog) => {
+    dialogMessage = dialog.message();
+    if (dialogChoice === "dismiss") await dialog.dismiss();
+    else await dialog.accept();
+  };
+  const { page } = await signUpTeacher(b, "Removing Teacher", onDialog);
+  const period1 = await createEmptyClass(page, "Removal Period 1");
+  const period2 = await createEmptyClass(page, "Removal Period 2");
+
+  // Two quizzes, each used by a learning path in both classes: one is going to
+  // be taken off just one path, the other is going to be deleted outright.
+  const toRemove = await makeQuiz(page, "Removable step", {});
+  const toDelete = await makeQuiz(page, "Deletable quiz", {});
+  const path1 = await makePath(page, period1, "Removal path A", [toDelete, toRemove]);
+  const path2 = await makePath(page, period2, "Removal path B", [toDelete, toRemove]);
+
+  // A student in Period 1 on the quiz that's about to be deleted, so the
+  // warning has a real attempt count to name. Both attempts fail on purpose —
+  // self-paced re-releases her either way — so she never reaches the second
+  // step and stays clear of the path edit below.
+  const code = await teacherClassCode(page, period1);
+  const ada = await joinAsStudent(b, code, "Ada Removal");
+  const adaId = await studentId(page, period1, "Ada Removal");
+  const assigned = await page.request.post(`${BASE}/api/enrollments/bulk`, { data: { students: [adaId], progressions: [path1] } });
+  if (!assigned.ok()) throw new Error(`could not assign: ${assigned.status()} ${await assigned.text()}`);
+  await sitQuiz(ada, "Deletable quiz", false);
+  await sitQuiz(ada, "Deletable quiz", false);
+
+  // ---- Removing a quiz from just one path -----------------------------------
+  await page.goto(`${BASE}/teacher/classes/${period1}/progressions/${path1}/edit`, { waitUntil: "networkidle" });
+  await page.locator(".step-picker button", { hasText: "Removable step" }).click();
+  await page.locator("button.editor-save").click();
+  await page.waitForURL((u) => u.pathname.endsWith(`/progressions/${path1}`), { timeout: 20000 });
+
+  const path1AfterRemove = await pathOverview(page, period1, path1);
+  check("removing a quiz from a path takes it off that path", !path1AfterRemove.steps.includes("Removable step"), path1AfterRemove.steps);
+  const path2Untouched = await pathOverview(page, period2, path2);
+  check("the other class's path keeps it, untouched", path2Untouched.steps.includes("Removable step"), path2Untouched.steps);
+  const stillListed = await listedQuizzes(page, period1);
+  check("the removed quiz is still in the quizzes list, not deleted", stillListed.ids.includes(toRemove), `${stillListed.ids.length} listed`);
+  await page.screenshot({ path: join(SHOTS, "remove-from-path.png"), fullPage: true });
+
+  // ---- The delete warning, read before anything is decided -------------------
+  await page.goto(`${BASE}/teacher/classes/${period1}/quizzes`, { waitUntil: "networkidle" });
+  const deleteButton = page.locator(".library-card", { hasText: "Deletable quiz" }).locator("button.danger");
+
+  dialogChoice = "dismiss";
+  await deleteButton.click();
+  await page.waitForTimeout(300);
+  const warning = dialogMessage;
+  log("delete warning shown to the teacher:");
+  log(warning.split("\n").map((line) => `  ${line}`).join("\n"));
+  check("the warning names both learning paths", /2 learning paths/.test(warning), warning);
+  check("the warning names both classes", warning.includes("Removal Period 1") && warning.includes("Removal Period 2"), warning);
+  check("the warning names the real attempt count", warning.includes("2 recorded attempts"), warning);
+  check("the warning says plainly that it cannot be undone", warning.includes("cannot be undone"), warning);
+  check("the delete button reads as its own distinct action, not \"remove\"", (await deleteButton.innerText()).includes("Delete quiz"), await deleteButton.innerText());
+
+  // ---- Cancelling changes nothing --------------------------------------------
+  const afterCancel = await listedQuizzes(page, period1);
+  check("cancelling leaves the quiz in the list", afterCancel.ids.includes(toDelete), `${afterCancel.ids.length} listed`);
+  const path1AfterCancel = await pathOverview(page, period1, path1);
+  check("cancelling leaves that class's path untouched", path1AfterCancel.steps.includes("Deletable quiz"), path1AfterCancel.steps);
+  const path2AfterCancel = await pathOverview(page, period2, path2);
+  check("cancelling leaves the other class's path untouched too", path2AfterCancel.steps.includes("Deletable quiz"), path2AfterCancel.steps);
+
+  // ---- Confirming removes it everywhere ---------------------------------------
+  // Reading the other class's path above navigated this page away from the
+  // quizzes list, so the delete button has to be found again.
+  await page.goto(`${BASE}/teacher/classes/${period1}/quizzes`, { waitUntil: "networkidle" });
+  dialogChoice = "accept";
+  await page.locator(".library-card", { hasText: "Deletable quiz" }).locator("button.danger").click();
+  await page.waitForTimeout(500);
+  const afterDelete = await listedQuizzes(page, period1);
+  check("confirming removes the quiz from the list", !afterDelete.ids.includes(toDelete), `${afterDelete.ids.length} listed`);
+  const path1AfterDelete = await pathOverview(page, period1, path1);
+  check("and takes its step out of the path it came from", !path1AfterDelete.steps.includes("Deletable quiz"), path1AfterDelete.steps);
+  const path2AfterDelete = await pathOverview(page, period2, path2);
+  check("and out of every other class's path that used it too", !path2AfterDelete.steps.includes("Deletable quiz"), path2AfterDelete.steps);
+  const gone = await page.goto(`${BASE}/teacher/classes/${period1}/quizzes/${toDelete}`, { waitUntil: "networkidle" });
+  check("the quiz record itself is gone", gone.status() === 404, `status ${gone.status()}`);
+
+  log(`\nshots in ${SHOTS}`);
+  await b.close();
+}
+
+// --- Making a separate copy of a quiz for one class (#24, owed) ------------
+//
+// Fixing a question for one class used to reach every other class sharing
+// that quiz — the whole point of #16, but it left no way to make an easier
+// one-off version for a single group. "Make a copy for this class" is the
+// escape hatch: a plain, independent quiz record, with only the current
+// class's path repointed at it by changing the step's quiz field — never the
+// step record itself, which is what leaves a student mid-path undisturbed.
+
+async function copyForClass() {
+  const b = await browser();
+  const { page } = await signUpTeacher(b, "Copying Teacher");
+  const classA = await createEmptyClass(page, "Copy Class A");
+  const classB = await createEmptyClass(page, "Copy Class B");
+
+  const shared = await makeQuiz(page, "Shared Sevens", {});
+  const pathA = await makePath(page, classA, "Copy Path A", shared);
+  const pathB = await makePath(page, classB, "Copy Path B", shared);
+
+  // A student in Class A, mid-path: enrolled and already sitting the shared
+  // quiz — and falling short of it — before the copy is made.
+  const code = await teacherClassCode(page, classA);
+  const ada = await joinAsStudent(b, code, "Ada Copying");
+  const adaId = await studentId(page, classA, "Ada Copying");
+  const assigned = await page.request.post(`${BASE}/api/enrollments/bulk`, { data: { students: [adaId], progressions: [pathA] } });
+  if (!assigned.ok()) throw new Error(`could not assign: ${assigned.status()} ${await assigned.text()}`);
+  await sitQuiz(ada, "Shared Sevens", false); // fails; self-paced re-releases her for a retry
+
+  const attemptsBefore = await attemptTitles(page, classA, adaId);
+  check("one attempt is on record before the copy is made", attemptsBefore.length === 1, attemptsBefore.join(", "));
+
+  // ---- THE ACTION: make a separate copy for Class A only ---------------------
+  await page.goto(`${BASE}/teacher/classes/${classA}/quizzes/${shared}`, { waitUntil: "networkidle" });
+  await page.locator("button.bar-copy-button").click();
+  await page.waitForURL((u) => !u.pathname.endsWith(`/quizzes/${shared}`), { timeout: 20000 });
+  const copy = page.url().match(/\/quizzes\/([^/?#]+)/)[1];
+  check("the copy is a distinct quiz record", Boolean(copy) && copy !== shared, copy ?? "no id in URL");
+
+  // ---- Class A's path now uses the copy; Class B's path is untouched --------
+  const overviewA = await pathOverview(page, classA, pathA);
+  const overviewB = await pathOverview(page, classB, pathB);
+  check("Class A's path now points at the copy", overviewA.quizIds.includes(copy) && !overviewA.quizIds.includes(shared), overviewA.quizIds.join(", "));
+  check("Class B's path still points at the original", overviewB.quizIds.includes(shared) && !overviewB.quizIds.includes(copy), overviewB.quizIds.join(", "));
+
+  // ---- Both quizzes are the teacher's, in their own right --------------------
+  const allQuizzes = await listedQuizzes(page, classA);
+  check("the quizzes list shows both the original and the copy", allQuizzes.ids.includes(shared) && allQuizzes.ids.includes(copy), `${allQuizzes.ids.length} listed`);
+
+  // ---- Editing one never reaches the other -----------------------------------
+  await page.goto(`${BASE}/teacher/classes/${classA}/quizzes/${shared}`, { waitUntil: "networkidle" });
+  await page.locator("input.bar-title").fill("Edited Original");
+  await page.locator("button.editor-save").click();
+  await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
+  await page.goto(`${BASE}/teacher/classes/${classA}/quizzes/${copy}`, { waitUntil: "networkidle" });
+  const copyTitleAfterOriginalEdit = await page.locator("input.bar-title").inputValue();
+  check("editing the original did not touch the copy's title", copyTitleAfterOriginalEdit === "Shared Sevens", copyTitleAfterOriginalEdit);
+
+  await page.locator("input.bar-title").fill("Edited Copy");
+  await page.locator("button.editor-save").click();
+  await page.waitForURL(/\/quizzes$/, { timeout: 20000 });
+  await page.goto(`${BASE}/teacher/classes/${classA}/quizzes/${shared}`, { waitUntil: "networkidle" });
+  const originalTitleAfterCopyEdit = await page.locator("input.bar-title").inputValue();
+  check("editing the copy did not touch the original's title", originalTitleAfterCopyEdit === "Edited Original", originalTitleAfterCopyEdit);
+
+  // ---- The student's place and history are unaffected by the repoint --------
+  const attemptsAfter = await attemptTitles(page, classA, adaId);
+  check("the earlier attempt is still on record, untouched by the copy", attemptsAfter.length === 1, attemptsAfter.join(", "));
+  const stillOffered = await offered(ada, "Edited Copy");
+  check("she is offered a retry of the same step, now serving the copy's current content", stillOffered.onScreen && stillOffered.canStart, JSON.stringify(stillOffered));
+
+  await page.screenshot({ path: join(SHOTS, "copy-for-class.png"), fullPage: true });
+  log(`\nshots in ${SHOTS}`);
+  await b.close();
+}
+
 async function smoke() {
   const fx = existsSync(FIXTURE) ? fixture() : await seed();
   const b = await browser();
@@ -1344,6 +1537,10 @@ async function smoke() {
   await sendToStep();
   log("\n-- a class from a path she already has --");
   await reusePath();
+  log("\n-- remove from a path vs. delete a quiz --");
+  await removeVsDelete();
+  log("\n-- make a separate copy of a quiz for one class --");
+  await copyForClass();
   summarise();
 }
 
@@ -1382,10 +1579,12 @@ else if (cmd === "cross-class") { await crossClass(); summarise(); }
 else if (cmd === "class-delete") { await classDelete(); summarise(); }
 else if (cmd === "send-to-step") { await sendToStep(); summarise(); }
 else if (cmd === "reuse-path") { await reusePath(); summarise(); }
+else if (cmd === "remove-vs-delete") { await removeVsDelete(); summarise(); }
+else if (cmd === "copy-for-class") { await copyForClass(); summarise(); }
 else if (cmd === "release") await release();
 else if (cmd === "shot") await shot(args[0] ?? "/", args[1]);
 else if (cmd === "student-shot") await shot(args[0] ?? "quiz", args[1] ?? "student", true);
 else {
-  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | pdf-exports | cross-class | class-delete | send-to-step | reuse-path | release | shot <path> [name] | student-shot <path|quiz> [name]");
+  log("commands: seed | smoke | ownership | quiz-lifecycle | student-records | time-limits | pdf-exports | cross-class | class-delete | send-to-step | reuse-path | remove-vs-delete | copy-for-class | release | shot <path> [name] | student-shot <path|quiz> [name]");
   process.exit(1);
 }

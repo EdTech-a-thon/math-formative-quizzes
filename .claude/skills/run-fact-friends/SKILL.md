@@ -77,7 +77,7 @@ editor filed a quiz in the library instead of handing it back to the draft.
 Screenshots land in `.claude/skills/run-fact-friends/shots/`. **Open them** —
 `smoke` passing its printed checks does not mean the page looks right.
 
-`smoke` ends with nine named scenarios, each of which prints `PASS`/`FAIL` per
+`smoke` ends with eleven named scenarios, each of which prints `PASS`/`FAIL` per
 check and a count at the end. `time-limits` is the other one worth knowing: a
 quiz's limit is stored in seconds, but quizzes saved before that carry whole
 minutes, and two copies of the resolver read the two fields — one in the app,
@@ -130,6 +130,30 @@ keeps the attempt she really sat and is offered the earlier quiz again. It ends
 with a student who had completed a path being pulled back to its first quiz and
 going active again.
 
+`remove-vs-delete` is the one #25 exists for: from inside a class, "delete"
+almost always means "take this off my path," not "destroy it everywhere," so
+the two have to read as obviously different actions. It removes a quiz from
+one of two classes' paths and asserts the quiz stays listed and the other
+class's path is untouched, then deletes a *different* quiz that both classes
+share — one with two recorded attempts against it — and reads the confirm()'s
+actual message through a custom dialog handler rather than the driver's usual
+auto-accept. That message has to name both learning paths, both classes by
+name, and the real attempt count, and say plainly that it cannot be undone.
+Dismissing it is asserted to change nothing at all before a second click
+accepts it for real and the quiz and its steps vanish from both classes.
+Native `confirm()` dialogs cannot be screenshotted — reading the message text
+is the only way to check it reads well.
+
+`copy-for-class` is #24's scenario, owed from the wave it landed in and folded
+in here. "Make a copy for this class" is the escape hatch off quiz sharing: a
+plain, independent quiz record, with only the current class's path repointed
+at it. It seeds a student mid-path on a shared quiz, makes the copy, and
+asserts the copying class's path now points at the copy while the other
+class's path still points at the original, that editing either one never
+reaches the other, and that the student's earlier attempt and her place on
+the path are undisturbed — then confirms she is served the copy's current
+content the next time she sits that step.
+
 Other commands:
 
 ```bash
@@ -142,6 +166,8 @@ node .claude/skills/run-fact-friends/driver.mjs cross-class      # one quiz used
 node .claude/skills/run-fact-friends/driver.mjs class-delete     # a deleted class leaves the quizzes
 node .claude/skills/run-fact-friends/driver.mjs send-to-step     # students sent straight to one quiz
 node .claude/skills/run-fact-friends/driver.mjs reuse-path       # a new class from a path she already has
+node .claude/skills/run-fact-friends/driver.mjs remove-vs-delete # remove-from-path vs. delete, and the delete warning
+node .claude/skills/run-fact-friends/driver.mjs copy-for-class   # a separate copy of a shared quiz for one class
 node .claude/skills/run-fact-friends/driver.mjs shot /teacher/home home
 node .claude/skills/run-fact-friends/driver.mjs student-shot quiz student-quiz
 node .claude/skills/run-fact-friends/driver.mjs release
@@ -174,9 +200,17 @@ localhost URL or a port number.
 
 ## Gotchas
 
-- **Releasing goes through `confirm()`.** Without `page.on("dialog", d => d.accept())`
-  the click silently does nothing — no request, no error, the button just stays
-  as it was. `watch()` in the driver installs this on every page.
+- **Releasing and deleting a quiz both go through `confirm()`.** Without
+  `page.on("dialog", d => d.accept())` the click silently does nothing — no
+  request, no error, the button just stays as it was. `watch()` in the driver
+  installs this on every page. To read a confirm's actual message, or to
+  dismiss one instead of accepting it (`remove-vs-delete` does both, to prove
+  cancelling a delete changes nothing), pass a custom `onDialog` into
+  `signUpTeacher`/`watch` instead of relying on the default. A Playwright
+  locator re-queries the current page each time you act on it, so if a check
+  in between (reading another class's path, say) navigated the page away and
+  back, re-`goto` before clicking again — there is nothing on the page the
+  locator was built against any more.
 - **One attempt per release.** Handing a quiz in sets `released: false`, so the
   student's Start button disappears. A second run needs `driver.mjs release`
   first; `student-shot quiz` throws a clear error when there is nothing to sit.
