@@ -68,7 +68,6 @@
   // concerned this is one quiz, handed to some students.
   let giving: Quiz | null = null;
   let passPercentage = 80;
-  let selfPaced = true;
   let dialogBusy = false;
   let dialogError = "";
 
@@ -77,7 +76,6 @@
     event.stopPropagation();
     giving = quiz;
     passPercentage = 80;
-    selfPaced = true;
     dialogError = "";
     message = "";
   }
@@ -103,13 +101,13 @@
       const response = await fetch(`/api/quizzes/${quiz.id}/assign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId: $page.params.id, students: studentIds, passPercentage, selfPaced }),
+        body: JSON.stringify({ classId: $page.params.id, students: studentIds, passPercentage }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message);
       await invalidateAll();
       giving = null;
-      message = oneOffSummary(result.assigned, result.skipped, quiz.data.title, result.selfPaced);
+      message = oneOffSummary(result.assigned, result.skipped, quiz.data.title);
     } catch (caught) {
       dialogError = caught instanceof Error ? caught.message : "We could not give out this quiz.";
     } finally {
@@ -245,13 +243,6 @@
           <button type="button" aria-label="Lower passing score" on:click={() => (passPercentage = Math.max(5, passPercentage - 5))}><Icon name="minus" size={15} /></button>
           <b>{passPercentage}<small>%</small></b>
           <button type="button" aria-label="Raise passing score" on:click={() => (passPercentage = Math.min(100, passPercentage + 5))}><Icon name="plus" size={15} /></button>
-        </div>
-      </div>
-      <div class="assign-setting">
-        <div><strong>When they can start</strong><small>{selfPaced ? "It is ready the moment they open their screen." : "It waits on their screen until you release it."}</small></div>
-        <div class="assign-pacing" role="group" aria-label="When they can start">
-          <button type="button" class:on={selfPaced} aria-pressed={selfPaced} on:click={() => (selfPaced = true)}>Straight away</button>
-          <button type="button" class:on={!selfPaced} aria-pressed={!selfPaced} on:click={() => (selfPaced = false)}>When I release it</button>
         </div>
       </div>
     </div>

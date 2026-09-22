@@ -1150,7 +1150,6 @@ async function assignOneOff() {
   const ladder = await makePath(page, classId, "Threes ladder", [warmUp, sprint], { passPercentage: 50 });
 
   const sixes = await makeQuiz(page, "Multiply by 6 alone", {});
-  const nines = await makeQuiz(page, "Multiply by 9 alone", {});
 
   const ada = await joinAsStudent(b, code, "Ada Oneoff");
   const bo = await joinAsStudent(b, code, "Bo Oneoff");
@@ -1162,8 +1161,8 @@ async function assignOneOff() {
   // ---- One quiz, two students, nothing built around it --------------------
   await openGiveDialog(page, classId, "Multiply by 6 alone");
   const score = (await page.locator(".assign-settings .stepper b").innerText()).replace(/\s+/g, "");
-  const pacing = (await page.locator(".assign-pacing button.on").innerText()).trim();
-  check("the dialog collects a passing score and pacing, already answered 80% and straight away", score === "80%" && pacing === "Straight away", `${score}, "${pacing}"`);
+  const asksPacing = await page.locator(".assign-settings", { hasText: /When they can start|release/i }).count();
+  check("the dialog collects a passing score, already 80%, and never asks when they can start", score === "80%" && asksPacing === 0, `${score}`);
   const wording = (await page.locator(".assign-dialog header, .assign-settings").allInnerTexts()).join(" | ").replace(/\s*\n+\s*/g, " | ");
   check("and it says they may retry, never that this is a single sitting", /retry/i.test(wording) && !/(single sitting|one sitting|one attempt|one go|only once)/i.test(wording), `"${wording}"`);
   await page.screenshot({ path: join(SHOTS, "assign-one-off-dialog.png") });
@@ -1223,14 +1222,6 @@ async function assignOneOff() {
   const counted = (await page.locator(".student-detail-heading-actions span").first().innerText()).trim();
   check("and counts the one-off apart from her learning paths rather than as one", counted === "1 learning path · 1 quiz on its own", `"${counted}"`);
   await page.screenshot({ path: join(SHOTS, "assign-one-off-student-page.png"), fullPage: true });
-
-  // ---- Pacing is a real choice, not a default she cannot escape ------------
-  await openGiveDialog(page, classId, "Multiply by 9 alone");
-  await page.locator(".assign-pacing button", { hasText: "When I release it" }).click();
-  await confirmSend(page, ["Bo Oneoff"]);
-  const heldTold = (await page.locator(".message.success").innerText()).trim();
-  const waiting = await offered(bo, "Multiply by 9 alone");
-  check("choosing to release it later leaves the student waiting instead", waiting.onScreen && !waiting.canStart && /Release it when you want them to start\./.test(heldTold), `${JSON.stringify(waiting)} — "${heldTold}"`);
 
   // ---- Handing the same quiz out twice never doubles it up -----------------
   await openGiveDialog(page, classId, "Multiply by 6 alone");

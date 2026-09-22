@@ -24,9 +24,9 @@ export async function POST({ request, cookies, params }) {
   // A quiz handed out on its own is still retried until it is passed, so it
   // needs a passing score just like a quiz inside a path does.
   const passPercentage = Math.min(100, Math.max(1, Math.round(Number(body.passPercentage)) || 80));
-  // Self-paced unless the teacher says otherwise: assigning one quiz should not
-  // then need a release pressed before anybody can start it.
-  const selfPaced = body.selfPaced !== false;
+  // Always self-paced: a quiz handed out on its own is meant to be started
+  // straight away, never held back waiting for a release.
+  const selfPaced = true;
 
   if (!classId) return json({ message: "Choose a class to assign this quiz in." }, { status: 400 });
   if (!students.length) return json({ message: "Pick at least one student." }, { status: 400 });
@@ -111,7 +111,7 @@ export async function POST({ request, cookies, params }) {
       assigned++;
     }
 
-    return json({ assigned, skipped, selfPaced });
+    return json({ assigned, skipped });
   } catch (caught) {
     const failure = pocketBaseError(caught, "We could not give out this quiz.");
     return json({ message: failure.message, assigned, skipped }, { status: failure.status });

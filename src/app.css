@@ -753,9 +753,6 @@ button span {
 .assign-setting strong { display: block; font-size: .84rem; }
 .assign-setting small { display: block; margin-top: 2px; color: #81799a; font-size: .74rem; }
 .assign-setting .stepper { flex: 0 0 auto; }
-.assign-pacing { display: flex; flex: 0 0 auto; gap: 6px; }
-.assign-pacing button { margin: 0; padding: 8px 11px; border: 1px solid #e0dbe8; border-radius: 10px; background: #fff; box-shadow: none; color: #756e80; font-size: .76rem; font-weight: 800; white-space: nowrap; }
-.assign-pacing button.on { border-color: #9c87e8; background: #eee9ff; color: #4d399b; }
 .assign-dialog-search { display: flex; align-items: center; gap: 8px; margin-top: 15px; padding: 0 12px; border: 1px solid #e0dbe8; border-radius: 11px; background: #fff; color: #a29aae; }
 .assign-dialog-search:focus-within { border-color: #9c87e8; box-shadow: 0 0 0 3px #eee9ff; }
 .assign-dialog-search input { flex: 1; min-width: 0; margin: 0; padding: 10px 0; border: 0; background: transparent; color: #4c465c; font-size: .88rem; outline: none; }

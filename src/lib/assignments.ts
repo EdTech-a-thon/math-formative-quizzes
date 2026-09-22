@@ -13,14 +13,11 @@ export function sendToStepSummary(moved: number, quizTitle: string) {
   return `Moved ${students} to ${quizTitle}. ${moved === 1 ? "They can" : "They can all"} start it right away.`;
 }
 
-// Giving a quiz out on its own. The pacing she chose decides the second half of
-// this: either nobody is waiting on her, or she still has to say when to start.
-export function oneOffSummary(assigned: number, skipped: number, quizTitle: string, selfPaced: boolean) {
+// Giving a quiz out on its own. It is always ready to start straight away.
+export function oneOffSummary(assigned: number, skipped: number, quizTitle: string) {
   const already = skipped ? ` ${skipped} already had it.` : "";
   if (!assigned) return `Everyone you picked already has ${quizTitle}.`;
   const students = `${assigned} ${assigned === 1 ? "student" : "students"}`;
-  const next = selfPaced
-    ? `${assigned === 1 ? "They can" : "They can all"} start it right away.`
-    : "Release it when you want them to start.";
+  const next = `${assigned === 1 ? "They can" : "They can all"} start it right away.`;
   return `Gave ${quizTitle} to ${students}. ${next}${already}`;
 }
