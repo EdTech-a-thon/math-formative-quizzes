@@ -25,7 +25,7 @@ export const FAILURE_MESSAGES: Record<SourceFailure, { message: string; detail: 
   },
   "no-record": {
     message: "That PDF has attachments, but none of them hold quiz data.",
-    detail: "Export the quiz or progression again and import the file you get.",
+    detail: "Export the quiz or learning path again and import the file you get.",
   },
   "damaged-record": {
     message: "That PDF's quiz data is damaged.",
@@ -34,6 +34,6 @@ export const FAILURE_MESSAGES: Record<SourceFailure, { message: string; detail: 
 };
 
 export const NOT_OURS = {
-  message: "That file holds data, but not a quiz or a progression.",
-  detail: "A quiz needs a title and questions; a progression needs a name and a list of quizzes.",
+  message: "That file holds data, but not a quiz or a learning path.",
+  detail: "A quiz needs a title and questions; a learning path needs a name and a list of quizzes.",
 };

@@ -1,6 +1,6 @@
 import { env } from "$env/dynamic/private";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { optionalTeacherAuthorization, pocketBaseUrl } from "$lib/server/pocketbase";
 
 // Cloudflare's visitor counter, switched on only when CF_BEACON_TOKEN is set.
 // Tokens are plain letters, digits, dashes and underscores; anything else is
@@ -12,14 +12,14 @@ function beaconTag() {
 }
 
 export async function handle({ event, resolve }) {
-  const token = event.cookies.get("teacher_session");
+  const authorization = optionalTeacherAuthorization(event.cookies);
   event.locals.teacher = null;
 
-  if (token) {
+  if (authorization) {
     try {
       const response = await fetch(`${pocketBaseUrl}/api/collections/teachers/auth-refresh`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: authorization },
       });
       if (response.ok) {
         const { record } = await response.json();

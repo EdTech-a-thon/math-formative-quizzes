@@ -1,6 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl } from "$lib/server/pocketbase";
 
 export async function load({ cookies }) {
   const studentId = cookies.get("student_session");

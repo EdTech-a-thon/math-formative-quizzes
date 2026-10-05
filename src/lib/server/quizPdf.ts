@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import { answerFor, type Operation, type Problem } from "$lib/quizProblems";
 import { attachRecord } from "$lib/server/pdfcx";
 import { progressionEnvelope, quizEnvelope, type ProgressionRecord, type QuizRecord } from "$lib/server/exportRecord";
+import { formatTimeLimit } from "$lib/timeLimit";
 
 // A4, and a margin close to the 1.5cm the on-screen print stylesheet uses, so
 // this and the browser's own Print produce the same document.
@@ -92,7 +93,10 @@ function drawProblem(page: PDFPage, fonts: Fonts, problem: Problem, index: numbe
 
 // Lay every question out four across, starting a fresh page when one fills up.
 function drawWorksheet(pdf: PDFDocument, fonts: Fonts, quiz: QuizRecord, aside: string) {
-  const meta = `Name: ______________________     Date: ______________     ${quiz.timeLimitMinutes} min  ·  ${quiz.problems.length} question${quiz.problems.length === 1 ? "" : "s"}`;
+  // An untimed quiz omits the time rather than printing a bare "0".
+  const time = formatTimeLimit(quiz.timeLimitSeconds);
+  const questionCount = `${quiz.problems.length} question${quiz.problems.length === 1 ? "" : "s"}`;
+  const meta = `Name: ______________________     Date: ______________     ${time ? `${time}  ·  ` : ""}${questionCount}`;
   let page = newPage(pdf);
   let y = drawHeading(page, fonts, quiz.title, aside, meta);
 
@@ -165,7 +169,7 @@ export async function renderQuizPdf(quiz: QuizRecord): Promise<Uint8Array> {
 export async function renderProgressionPdf(progression: ProgressionRecord): Promise<Uint8Array> {
   const { pdf, fonts } = await startDocument();
   pdf.setTitle(progression.name);
-  pdf.setSubject("Fact Friends progression");
+  pdf.setSubject("Fact Friends learning path");
 
   // Cover: what the path is, and every step in the order learners meet them.
   const total = progression.quizzes.reduce((sum, quiz) => sum + quiz.problems.length, 0);

@@ -1,21 +1,23 @@
 import { error } from "@sveltejs/kit";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl, teacherAuthorization } from "$lib/server/pocketbase";
 
 export async function load({ cookies, params }) {
-  const headers = { Authorization: `Bearer ${cookies.get("teacher_session")}` };
+  const headers = { Authorization: teacherAuthorization(cookies) };
   const [quizzesResponse, progressionsResponse, stepsResponse, enrollmentsResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/quizzes/records?perPage=500`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=500`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=500&sort=position&expand=quiz`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=2000&fields=progression,status,released`, { headers }),
   ]);
-  if (!quizzesResponse.ok || !progressionsResponse.ok || !stepsResponse.ok) error(500, "We could not load progressions.");
+  if (!quizzesResponse.ok || !progressionsResponse.ok || !stepsResponse.ok) error(500, "We could not load learning paths.");
   const quizzes = await quizzesResponse.json();
   const progressions = await progressionsResponse.json();
   const steps = await stepsResponse.json();
   const enrollmentItems = enrollmentsResponse.ok ? (await enrollmentsResponse.json()).items : [];
-  const classQuizzes = quizzes.items.filter((quiz: { class: string }) => quiz.class === params.id);
+  // Quizzes are the teacher's, so the access rules have already narrowed these
+  // to hers; only the learning paths below are still per class.
+  const teacherQuizzes = quizzes.items;
 
   // How many students are assigned to each progression.
   const studentCount: Record<string, number> = {};
@@ -28,8 +30,11 @@ export async function load({ cookies, params }) {
     counts[enrollment.progression] = (counts[enrollment.progression] ?? 0) + 1;
   }
 
+  // A quiz given to students on its own is stored as a hidden learning path
+  // holding only that quiz, so it is kept out of the list of paths — otherwise
+  // this page grows a card for every quiz she has ever handed out.
   const classProgressions = progressions.items
-    .filter((progression: { class: string }) => progression.class === params.id)
+    .filter((progression: { class: string; standalone?: boolean }) => progression.class === params.id && progression.standalone !== true)
     .map((progression: { id: string }) => ({
       ...progression,
       studentCount: studentCount[progression.id] ?? 0,
@@ -38,7 +43,7 @@ export async function load({ cookies, params }) {
     }));
   const progressionIds = new Set(classProgressions.map((progression: { id: string }) => progression.id));
   return {
-    quizzes: classQuizzes,
+    quizzes: teacherQuizzes,
     progressions: classProgressions,
     steps: steps.items.filter((step: { progression: string }) => progressionIds.has(step.progression)),
   };

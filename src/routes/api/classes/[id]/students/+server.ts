@@ -1,15 +1,11 @@
-import { error, json } from "@sveltejs/kit";
-
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { json } from "@sveltejs/kit";
+import { pocketBaseError, teacherPocketBaseRequest } from "$lib/server/pocketbase";
 
 function loginName(name: string) {
   return name.toLowerCase().replace(/[^a-z]/g, "");
 }
 
 export async function POST({ params, request, cookies }) {
-  const teacherToken = cookies.get("teacher_session");
-  if (!teacherToken) error(401, "Please sign in again.");
-
   const body = await request.json().catch(() => ({}));
   const names = (Array.isArray(body.names) ? body.names : [])
     .map((name: unknown) => String(name).trim())
@@ -17,11 +13,6 @@ export async function POST({ params, request, cookies }) {
 
   if (!names.length) return json({ message: "Add at least one student name." }, { status: 400 });
   if (names.some((name: string) => name.length > 120)) return json({ message: "Student names must be 120 characters or fewer." }, { status: 400 });
-
-  const authorization = `Bearer ${teacherToken}`;
-  const headers = { "Content-Type": "application/json", Authorization: authorization };
-  const classResponse = await fetch(`${pocketBaseUrl}/api/collections/classes/records/${params.id}`, { headers });
-  if (!classResponse.ok) return json({ message: "We could not find this class." }, { status: classResponse.status });
 
   const requested = names.map((name: string) => ({ name, loginName: loginName(name) }));
   if (requested.some((student: { loginName: string }) => !student.loginName)) {
@@ -33,24 +24,40 @@ export async function POST({ params, request, cookies }) {
   );
   if (duplicateInList) return json({ message: `${duplicateInList.name} appears more than once in this list.` }, { status: 400 });
 
-  const filter = encodeURIComponent(`class="${params.id}"`);
-  const existingResponse = await fetch(`${pocketBaseUrl}/api/collections/students/records?perPage=500&fields=loginName&filter=${filter}`, { headers });
-  const existing = existingResponse.ok ? (await existingResponse.json()).items : [];
-  const existingNames = new Set(existing.map((student: { loginName: string }) => student.loginName));
-  const duplicate = requested.find((student: { loginName: string }) => existingNames.has(student.loginName));
-  if (duplicate) return json({ message: `${duplicate.name} is already on this roster.` }, { status: 409 });
+  try {
+    await teacherPocketBaseRequest(
+      cookies,
+      `/api/collections/classes/records/${params.id}`,
+      { errorMessage: "We could not find this class.", preferErrorMessage: true },
+    );
 
-  const added = [];
-  for (const student of requested) {
-    const response = await fetch(`${pocketBaseUrl}/api/collections/students/records`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ class: params.id, name: student.name, loginName: student.loginName }),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) return json({ message: result.message || "We could not add these students.", added: added.length }, { status: response.status });
-    added.push(result);
+    const filter = encodeURIComponent(`class="${params.id}"`);
+    const existing = await teacherPocketBaseRequest<{ items: { loginName: string }[] }>(
+      cookies,
+      `/api/collections/students/records?perPage=500&fields=loginName&filter=${filter}`,
+      { errorMessage: "We could not find the class roster." },
+    );
+    const existingNames = new Set(existing.items.map((student) => student.loginName));
+    const duplicate = requested.find((student: { loginName: string }) => existingNames.has(student.loginName));
+    if (duplicate) return json({ message: `${duplicate.name} is already on this roster.` }, { status: 409 });
+
+    let added = 0;
+    for (const student of requested) {
+      await teacherPocketBaseRequest(
+        cookies,
+        "/api/collections/students/records",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ class: params.id, name: student.name, loginName: student.loginName }),
+          errorMessage: "We could not add these students.",
+        },
+      );
+      added++;
+    }
+    return json({ added });
+  } catch (caught) {
+    const failure = pocketBaseError(caught, "We could not add these students.");
+    return json({ message: failure.message }, { status: failure.status });
   }
-
-  return json({ added: added.length });
 }

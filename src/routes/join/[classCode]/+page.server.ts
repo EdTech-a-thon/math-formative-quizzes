@@ -1,6 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl } from "$lib/server/pocketbase";
 
 async function pocketBasePost(path: string, payload: unknown) {
   const response = await globalThis.fetch(`${pocketBaseUrl}${path}`, {

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { invalidateAll } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { page } from "$app/stores";
   import Icon from "$lib/Icon.svelte";
   import IconGlyph from "$lib/IconGlyph.svelte";
   import AssignDialog from "$lib/AssignDialog.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
-  import { assignmentSummary } from "$lib/assignments";
+  import { assignmentSummary, sendToStepSummary } from "$lib/assignments";
 
   type Step = { id: string; quizId: string; position: number; title: string; questionCount: number };
   type Enrollment = { id: string; studentId: string; studentName: string; currentStep: string; position: number; status: string; released: boolean };
@@ -20,6 +20,30 @@
   $: studentsAt = (stepId: string) => activeEnrollments.filter((enrollment) => enrollment.currentStep === stepId);
 
   let releasing = "";
+  let deleting = false;
+
+  // Says exactly what goes and what stays before anything is removed.
+  function deleteWarning() {
+    const lines = [`Delete "${data.progression.name}"? This cannot be undone.`];
+    const students = data.enrollments.length;
+    if (students) lines.push(`${students} ${students === 1 ? "student is" : "students are"} on this path. Their place on it and their attempt history for it will be deleted.`);
+    lines.push("The quizzes stay in your quiz library.");
+    return lines.join("\n\n");
+  }
+
+  async function deletePath() {
+    if (!confirm(deleteWarning())) return;
+    deleting = true;
+    error = "";
+    try {
+      const response = await fetch(`/api/progressions/${data.progression.id}`, { method: "DELETE" });
+      if (!response.ok) { const result = await response.json().catch(() => ({})); throw new Error(result.message); }
+      await goto(base);
+    } catch (caught) {
+      error = caught instanceof Error ? caught.message : "We could not delete this learning path.";
+      deleting = false;
+    }
+  }
   let error = "";
   let message = "";
 
@@ -49,6 +73,47 @@
       message = assignmentSummary(result.assigned, result.skipped);
     } catch (caught) {
       dialogError = caught instanceof Error ? caught.message : "We could not add these students.";
+    } finally {
+      dialogBusy = false;
+    }
+  }
+
+  // Sending students straight to one quiz in this path. The same picker again,
+  // but this time the whole class is on offer: a student who has never been on
+  // this path joins it here, and one who is already on it moves here.
+  let sending: Step | null = null;
+  $: enrollmentByStudent = new Map(data.enrollments.map((enrollment) => [enrollment.studentId, enrollment]));
+  $: stepTitleById = new Map(data.steps.map((step) => [step.id, step.title]));
+  // Where each student stands today, so the teacher can see who she is moving.
+  $: sendCandidates = (step: Step) =>
+    data.students.map((student) => {
+      const enrollment = enrollmentByStudent.get(student.id);
+      let detail = "not on this path yet";
+      if (enrollment?.status === "completed") detail = "finished this path";
+      else if (enrollment?.currentStep === step.id) detail = "already on this quiz";
+      else if (enrollment) detail = `on ${stepTitleById.get(enrollment.currentStep) ?? "this path"}`;
+      return { id: student.id, name: student.name, detail, shade: data.progression.shade ?? "" };
+    });
+
+  async function sendToStep(studentIds: string[]) {
+    const step = sending;
+    if (!step) return;
+    dialogBusy = true;
+    dialogError = "";
+    message = "";
+    try {
+      const response = await fetch("/api/enrollments/step", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progression: data.progression.id, step: step.id, students: studentIds }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message);
+      await invalidateAll();
+      sending = null;
+      message = sendToStepSummary(result.moved, step.title);
+    } catch (caught) {
+      dialogError = caught instanceof Error ? caught.message : "We could not move these students.";
     } finally {
       dialogBusy = false;
     }
@@ -98,17 +163,17 @@
 <svelte:head><title>{data.progression.name} · Fact Friends</title></svelte:head>
 
 <section class="workspace-page progression-overview">
-  <a class="overview-back" href={base}><Icon name="arrow-left" size={14} /> Progressions</a>
+  <a class="overview-back" href={base}><Icon name="arrow-left" size={14} /> Learning paths</a>
   <header class={`progression-overview-header ${shadeClass(data.progression.shade)}`}>
     <div class="overview-title-icon"><IconGlyph name={data.progression.icon || "route"} size={27} fallback="route" /></div>
     <div class="overview-title">
-      <p class="eyebrow">PROGRESSION</p>
+      <p class="eyebrow">LEARNING PATH</p>
       <h1>{data.progression.name}</h1>
       <p>{data.progression.description || `${data.steps.length} quizzes in this learning path.`}</p>
       <div class="overview-facts"><span>{data.progression.passPercentage}% to pass</span><span>{data.steps.length} quizzes</span><span>{data.enrollments.length} students</span><span>{data.progression.oneAtATime ? "one question at a time" : "all questions at once"}</span><span>{data.progression.showAnswers ? "answers shown" : "answers hidden"}</span><span>{data.progression.selfPaced ? "self-paced" : "teacher released"}</span></div>
     </div>
     <div class="overview-actions">
-      <a class="ghost-btn" href={`${base}/${data.progression.id}/edit`}><Icon name="pencil" size={14} /> Edit progression</a>
+      <a class="ghost-btn" href={`${base}/${data.progression.id}/edit`}><Icon name="pencil" size={14} /> Edit learning path</a>
       <a class="ghost-btn" href={`/api/progressions/${data.progression.id}/pdf`} title="Export this path and all its quizzes as one PDF"><Icon name="upload" size={14} /> Export</a>
       {#if !data.progression.selfPaced}
         <button class="primary-action" type="button" disabled={!waitingCount || Boolean(releasing)} on:click={releaseAll}>
@@ -145,7 +210,12 @@
               <h3>{step.title}</h3>
               <p>{step.questionCount} questions</p>
             </a>
-            <span>{students.length} {students.length === 1 ? "student" : "students"}</span>
+            <div class="step-header-side">
+              <span>{students.length} {students.length === 1 ? "student" : "students"}</span>
+              {#if data.students.length}
+                <button type="button" class="step-send-button" on:click={() => (sending = step)}><Icon name="arrow-right" size={12} /> Send students here</button>
+              {/if}
+            </div>
           </header>
           {#if students.length}
             <div class="step-students">
@@ -174,6 +244,10 @@
   {#if completed.length}
     <section class="progression-completed" id="completed"><h2><Icon name="check" size={17} /> Completed</h2><div class="completed-student-links">{#each completed as student}<a href={`/teacher/classes/${$page.params.id}/students/${student.studentId}`}>{student.studentName}</a>{/each}</div></section>
   {/if}
+  <footer class="overview-delete">
+    <p>Done with this learning path? Deleting it removes students' progress on it. The quizzes stay in your quiz library.</p>
+    <button class="ghost-btn danger" type="button" disabled={deleting} on:click={deletePath}>{deleting ? "Deleting…" : "Delete learning path"}</button>
+  </footer>
 </section>
 
 {#if picking}
@@ -186,5 +260,21 @@
     error={dialogError}
     onClose={() => { picking = false; dialogError = ""; }}
     onConfirm={assignStudents}
+  />
+{/if}
+
+{#if sending}
+  <AssignDialog
+    title={`Send students to ${sending.title}`}
+    subtitle="Everyone you pick goes straight to this quiz and can start it right away."
+    kind="student"
+    verb="Send"
+    busyLabel="Sending…"
+    confirmIcon="arrow-right"
+    items={sendCandidates(sending)}
+    busy={dialogBusy}
+    error={dialogError}
+    onClose={() => { sending = null; dialogError = ""; }}
+    onConfirm={sendToStep}
   />
 {/if}

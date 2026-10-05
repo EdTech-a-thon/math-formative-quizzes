@@ -1,12 +1,12 @@
 import { error } from "@sveltejs/kit";
 import type { Problem } from "$lib/quizProblems";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl, teacherAuthorization } from "$lib/server/pocketbase";
 
 type Step = { id: string; quiz: string; position: number };
 
 export async function load({ cookies, params }) {
-  const headers = { Authorization: `Bearer ${cookies.get("teacher_session")}` };
+  const headers = { Authorization: teacherAuthorization(cookies) };
   const [progressionResponse, quizzesResponse, stepsResponse, enrollmentsResponse, studentsResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records/${params.progressionId}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/quizzes/records?perPage=500`, { headers }),
@@ -14,15 +14,17 @@ export async function load({ cookies, params }) {
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=2000&expand=student,currentStep&filter=${encodeURIComponent(`progression="${params.progressionId}"`)}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/students/records?perPage=500&sort=name&filter=${encodeURIComponent(`class="${params.id}"`)}`, { headers }),
   ]);
-  if (progressionResponse.status === 404) error(404, "Progression not found.");
-  if (!progressionResponse.ok) error(500, "We could not load this progression.");
+  if (progressionResponse.status === 404) error(404, "Learning path not found.");
+  if (!progressionResponse.ok) error(500, "We could not load this learning path.");
   const progression = await progressionResponse.json();
-  if (progression.class !== params.id) error(404, "Progression not found.");
+  if (progression.class !== params.id) error(404, "Learning path not found.");
   if (!quizzesResponse.ok) error(500, "We could not load this class's quizzes.");
-  if (!stepsResponse.ok) error(500, "We could not load this progression's steps.");
+  if (!stepsResponse.ok) error(500, "We could not load this learning path's steps.");
   if (!enrollmentsResponse.ok) error(500, "We could not load student progress.");
 
-  const quizzes = (await quizzesResponse.json()).items.filter((quiz: { class: string }) => quiz.class === params.id);
+  // Quizzes belong to the teacher, so a step can point at one she built in
+  // another class; the access rules keep the list to hers.
+  const quizzes = (await quizzesResponse.json()).items;
   const steps: Step[] = (await stepsResponse.json()).items.sort((a: Step, b: Step) => a.position - b.position);
   const quizById = new Map(quizzes.map((quiz: { id: string }) => [quiz.id, quiz]));
   const enrollmentItems = enrollmentsResponse.ok ? (await enrollmentsResponse.json()).items : [];

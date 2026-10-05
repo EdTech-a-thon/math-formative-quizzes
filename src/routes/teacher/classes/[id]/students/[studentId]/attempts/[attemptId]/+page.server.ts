@@ -1,14 +1,14 @@
 import { error } from "@sveltejs/kit";
 import { answerFor, symbolFor, type Operation } from "$lib/quizProblems";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl, teacherAuthorization } from "$lib/server/pocketbase";
 
 // Each response records the operator it was sat with, so editing the quiz
 // afterwards can never rewrite what this report says the questions were.
 type Response = { top: number; bottom: number; op?: Operation; answer: string; correct: boolean };
 
 export async function load({ cookies, params }) {
-  const headers = { Authorization: `Bearer ${cookies.get("teacher_session")}` };
+  const headers = { Authorization: teacherAuthorization(cookies) };
   const [studentResponse, attemptResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/students/records/${params.studentId}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/quiz_attempts/records/${params.attemptId}?expand=quiz,progressionStep,progressionEnrollment.progression`, { headers }),
@@ -18,7 +18,9 @@ export async function load({ cookies, params }) {
   if (!studentResponse.ok || !attemptResponse.ok) error(500, "We could not load this attempt.");
   const student = await studentResponse.json();
   const attempt = await attemptResponse.json();
-  if (student.class !== params.id || attempt.student !== params.studentId || attempt.expand?.quiz?.class !== params.id) error(404, "Attempt not found.");
+  // The student pins the attempt to this class. The quiz no longer belongs to a
+  // class — it is the teacher's, and may be used by several of her classes.
+  if (student.class !== params.id || attempt.student !== params.studentId) error(404, "Attempt not found.");
 
   const quiz = attempt.expand?.quiz?.data ?? {};
   const responses = (Array.isArray(attempt.responses) ? attempt.responses : []) as Response[];

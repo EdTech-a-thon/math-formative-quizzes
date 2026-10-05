@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "$lib/Icon.svelte";
+  import type { IconName } from "$lib/icons";
   import IconGlyph from "$lib/IconGlyph.svelte";
   import { shadeClass } from "$lib/shades";
 
@@ -14,6 +15,12 @@
   export let items: Item[] = [];
   export let busy = false;
   export let error = "";
+  // The confirm button says what this particular picker does. Assigning a
+  // student to a learning path and sending one to a step are different actions,
+  // so they must not read the same on screen.
+  export let verb = "Assign";
+  export let busyLabel = "Assigning…";
+  export let confirmIcon: IconName = "plus";
   export let onClose: () => void;
   export let onConfirm: (ids: string[]) => void;
 
@@ -22,7 +29,7 @@
 
   $: matches = items.filter((item) => `${item.name} ${item.detail ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()));
   $: allMatchesChosen = matches.length > 0 && matches.every((item) => chosen.has(item.id));
-  $: noun = kind === "student" ? "student" : "progression";
+  $: noun = kind === "student" ? "student" : "learning path";
 
   function toggle(id: string) {
     if (chosen.has(id)) chosen.delete(id);
@@ -55,6 +62,10 @@
       <div><h2>{title}</h2>{#if subtitle}<p>{subtitle}</p>{/if}</div>
       <button type="button" class="assign-dialog-close" aria-label="Close" disabled={busy} on:click={onClose}><Icon name="x" size={18} /></button>
     </header>
+
+    <!-- Some pickers decide something about the work before it goes out, such
+         as the passing score on a quiz given on its own. -->
+    <slot name="settings" />
 
     <div class="assign-dialog-search">
       <Icon name="search" size={15} />
@@ -89,8 +100,8 @@
     <footer>
       <button type="button" class="ghost-btn" disabled={busy} on:click={onClose}>Cancel</button>
       <button type="button" class="primary-action" disabled={!chosen.size || busy} on:click={() => onConfirm([...chosen])}>
-        <Icon name="plus" size={15} />
-        {busy ? "Assigning…" : chosen.size ? `Assign ${chosen.size} ${chosen.size === 1 ? noun : `${noun}s`}` : "Assign"}
+        <Icon name={confirmIcon} size={15} />
+        {busy ? busyLabel : chosen.size ? `${verb} ${chosen.size} ${chosen.size === 1 ? noun : `${noun}s`}` : verb}
       </button>
     </footer>
   </div>

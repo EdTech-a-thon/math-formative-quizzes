@@ -1,8 +1,22 @@
 import { json } from "@sveltejs/kit";
+import { PocketBaseRequestError, pocketBaseRequest } from "$lib/server/pocketbase";
 
-export async function POST({ request, fetch }) {
+export async function POST({ request }) {
   const { classCode } = await request.json();
-  const response = await fetch("http://127.0.0.1:8090/api/fact-friends/class-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ classCode }) });
-  const body = await response.json();
-  return json(body, { status: response.status });
+  try {
+    const body = await pocketBaseRequest(
+      "/api/fact-friends/class-code",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classCode }),
+      },
+    );
+    return json(body);
+  } catch (caught) {
+    if (caught instanceof PocketBaseRequestError) {
+      return json(caught.body, { status: caught.status });
+    }
+    return json({ message: "PocketBase request failed." }, { status: 500 });
+  }
 }

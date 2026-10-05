@@ -1,7 +1,7 @@
 import { error, redirect } from "@sveltejs/kit";
 import { answerFor, symbolFor, type Operation } from "$lib/quizProblems";
 
-const pocketBaseUrl = "http://127.0.0.1:8090";
+import { pocketBaseUrl } from "$lib/server/pocketbase";
 
 // Each response kept the operator it was sat with, so a quiz edited afterwards
 // can never rewrite what this page says the questions were.
