@@ -4,7 +4,7 @@ import { pocketBaseUrl, teacherAuthorization } from "$lib/server/pocketbase";
 export async function load({ cookies, params }) {
   const headers = { Authorization: teacherAuthorization(cookies) };
   const studentFilter = encodeURIComponent(`student="${params.studentId}"`);
-  const [studentResponse, enrollmentsResponse, stepsResponse, attemptsResponse, progressionsResponse] = await Promise.all([
+  const [studentResponse, enrollmentsResponse, stepsResponse, attemptsResponse, progressionsResponse, classmatesResponse] = await Promise.all([
     globalThis.fetch(`${pocketBaseUrl}/api/collections/students/records/${params.studentId}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_enrollments/records?perPage=500&expand=progression,currentStep,currentStep.quiz&filter=${studentFilter}`, { headers }),
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progression_steps/records?perPage=2000`, { headers }),
@@ -13,6 +13,8 @@ export async function load({ cookies, params }) {
     // its own is a hidden single-quiz path, and offering those back would turn
     // this picker into a second, confusing copy of the quiz library.
     globalThis.fetch(`${pocketBaseUrl}/api/collections/progressions/records?perPage=200&sort=name&filter=${encodeURIComponent(`class="${params.id}" && standalone != true`)}`, { headers }),
+    // The other students in this class, to merge a duplicate student into.
+    globalThis.fetch(`${pocketBaseUrl}/api/collections/students/records?perPage=500&sort=name&fields=id,name&filter=${encodeURIComponent(`class="${params.id}" && id != "${params.studentId}"`)}`, { headers }),
   ]);
 
   if (studentResponse.status === 404) error(404, "Student not found.");
@@ -25,6 +27,7 @@ export async function load({ cookies, params }) {
   const stepItems = (await stepsResponse.json()).items;
   const attemptItems = (await attemptsResponse.json()).items;
   const progressionItems = progressionsResponse.ok ? (await progressionsResponse.json()).items : [];
+  const classmates: { id: string; name: string }[] = classmatesResponse.ok ? (await classmatesResponse.json()).items : [];
   const stepCount: Record<string, number> = {};
   for (const step of stepItems as { progression: string }[]) stepCount[step.progression] = (stepCount[step.progression] ?? 0) + 1;
 
@@ -35,6 +38,7 @@ export async function load({ cookies, params }) {
       loginName: student.loginName,
       extraTimeMinutes: Number(student.accommodations?.extraTimeMinutes) || 0,
     },
+    classmates,
     // Every path in this class, so the page can offer the ones this student is
     // not on yet.
     progressions: (progressionItems as { id: string; name: string; operation?: string; shade?: string }[]).map((progression) => ({

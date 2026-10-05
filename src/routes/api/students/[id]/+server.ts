@@ -33,3 +33,24 @@ export async function PATCH({ cookies, params, request }) {
     return json({ message: failure.message }, { status: failure.status });
   }
 }
+
+// Remove a student from their class. With `mergeIntoId`, their enrollments and
+// attempts move to that student first (for a duplicate student); without it,
+// their work is deleted with them.
+export async function DELETE({ cookies, params, request }) {
+  const body = await request.json().catch(() => ({}));
+  const errorMessage = "We could not remove this student.";
+
+  try {
+    await teacherPocketBaseRequest(cookies, "/api/fact-friends/remove-student", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studentId: params.id, mergeIntoId: String(body.mergeIntoId ?? "") }),
+      errorMessage,
+    });
+    return json({ ok: true });
+  } catch (caught) {
+    const failure = pocketBaseError(caught, errorMessage);
+    return json({ message: failure.message }, { status: failure.status });
+  }
+}

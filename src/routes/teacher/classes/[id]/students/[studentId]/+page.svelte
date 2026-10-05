@@ -1,16 +1,18 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { invalidateAll } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import Icon from "$lib/Icon.svelte";
   import IconGlyph from "$lib/IconGlyph.svelte";
   import AssignDialog from "$lib/AssignDialog.svelte";
+  import RemoveStudentDialog from "$lib/RemoveStudentDialog.svelte";
   import { shadeClass, type ShadeId } from "$lib/shades";
   import { assignmentSummary } from "$lib/assignments";
+  import { pushToast } from "$lib/toasts";
 
   type Enrollment = { id: string; progressionId: string; currentStep: string; progressionName: string; icon: string | null; shade: ShadeId | null; operation: string; position: number; totalSteps: number; standalone: boolean; quizId: string; currentQuiz: string; status: string; released: boolean };
   type Attempt = { id: string; title: string; position: number | null; correct: number; total: number; passed: boolean; leveledUp: boolean; completedAt: string };
   type Progression = { id: string; name: string; operation: string; shade: string; stepCount: number };
-  export let data: { student: { id: string; name: string; loginName: string; extraTimeMinutes: number }; enrollments: Enrollment[]; attempts: Attempt[]; progressions: Progression[] };
+  export let data: { student: { id: string; name: string; loginName: string; extraTimeMinutes: number }; classmates: { id: string; name: string }[]; enrollments: Enrollment[]; attempts: Attempt[]; progressions: Progression[] };
 
   let busy = "";
   let error = "";
@@ -98,6 +100,29 @@
       error = caught instanceof Error ? caught.message : "We could not release this attempt.";
     } finally {
       busy = "";
+    }
+  }
+
+  let removing = false;
+  let removeBusy = false;
+  let removeError = "";
+
+  async function removeStudent(mergeIntoId: string) {
+    removeBusy = true;
+    removeError = "";
+    try {
+      const response = await fetch(`/api/students/${data.student.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mergeIntoId }),
+      });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message);
+      const keptName = data.classmates.find((classmate) => classmate.id === mergeIntoId)?.name;
+      pushToast("success", keptName ? `${data.student.name}'s work moved to ${keptName}` : `${data.student.name} removed from the class`);
+      await goto(`/teacher/classes/${$page.params.id}`);
+    } catch (caught) {
+      removeError = caught instanceof Error && caught.message ? caught.message : "We could not remove this student.";
+      removeBusy = false;
     }
   }
 
@@ -203,7 +228,26 @@
       <p class="student-detail-empty">This student has not completed an attempt yet.</p>
     {/if}
   </section>
+
+  <footer class="overview-delete">
+    <p>Signed up twice, or left the class? You can move {data.student.name}'s work to another student before removing them.</p>
+    <button class="ghost-btn danger" type="button" on:click={() => (removing = true)}>Remove student</button>
+  </footer>
 </section>
+
+{#if removing}
+  <RemoveStudentDialog
+    studentName={data.student.name}
+    {pathCount}
+    {oneOffCount}
+    attemptCount={data.attempts.length}
+    classmates={data.classmates}
+    busy={removeBusy}
+    error={removeError}
+    onClose={() => { removing = false; removeError = ""; }}
+    onConfirm={removeStudent}
+  />
+{/if}
 
 {#if picking}
   <AssignDialog

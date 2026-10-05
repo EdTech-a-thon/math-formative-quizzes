@@ -30,3 +30,25 @@ _Avoid_: Assignment, membership
 A teacher granting one student one attempt at the quiz they are currently on. A
 self-paced path releases the next attempt automatically instead.
 _Avoid_: Unlock, publish, open
+
+**Student**:
+One child in one class. A student belongs to exactly one class.
+_Avoid_: Account, user
+
+**Duplicate student**:
+A second student in the same class who is the same child, usually created by
+typing their name differently when joining an open class.
+
+**Remove student**:
+Permanently delete a student from their class, along with any work not merged
+into another student first.
+_Avoid_: Archive, unenroll
+
+**Merge**:
+Move a duplicate student's enrollments and quiz attempts onto the student being
+kept, then remove the duplicate. The kept student's name and accommodations stay
+as they are.
+_Avoid_: Transfer, combine
+
+**Accommodation**:
+A per-student adjustment, such as extra time, that applies to every quiz.
