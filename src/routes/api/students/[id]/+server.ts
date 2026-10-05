@@ -34,3 +34,20 @@ export async function PATCH({ cookies, params, request }) {
   if (!response.ok) return json({ message: result.message || "We could not save these accommodations." }, { status: response.status });
   return json({ accommodations });
 }
+
+// Remove a student from their class. With `mergeIntoId`, their enrollments and
+// attempts move to that student first (for a duplicate student); without it,
+// their work is deleted with them.
+export async function DELETE({ cookies, params, request }) {
+  const authorization = auth(cookies);
+  const body = await request.json().catch(() => ({}));
+
+  const response = await fetch(`${pocketBaseUrl}/api/fact-friends/remove-student`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: authorization },
+    body: JSON.stringify({ studentId: params.id, mergeIntoId: String(body.mergeIntoId ?? "") }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) return json({ message: result.message || "We could not remove this student." }, { status: response.status });
+  return json({ ok: true });
+}

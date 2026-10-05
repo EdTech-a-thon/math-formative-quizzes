@@ -762,6 +762,18 @@ button span {
 .assign-dialog .message { margin: 12px 0 0; }
 .assign-dialog > footer { display: flex; align-items: center; justify-content: flex-end; gap: 9px; margin-top: 15px; }
 .assign-dialog > footer .primary-action { display: inline-flex; align-items: center; gap: 6px; width: auto; margin: 0; }
+/* Removing a student (src/lib/RemoveStudentDialog.svelte). */
+.overview-delete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 36px; border-top: 1px solid #e9e4df; padding-top: 18px; }
+.overview-delete p { margin: 0; color: #77728c; font-size: .85rem; }
+.overview-delete .ghost-btn { padding: 10px 12px; }
+.remove-student-dialog { --operation: #c0392b; --operation-soft: #fdeceb; }
+.remove-student-work { margin: 14px 0 0; color: #4c465c; font-size: .85rem; }
+.remove-student-choices { display: grid; gap: 8px; margin-top: 14px; }
+.remove-student-picker { width: 100%; margin: 0; padding: 10px; border: 1px solid #ded6ec; border-radius: 10px; background: #fff; color: #26233a; font-size: .88rem; }
+.remove-student-note { margin: 0; color: #81799a; font-size: .76rem; line-height: 1.45; }
+.primary-action.danger-action { background: #c0392b; box-shadow: 0 4px 0 #962d22; }
+.primary-action.danger-action:hover { background: #a93226; }
+.primary-action.danger-action:disabled { cursor: default; }
 .add-students-dialog > label { margin: 17px 0 6px; color: #625d72; font-size: .78rem; font-weight: 900; }
 .add-students-dialog textarea { width: 100%; resize: vertical; min-height: 150px; padding: 11px 12px; border: 1px solid #e0dbe8; border-radius: 11px; background: #fff; color: #4c465c; font: .9rem/1.55 "Nunito Sans", sans-serif; }
 .add-students-dialog textarea:focus { border-color: #9c87e8; outline: none; box-shadow: 0 0 0 3px #eee9ff; }
