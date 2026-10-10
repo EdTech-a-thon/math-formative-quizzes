@@ -51,7 +51,7 @@
   <div class="help-dialog-backdrop" role="presentation" on:click|self={() => showingHelp = false}>
     <div class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-dialog-title" tabindex="-1">
       <header><h2 id="help-dialog-title">Need a hand?</h2><button type="button" aria-label="Close help" on:click={() => showingHelp = false}><Icon name="x" size={18} /></button></header>
-      <p>If you are running into trouble or have suggestions, email us at <a href="mailto:support@factfriends.com?subject=Fact%20Friends%20help">support@factfriends.com</a>.</p>
+      <p>If you are running into trouble or have suggestions, email us at <a href="mailto:support@teacher.dev?subject=Fact%20Friends%20help">support@teacher.dev</a>.</p>
     </div>
   </div>
 {/if}
